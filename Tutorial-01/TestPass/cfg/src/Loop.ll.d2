@@ -1,0 +1,50 @@
+g_incr : {
+  func: |llvm
+    %2 = load i32, i32* @g, align 4, !tbaa !5
+    %3 = add nsw i32 %2, %0
+    store i32 %3, i32* @g, align 4, !tbaa !5
+    ret i32 %3
+  |
+}
+loop: {
+block1: |llvm
+  ; ottimizzatore ha eliminato il loop e espanso inline la chiamata a @g_incr.
+  ; la funzione @g_incr aggiunge alla variabile globale @g il parametro c passato.
+  ; perchè fare tante chiamate successive quando posso ottenere il risultato finale con una singola chiamata a cui viene passato il valore "ottimale"?
+  ; in @g viene accumulato il valore di c tante volte quante viene chiamata nel loop: il numero di iterazioni è dato da "b-a", quindi mi basterebbe
+  ; moltiplicare il valore di c per questa differenza e farla accumulare in @g
+  ; la condizione per eseguire il corpo del loop diventa essenzialmente "b > a"
+  %4 = load i32, i32* @g, align 4, !tbaa !5
+  ; calcolo condizione di esecuzione del corpo del loop
+  %5 = icmp sgt i32 %1, %0
+  br i1 %5, label %6, label %10
+|
+
+block2: |llvm
+  6:                                                ; preds = %3
+  ; calcolo la differenza "b-a"
+  %7 = sub i32 %1, %0
+  ; moltiplico differenza per c
+  %8 = mul i32 %7, %2
+  ; da qui ho espansione inline di @g_incr
+  ; %4 contiene il valore di @g, a cui accumulo il risultato appena ottenuto
+  %9 = add i32 %4, %8
+  ; salvo il valore in @g
+  store i32 %9, i32* @g, align 4, !tbaa !5
+  br label %10
+
+|
+
+block3: |llvm
+  10:                                               ; preds = %6, %3
+  ; valore dipende da path di esecuzione: se non ho eseguito il corpo del loop, il valore di ritorno sarà semplicemente il valore di @g caricato in %4
+  ; la store del valore di @g in ret è inutile, tanto che ret è stata eliminata perchè non ha utilizzi ma solo quella definizione finale
+  %11 = phi i32 [ %9, %6 ], [ %4, %3 ]
+  ret i32 %11
+|
+
+
+block1 -> block2: true
+block1 -> block3: false
+block2 -> block3: fallthrough
+}
