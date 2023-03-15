@@ -1,6 +1,8 @@
 #include <llvm/Passes/PassBuilder.h>
 #include <llvm/Passes/PassPlugin.h>
 #include <llvm/Support/raw_ostream.h>
+#include "llvm/Analysis/CallGraph.h"
+#include "llvm/IR/Function.h"
 
 using namespace llvm;
 
@@ -8,16 +10,63 @@ namespace {
 
 class TestPass final : public PassInfoMixin<TestPass> {
 public:
+  
   PreservedAnalyses run([[maybe_unused]] Module &M, ModuleAnalysisManager &) {
-    outs() << "Passo di test per il corso di Linguaggi e Compilatori"
-           << "\n";
+    outs() << "\nPasso di test per il corso di Linguaggi e Compilatori"
+           << "\n\n";
+            for (auto iter = M.getFunctionList().begin(); iter!=M.getFunctionList().end(); ++iter) 
+            {
+              Function &F = *iter;
+              outs()<< "Nome funzione: ";
+              outs()<< F.getName().data();
+              outs()<< "\n";
 
-      // TODO: Completare il metodo come indicato per il LAB1.
-    
-    }
+              outs()<< "numero di argomenti: ";
+              outs()<< F.getFunctionType()->getNumParams();
+              if(F.getFunctionType()->isVarArg())
+              {
+                outs()<<"+*";
+              }
+              outs()<< "\n";
 
-    return PreservedAnalyses::all();
-  }
+              int c = 0;
+              int cIstruzioni = 0;
+              int cbb = 0;
+
+              for (auto bb = F.begin(); bb!=F.end(); ++bb) 
+              {
+                cbb++;
+                for (auto instruction = (*bb).begin(); instruction!=(*bb).end(); ++instruction) 
+                {
+                  cIstruzioni++;
+                  if (CallInst *callInst = dyn_cast<CallInst>(instruction)) 
+                  {
+                    if (Function *calledFunction = callInst->getCalledFunction()) 
+                    {
+                      c++;
+                    }
+                  }
+                }
+              }
+
+              outs()<< "numero di chiamate alla funzione: ";
+              outs()<< c;
+              outs()<< "\n";
+
+              outs()<< "numero di istruzioni: ";
+              outs()<< cIstruzioni;
+              outs()<< "\n";
+
+              outs()<< "numero di basic block: ";
+              outs()<< cbb;
+              outs()<<"\n\n";
+            }
+
+            outs()<<"\n";
+
+      return PreservedAnalyses::all();
+
+  };
 }; // class TestPass
 
 } // anonymous namespace
