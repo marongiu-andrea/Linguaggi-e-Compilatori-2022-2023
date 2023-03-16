@@ -14,7 +14,7 @@ public:
 
       // TODO: Completare il metodo come indicato per il LAB1.
     
-    }
+    
 
     return PreservedAnalyses::all();
   }
