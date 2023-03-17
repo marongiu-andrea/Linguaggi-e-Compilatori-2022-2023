@@ -8,6 +8,7 @@ SRCs := $(wildcard $(SRC_DIR)/*.c)
 IR0s := $(SRCs:$(SRC_DIR)/%.c=$(IR_DIR)/%.ll.O0)
 IR2s := $(SRCs:$(SRC_DIR)/%.c=$(IR_DIR)/%.ll.O2)
 
+CXX = /usr/bin/clang++
 CXXFLAGS := $(shell llvm-config --cxxflags) -fPIC
 
 all: $(IR0s) $(IR2s) $(OPTIMIZER)
