@@ -13,6 +13,19 @@ public:
            << "\n";
 
       // TODO: Completare il metodo come indicato per il LAB1.
+      for (auto iter = M.begin(); iter != M.end(); ++iter){
+        int bbcount = 0;
+        int instcount = 0;
+        int callsitescount = 0;
+
+        Function &F = iter;
+        outs() <<"\nFunction Name: " << F.getName() << "\n";
+
+#if 0
+        Value &V = 'iter';
+
+        for (auto iter v)
+      }
     
     
 
