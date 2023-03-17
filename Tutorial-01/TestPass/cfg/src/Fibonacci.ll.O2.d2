@@ -9,7 +9,14 @@ Fibonacci: {
     %4 = phi i32 [ %0, %1 ], [ %7, %5 ]
     ; implementa una "jump table"
     ; di default porta al blocco per il calcolo del prossimo numero di fibonacci
-    ; altrimenti porta al blocco finale se incontro le due condizioni finali (0 e 1)
+    ; altrimenti porta al blocco finale se incontro le due condizioni finali (0 e 1).
+    ; possiamo notare come l'ottimizzatore sia stato in grado di eliminare una
+    ; chiamata ricorsiva trasformandola in un loop. infatti per ogni iterazione viene 
+    ; chiamata ricorsivamenta la funzione solo per il valore n-1. Il risultato viene
+    ; poi addizionato ad un accumulatore. Il valore per n-2 invece, verrà scomposto nei 
+    ; due valori necessari al suo calcolo nell'iterazione successiva e ancora una volta 
+    ; verrà calcolato solo il numero di Fibonacci per il nuovo valore n-1 (a questo punto 
+    ; diventato n-3) e così via fino a che il nuovo valore di n-2 non diventerà 0 o 1.
     switch i32 %4, label %5 [
       i32 0, label %11
       i32 1, label %12
