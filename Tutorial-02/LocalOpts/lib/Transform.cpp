@@ -1,6 +1,6 @@
 #include "LocalOpts.h"
 #include "llvm/IR/InstrTypes.h"
-
+#include <string.h>
 using namespace llvm;
 
 bool runOnBasicBlock(BasicBlock &B) {
@@ -53,6 +53,18 @@ bool runOnBasicBlock(BasicBlock &B) {
     // Si possono aggiornare le singole references separatamente?
     // Controlla la documentazione e prova a rispondere.
     Inst1st.replaceAllUsesWith(NewInst);
+
+    for (auto Iter = B.begin(); Iter != B.end(); ++Iter){
+      Instruction &Inst = *Iter;
+      bool optimizable=0;
+      if(strcmp(Inst.getOpcodeName(),"mul")==0){
+        for (auto *Iter = Inst.op_begin(); Iter != Inst.op_end(); ++Iter) {
+          Value *Operand = *Iter;
+
+        }
+        outs()<<"\n";
+      }
+    }
 
     return true;
   }
