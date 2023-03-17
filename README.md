@@ -5,3 +5,4 @@ Guppo 8
 - Simone Vaiasinni
 - Algert Mucaj
 - Christian Messori
+
