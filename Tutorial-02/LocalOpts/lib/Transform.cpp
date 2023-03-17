@@ -1,10 +1,12 @@
 #include "LocalOpts.h"
 #include "llvm/IR/InstrTypes.h"
+#include "llvm/IR/Constants.h"
+#include "llvm/IR/DerivedTypes.h"
 
 using namespace llvm;
 
 bool runOnBasicBlock(BasicBlock &B) {
-    
+    /*
     // Preleviamo le prime due istruzioni del BB
     Instruction &Inst1st = *B.begin(), &Inst2nd = *(++B.begin());
 
@@ -53,6 +55,30 @@ bool runOnBasicBlock(BasicBlock &B) {
     // Si possono aggiornare le singole references separatamente?
     // Controlla la documentazione e prova a rispondere.
     Inst1st.replaceAllUsesWith(NewInst);
+    
+    */
+    for (Instruction &iter : B){
+
+      if(iter.getOpcode() == Instruction::Mul){
+        for (auto *argIter = iter.op_begin(); argIter != iter.op_end(); ++argIter) {
+      Value *Operand = *argIter;
+
+      /*if (Argument *Arg = dyn_cast<Argument>(Operand)) {
+        outs() << "\t" << *Arg << ": SONO L'ARGOMENTO N. " << Arg->getArgNo() 
+	       <<" DELLA FUNZIONE" << Arg->getParent()->getName()
+               << "\n";
+      }*/
+      if (ConstantInt *C = dyn_cast<ConstantInt>(Operand)) {
+        int value = C->getSExtValue();
+        printf("Operando numerico %i\n",value);
+        //TODO
+        //verificare se value è una potenza di due
+        //se è potenza di due, creare una nuova istruzione che lo usi come operando assieme all'altro
+        //sostituire quell'istruzione a quella precedente
+      }
+    }
+      }
+    };
 
     return true;
   }
