@@ -1,7 +1,13 @@
 #include "LocalOpts.h"
 #include "llvm/IR/InstrTypes.h"
+#include <math.h>
+#include <list>
+#include <string.h>
 
 using namespace llvm;
+
+bool isPowOfTwo(int n);
+
 
 bool runOnBasicBlock(BasicBlock &B) {
     
@@ -57,20 +63,87 @@ bool runOnBasicBlock(BasicBlock &B) {
     return true;
   }
 
+bool myRun(BasicBlock& bb)
+{
+  std::list<Instruction*> toBeRemoved;
 
-  bool runOnFunction(Function &F) {
-    bool Transformed = false;
+  for(auto& inst : bb)
+  {
+        if(!strcmp(inst.getOpcodeName(),"mul"))     // cerchiamo le mul
+        {
+          outs() << inst << "\n";
 
-    for (auto Iter = F.begin(); Iter != F.end(); ++Iter) {
-      if (runOnBasicBlock(*Iter)) {
-        Transformed = true;
-      }
+          ConstantInt* opLeft = dyn_cast<ConstantInt>(inst.getOperand(0));
+          ConstantInt* opRight = dyn_cast<ConstantInt>(inst.getOperand(1));
+
+          Instruction* newInst = nullptr;
+
+          if(opLeft && !opRight)
+          {
+            uint64_t val = opLeft->getZExtValue();
+
+            outs() << "OpLeft: " << val << "\n";
+            if(val > 0 and isPowOfTwo(int(val)))
+            {
+              outs() << val << " è potenza del 2\n";
+
+              Value* newOp = ConstantInt::get(IntegerType::get(bb.getContext(), 32), log2(val), false);
+
+              outs() << "newOp: " << dyn_cast<ConstantInt>(newOp)->getZExtValue() << "\n";
+
+              newInst = BinaryOperator::Create(Instruction::Shl, inst.getOperand(1), newOp);
+            }
+          }
+          else if(opRight && !opLeft)
+          {
+            uint64_t val = opRight->getZExtValue();
+
+            outs() << "OpRight: " << val << "\n";
+
+            if(val > 0 and isPowOfTwo(int(val)))
+            {
+              outs() << val << " è potenza del 2\n";
+          
+              Value* newOp = ConstantInt::get(IntegerType::get(bb.getContext(), 32), log2(val), false);
+
+              outs() << "newOp: " << dyn_cast<ConstantInt>(newOp)->getZExtValue() << "\n";
+              
+              newInst = BinaryOperator::Create(Instruction::Shl, inst.getOperand(0), newOp);
+            }
+          }
+
+          if(newInst)
+          {
+            newInst->insertBefore(&inst);
+            inst.replaceAllUsesWith(newInst);
+            toBeRemoved.push_back(&inst);
+          }
+        }
     }
+    for(auto i : toBeRemoved)
+    {
+      i->eraseFromParent();
+    }
+    return true;
+}
+bool isPowOfTwo(int n)
+{
+  if(n <= 1)
+    return false;
+  return floor(log2(n)) == ceil(log2(n));
+}
 
-    return Transformed;
+bool runOnFunction(Function &F) {
+  bool Transformed = false;
+
+  for (auto Iter = F.begin(); Iter != F.end(); ++Iter) {
+    if (myRun(*Iter)) {
+      Transformed = true;
+    }
   }
 
-
+  return Transformed;
+}
 
 
 PreservedAnalyses TransformPass::run([[maybe_unused]] Module &M,
