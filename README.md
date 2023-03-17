@@ -5,7 +5,3 @@ Guppo 8
 - Simone Vaiasinni
 - Algert Mucaj
 - Christian Messori
-
-opt –load-pass-plugin=./libTestPass.so \
--passes=test-pass test/Loop.bc \
-–o test/LoopTestPass.bc
