@@ -75,7 +75,7 @@ bool runOnBasicBlock(BasicBlock &B) {
           outs() << "Istruzione numero: " << index++ << " è una moltiplicazione \n";
           outs() << "\tIstruzione: " << Inst << "\n";
           outs() << "\t" << *C << ": sono una costante intera di valore " << C->getValue() << "\n";
-
+          outs() << "\t trovato in pos: " << op_index << "\n";
           APInt intVal = C->getValue();
           float floatVal = static_cast<float>(intVal.getLimitedValue());
           float log_value = log2(floatVal);
@@ -91,7 +91,8 @@ bool runOnBasicBlock(BasicBlock &B) {
             }else{
               operand_instr = Inst.getOperand(0);
             }
-
+            outs() << "\toperatore scelto " << *operand_instr << "\n";
+            
             ConstantInt* log2ConstInt = ConstantInt::get(context, APInt(32, 1));
             Instruction *NewInst = BinaryOperator::CreateShl(operand_instr, log2ConstInt, "NewInst");
             outs() << "\tNUova istruzione" << *NewInst << "\n";
@@ -101,6 +102,7 @@ bool runOnBasicBlock(BasicBlock &B) {
             Inst.replaceAllUsesWith(NewInst);
           }
         }
+        op_index++;
       }
       /*
       for (auto *Iter_op = Inst.op_begin(); Iter_op != Inst.op_end(); ++Iter_op) {
