@@ -47,6 +47,8 @@ Fibonacci: {
     ret i32 %15
   |
   
+  printf2: "@printf"
+  
   # collegamenti
   entry -> bb1: true
   bb1 -> bb2: default
@@ -54,42 +56,38 @@ Fibonacci: {
   bb1 -> bb3: value '0'
   bb1 -> bb4: value '1'
   bb3 -> bb4: true
+  bb2 -> "@printf": call
+  "@printf" -> bb2: return
+  bb2 -> "@Fibonacci": call
+  "@Fibonacci" -> bb2: return
+  bb4 -> printf2: call
+  printf2 -> bb4: return
 }
 
 printf : {
 
   entry: |llvm
-    %2 = alloca [1 x %struct.__va_list_tag], align 16
+  %2 = alloca [1 x %struct.__va_list_tag], align 16
   %3 = bitcast [1 x %struct.__va_list_tag]* %2 to i8*
   call void @llvm.lifetime.start.p0i8(i64 24, i8* nonnull %3) #4
-  |
-  bb1: |llvm
   %4 = getelementptr inbounds [1 x %struct.__va_list_tag], [1 x %struct.__va_list_tag]* %2, i64 0, i64 0
   call void @llvm.va_start(i8* nonnull %3)
-  |
-  bb2: |llvm
   %5 = load %struct._IO_FILE*, %struct._IO_FILE** @stdout, align 8, !tbaa !5
   %6 = call i32 @vfprintf(%struct._IO_FILE* noundef %5, i8* noundef %0, %struct.__va_list_tag* noundef nonnull %4)
-  |
-  bb3: |llvm
   call void @llvm.va_end(i8* nonnull %3)
-  |
-  bb4: |llvm
   call void @llvm.lifetime.end.p0i8(i64 24, i8* nonnull %3) #4
-  |
-  bb5: |llvm
   ret i32 %6
   |
   
   entry -> "@llvm.lifetime.start.p0i8": call
-  "@llvm.lifetime.start.p0i8" -> bb1: return
-  bb1 -> "@llvm.va_start": call
-  "@llvm.va_start" -> bb2: return
-  bb2 -> "@vfprintf": call
-  "@vfprintf" -> bb3: return
-  bb3 -> "@llvm.va_end": call
-  "@llvm.va_end" -> bb4: return
-  bb4 -> "@llvm.lifetime.end.p0i8": call
-  "@llvm.lifetime.end.p0i8" -> bb5: return
+  "@llvm.lifetime.start.p0i8" -> entry: return
+  entry -> "@llvm.va_start": call
+  "@llvm.va_start" -> entry: return
+  entry -> "@vfprintf": call
+  "@vfprintf" -> entry: return
+  entry -> "@llvm.va_end": call
+  "@llvm.va_end" -> entry: return
+  entry -> "@llvm.lifetime.end.p0i8": call
+  "@llvm.lifetime.end.p0i8" -> entry: return
 
 }

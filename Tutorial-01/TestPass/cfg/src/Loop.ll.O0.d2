@@ -70,4 +70,6 @@ loop {
   bb1 -> bb4: false
   bb2 -> bb3: true
   bb3 -> bb1: true
+  bb2 -> "@g_incr": call
+  "@g_incr" -> bb2: return
 }

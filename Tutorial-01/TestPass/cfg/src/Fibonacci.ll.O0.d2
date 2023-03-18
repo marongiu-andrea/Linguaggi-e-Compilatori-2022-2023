@@ -61,6 +61,9 @@ Fibonacci: {
     ; restituisce il valore di ritorno al chiamante
     ret i32 %28
   |
+  
+  printf1: "@printf"
+  printf2: "@printf"
 
   # Collegamenti
   entry -> bb1: true
@@ -70,6 +73,14 @@ Fibonacci: {
   bb2 -> bb4: false
   bb3 -> bb5: true
   bb4 -> bb5: true
+  bb1 -> "@printf": call
+  "@printf" -> bb1: return
+  bb3 -> printf1: call
+  printf1 -> bb3: return
+  bb4 -> printf2: call
+  printf2 -> bb4: return
+  bb4 -> "@Fibonacci": call
+  "@Fibonacci" -> bb4: return
 }
 
 printf {
@@ -93,4 +104,11 @@ printf {
     %11 = load i32, ptr %3, align 4
     ret i32 %11
   |
+  
+  entry -> "@llvm.va_start": call
+  "@llvm.va_start" -> entry: return
+  entry -> "@vfprintf": call
+  "@vfprintf" -> entry: return
+  entry -> "@llvm.va_end": call
+  "@llvm.va_end" -> entry: return
 }
