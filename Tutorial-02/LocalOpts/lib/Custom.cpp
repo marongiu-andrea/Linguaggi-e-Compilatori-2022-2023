@@ -1,6 +1,7 @@
 #include "LocalOpts.h"
 #include "llvm/IR/InstrTypes.h"
 #include <stack>
+#include <math.h>
 
 using namespace llvm;
 
@@ -31,7 +32,7 @@ bool runOnBasicBlock(BasicBlock &BB) {
             int val = C->getSExtValue();
             // Se la costante è una potenza del 2, la aggiunge allo stack.
             if ((val & (val - 1)) == 0) {
-              shifts.push(val);
+              shifts.push(log2(val));
               do_shift = true;
             }
           }
