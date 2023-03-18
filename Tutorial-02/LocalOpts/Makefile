@@ -13,3 +13,6 @@ $(OPTIMIZER): $(OBJs)
 .PHONY: clean
 clean:
 	$(RM) $(OPTIMIZER) $(OBJs)
+setup:
+	opt -load-pass-plugin=./libLocalOpts.so -passes=transform $(firstrepr) -o $(bcfile)
+	llvm-dis $(bcfile) -o $(optrepr)
