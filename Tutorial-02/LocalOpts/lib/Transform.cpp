@@ -68,31 +68,38 @@ bool runOnBasicBlock(BasicBlock &B) {
     Instruction &Inst = *Iter;
 
     if(!strcmp(Inst.getOpcodeName(),"mul")){
-      
+      int op_index = 0;
+      for (auto *Iter = Inst.op_begin(); Iter != Inst.op_end(); ++Iter) {
+        Value *iter_op = *Iter;
+        if (ConstantInt *C = dyn_cast<ConstantInt>(iter_op)) {
+          outs() << "Istruzione numero: " << index++ << " è una moltiplicazione \n";
+          outs() << "\tIstruzione: " << Inst << "\n";
+          outs() << "\t" << *C << ": sono una costante intera di valore " << C->getValue() << "\n";
 
-      if (ConstantInt *C = dyn_cast<ConstantInt>(Inst.getOperand(1))) {
-        outs() << "Istruzione numero: " << index++ << " è una moltiplicazione \n";
-        outs() << "\tIstruzione: " << Inst << "\n";
-        outs() << "\t" << *C << ": SONO UNA COSTANTE INTERA DI VALORE " << C->getValue() << "\n";
-
-        APInt intVal = C->getValue();
-        float floatVal = static_cast<float>(intVal.getLimitedValue());
-        float log_value = log2(floatVal);
-        
-        //se il log_value è pari alla sua floor vuol dire che value_In_float è effettivamente una potenza di 2
-        //se non lo fosse  log_value sarebbe un valore con la virgola e quindi non valido
-        if(log_value == floor(log_value)){
-          int log_value_int = static_cast<int>(log_value);
+          APInt intVal = C->getValue();
+          float floatVal = static_cast<float>(intVal.getLimitedValue());
+          float log_value = log2(floatVal);
           
-          Value *operand_instr = Inst.getOperand(0);
+          //se il log_value è pari alla sua floor vuol dire che value_In_float è effettivamente una potenza di 2
+          //se non lo fosse  log_value sarebbe un valore con la virgola e quindi non valido
+          if(log_value == floor(log_value)){
+            int log_value_int = static_cast<int>(log_value);
+            
+            Value *operand_instr = nullptr;
+            if(op_index == 0){
+              operand_instr = Inst.getOperand(1);
+            }else{
+              operand_instr = Inst.getOperand(0);
+            }
 
-          ConstantInt* log2ConstInt = ConstantInt::get(context, APInt(32, 1));
-          Instruction *NewInst = BinaryOperator::CreateShl(operand_instr, log2ConstInt, "NewInst");
-          outs() << "\tNew instruction" << *NewInst << "\n";
-          NewInst->insertAfter(old_instr);
-            // Si possono aggiornare le singole references separatamente?
-            // Controlla la documentazione e prova a rispondere.
-          Inst.replaceAllUsesWith(NewInst);
+            ConstantInt* log2ConstInt = ConstantInt::get(context, APInt(32, 1));
+            Instruction *NewInst = BinaryOperator::CreateShl(operand_instr, log2ConstInt, "NewInst");
+            outs() << "\tNUova istruzione" << *NewInst << "\n";
+            NewInst->insertAfter(old_instr);
+              // Si possono aggiornare le singole references separatamente?
+              // Controlla la documentazione e prova a rispondere.
+            Inst.replaceAllUsesWith(NewInst);
+          }
         }
       }
       /*
