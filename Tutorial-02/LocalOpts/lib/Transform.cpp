@@ -96,7 +96,7 @@ bool runOnBasicBlock(BasicBlock &B) {
             ConstantInt* log2ConstInt = ConstantInt::get(context, APInt(32, 1));
             Instruction *NewInst = BinaryOperator::CreateShl(operand_instr, log2ConstInt, "NewInst");
             outs() << "\tNUova istruzione" << *NewInst << "\n";
-            NewInst->insertAfter(old_instr);
+            NewInst->insertAfter(&Inst);
               // Si possono aggiornare le singole references separatamente?
               // Controlla la documentazione e prova a rispondere.
             Inst.replaceAllUsesWith(NewInst);
