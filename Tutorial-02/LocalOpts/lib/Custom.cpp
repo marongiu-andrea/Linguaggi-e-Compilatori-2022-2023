@@ -69,6 +69,12 @@ bool runOnBasicBlock(BasicBlock &BB) {
           NewInst->insertAfter(&I);
           // Si rimpiazzano tutti gli usi della corrente con la nuova.
           I.replaceAllUsesWith(NewInst);
+          // Riguardo alla domanda:
+          // Si possono aggiornare le singole references separatamente?
+          // La risposta è: non propriamente. Con il metodo
+          // void replaceUsesWithIf (Value *New, llvm::function_ref<bool(Use &U)> ShouldReplace)
+          // è però possibile aggiornare references in base ad una data
+          // condizione.
         }
       }
     }
@@ -92,7 +98,6 @@ bool runOnFunction(Function &F) {
 
 
 PreservedAnalyses TransformPass::run([[maybe_unused]] Module &M, ModuleAnalysisManager &) {
-
   // Un semplice passo di esempio di manipolazione della IR.
   for (auto Iter = M.begin(); Iter != M.end(); ++Iter) {
     if (runOnFunction(*Iter)) {
