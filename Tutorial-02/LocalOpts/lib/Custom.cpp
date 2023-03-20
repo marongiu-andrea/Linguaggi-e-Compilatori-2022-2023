@@ -71,10 +71,11 @@ bool runOnBasicBlock(BasicBlock &BB) {
           I.replaceAllUsesWith(NewInst);
           // Riguardo alla domanda:
           // Si possono aggiornare le singole references separatamente?
-          // La risposta è: non propriamente. Con il metodo
+          // La risposta è: sì, come già visto sulle slides è possibile iterare
+          // sugli Uses, modificandoli secondo le esigenze. Poi, si può usare
+          // il metodo:
           // void replaceUsesWithIf (Value *New, llvm::function_ref<bool(Use &U)> ShouldReplace)
-          // è però possibile aggiornare references in base ad una data
-          // condizione.
+          // per aggiornare references in base ad una data condizione.
         }
       }
     }
