@@ -3,14 +3,9 @@
 
 #include <cmath>
 #include <stdint.h>
+#include <vector>
 
 using namespace llvm;
-
-inline bool IsPowerOf2(uint32_t a)
-{
-    return (a & (a-1)) == 0;
-}
-
 #if 0
 bool runOnBasicBlock(BasicBlock &B) {
     // Preleviamo le prime due istruzioni del BB
@@ -67,46 +62,86 @@ bool runOnBasicBlock(BasicBlock &B) {
 }
 #else
 bool runOnBasicBlock(BasicBlock &B) {
+    std::vector<Instruction *> instrToDelete;
     for(auto it = B.begin(); it != B.end(); ++it) {
         Instruction& instr = *it;
+
+        if (!instr.isBinaryOp())
+            continue;;
         
-        if(instr.getOpcode() == Instruction::Mul) {
-            auto operand1 = instr.getOperand(0);
-            auto operand2 = instr.getOperand(1);
-            ConstantInt* op1const = dyn_cast<ConstantInt>(operand1);
-            ConstantInt* op2const = dyn_cast<ConstantInt>(operand2);
-            
-            bool replace = false;
-            uint32_t shiftRhs = 0;
-            Value* shiftLhs = 0;
-            if(op1const) {
-                uint32_t intValue = op1const->getSExtValue();
-                if(IsPowerOf2(intValue)) {
-                    replace = true;
-                    shiftLhs = operand2;
-                    shiftRhs = log2(intValue);
-                }
+        bool replace = false;
+        uint64_t shiftRhs = 0;
+        Value* shiftLhs = 0;
+
+        auto parseOperand = [&](llvm::Value *left, llvm::ConstantInt *rhs) {
+            if (!rhs || rhs->isNegative())
+                return;
+
+            uint64_t intValue = rhs->getZExtValue();
+            if (isPowerOf2_64(intValue)) {
+                replace = true;
+                shiftLhs = left;
+                shiftRhs = log2(intValue);
             }
-            if(!replace && op2const) {
-                uint32_t intValue = op2const->getSExtValue();
-                if(IsPowerOf2(intValue)) {
-                    replace = true;
-                    shiftLhs = operand1;
-                    shiftRhs = log2(intValue);
-                }
-            }
-            
+        };
+        
+        auto operand1 = instr.getOperand(0);
+        auto operand2 = instr.getOperand(1);
+        ConstantInt* op1const = dyn_cast<ConstantInt>(operand1);
+        ConstantInt* op2const = dyn_cast<ConstantInt>(operand2);
+        Instruction* newInstr = nullptr;
+
+        switch (instr.getOpcode())  
+        {
+        case Instruction::Mul:
+        {
+            parseOperand(operand2, op1const);
+            if (!replace)
+                parseOperand(operand1, op2const);
+
             if(replace) {
                 Constant* rhsValue = ConstantInt::getSigned(operand1->getType(),
                                                             shiftRhs);
-                Instruction* lShInstr = BinaryOperator::Create(Instruction::Shl,
-                                                               shiftLhs, rhsValue);
-                
-                lShInstr->insertAfter(&instr);
-                instr.replaceAllUsesWith(lShInstr);
+                newInstr = BinaryOperator::Create(Instruction::Shl,
+                                                    shiftLhs, rhsValue);
             }
+
+            break;
+        }
+        
+        case Instruction::SDiv:
+        {
+            auto operand1 = instr.getOperand(0);
+            auto operand2 = instr.getOperand(1);
+            ConstantInt* op2const = dyn_cast<ConstantInt>(operand2);
+
+            parseOperand(operand1, op2const);
+            if (replace) {
+                Constant *rhsValue = ConstantInt::getSigned(operand2->getType(), shiftRhs);
+                
+                newInstr = BinaryOperator::Create(Instruction::LShr,
+                                                    shiftLhs, rhsValue);
+                
+            
+            }
+            break;
+        }
+        default:
+            continue;;
+        }
+
+        if (newInstr) {
+            newInstr->insertAfter(&instr);
+            instr.replaceAllUsesWith(newInstr);
+            instrToDelete.push_back(&instr);
         }
     }
+
+    for (auto *instr: instrToDelete)
+      instr->eraseFromParent();
+
+    instrToDelete.clear();
+
     
     outs() << "Done!\n";
     return true;
