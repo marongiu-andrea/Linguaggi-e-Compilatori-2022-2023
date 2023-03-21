@@ -1,34 +1,41 @@
 
 LIBDIR = lib
-OPTIMIZER := ${LIBDIR}/Transform.so
 SRCFILEs := $(wildcard ${LIBDIR}/*.cpp)
 OBJFILEs := $(subst .cpp,.o, ${SRCFILEs})
-# SRCFILEs := lib/Transform.cpp
-# OBJFILEs := lib/Transform.o
 
-LLVM_VERSION ?= 14
+STRENGTH := ${LIBDIR}/Strength.so
+IDENTITY := ${LIBDIR}/AlgebricIdentity.so
+MULTIINSTRUCTIONS := ${LIBDIR}/MultiInstructions.so
 
 CXXFLAGS := $(shell llvm-config --cxxflags) -fPIC 
 LLVMFLAGS := $(shell llvm-config --ldflags --libs --system-libs)
 
-all: $(OPTIMIZER) 
+all: $(STRENGTH) $(IDENTITY) $(MULTIINSTRUCTIONS)
 
-$(OPTIMIZER): $(OBJFILEs)
+$(STRENGTH): $(OBJFILEs)
 	$(CXX) ${LLVMFLAGS} -dylib -shared $^ -o $@
-	@if [ ! $(file) = "" ]; then \
-		make load ${file}; \
-	fi
 
-lib/Transform.o: lib/Transform.cpp
-	$(CXX) $(CXXFLAGS) -c $^ -o $@
+$(IDENTITY): $(OBJFILEs)
+	$(CXX) ${LLVMFLAGS} -dylib -shared $^ -o $@
 
-lib/LocalOpts.o: lib/LocalOpts.cpp
-	$(CXX) $(CXXFLAGS) -c $^ -o $@
+$(MULTIINSTRUCTIONS): $(OBJFILEs)
+	$(CXX) ${LLVMFLAGS} -dylib -shared $^ -o $@
 
 .PHONY: clean
 clean:
-	$(RM) $(OPTIMIZER) $(OBJs)
+	$(RM) $(STRENGTH) $(IDENTITY) $(MULTIINSTRUCTIONS) $(OBJFILEs)
 
-load:
-	opt -load-pass-plugin=./lib/Transform.so -passes=transform $(file)  -o $(subst .ll,.bc,$(file))
+st:
+	make $(STRENGTH)
+	opt -load-pass-plugin=./lib/Strength.so -passes=strength $(file)  -o $(subst .ll,.bc,$(file))
+	llvm-dis $(subst .ll,.bc,$(file)) -o testTransform/Optimized.ll
+
+ai:
+	make $(IDENTITY)
+	opt -load-pass-plugin=./lib/AlgebricIdentity.so -passes=identity $(file)  -o $(subst .ll,.bc,$(file))
+	llvm-dis $(subst .ll,.bc,$(file)) -o testTransform/Optimized.ll
+
+mi:
+	make $(MULTIINSTRUCTIONS)
+	opt -load-pass-plugin=./lib/MultiInstructions.so -passes=multi $(file)  -o $(subst .ll,.bc,$(file))
 	llvm-dis $(subst .ll,.bc,$(file)) -o testTransform/Optimized.ll
