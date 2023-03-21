@@ -4,7 +4,9 @@
 #include "llvm/IR/DerivedTypes.h"
 #include "llvm/IR/Type.h"
 #include "llvm/IR/Instructions.h"
+#include "llvm/IR/IRBuilder.h"
 #include "cmath"
+#include "vector"
 
 using namespace llvm;
 
@@ -67,7 +69,10 @@ bool runOnBasicBlock(BasicBlock &B) {
     Inst1st.replaceAllUsesWith(NewInst);
     
     */
+    std::vector<Instruction*> daEliminare;
     for (Instruction &iter : B){
+      //All'iterazione successiva cancello l'istruzione
+  
       if(iter.getOpcode() == Instruction::Mul){
           int operandPow2=-1, operandNotPow=-1;
           int value0,value1;
@@ -100,24 +105,28 @@ bool runOnBasicBlock(BasicBlock &B) {
               continue;
             }
             //creo l'operando per la nuova operazione di shift
-            printf("Sono qui\n");
             ConstantInt *Con = dyn_cast<ConstantInt>(iter.getOperand(operandPow2));
-            printf("Sono qui\n");
             Value *newOP = ConstantInt::get(Con->getType(),
               static_cast<int>(log2(valueF)));
-            printf("Sono qui\n");
-            Instruction *NewInst = BinaryOperator::Create(Instruction::Shl, 
-              iter.getOperand(operandNotPow), 
+          
+            //creazione nuova istruzione
+            IRBuilder<> builder(&iter);
+            Value* NewInst = builder.CreateShl(iter.getOperand(operandNotPow),
               newOP);
-              printf("Sono qui\n");
+            Instruction* inst = static_cast<Instruction*>(NewInst);
+            printf("Ho creato la nuova istruzione\n");
 
-            //sostituisco la vecchio mul con la nuova shift
-            NewInst->insertAfter(&iter);
-            //iter.replaceAllUsesWith(NewInst);
-            //iter.eraseFromParent();
+            //inserisco la nuoca mul e salvo il riferimento alla vecchia istruzione in una struttura dati
+            //per eliminarlo in seguito      
+            iter.replaceAllUsesWith(inst);
+            printf("Ho inserito la nuova istruzione\n");
+            daEliminare.push_back(&iter);
 
       }
     };
+    for(int i=0; i < daEliminare.size(); i++){
+      daEliminare[i]->eraseFromParent();
+    }
 
     return true;
   }
