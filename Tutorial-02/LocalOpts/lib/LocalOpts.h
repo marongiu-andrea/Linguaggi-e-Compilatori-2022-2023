@@ -10,3 +10,21 @@ public:
                               llvm::ModuleAnalysisManager &);
 }; // class AlgebraicIdentityPass
 
+class algerbraic_pass final
+    : public llvm::PassInfoMixin<TransformPass> {
+public:
+  llvm::PreservedAnalyses run(llvm::Module &,
+                              llvm::ModuleAnalysisManager &);
+};
+class strength_pass final
+    : public llvm::PassInfoMixin<TransformPass> {
+public:
+  llvm::PreservedAnalyses run(llvm::Module &,
+                              llvm::ModuleAnalysisManager &);
+};
+class multi_pass final
+    : public llvm::PassInfoMixin<TransformPass> {
+public:
+  llvm::PreservedAnalyses run(llvm::Module &,
+                              llvm::ModuleAnalysisManager &);
+};
