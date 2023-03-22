@@ -6,11 +6,6 @@ using namespace llvm;
 
 namespace {
 
-  /*  
-    opt -load-pass-plugin=./libTestPass.so \
-    -passes=test-pass test/LoopO0.ll -o test/LoopTestPass.ll
-  */
-
   class TestPass final : public PassInfoMixin<TestPass> 
   {
   public:
