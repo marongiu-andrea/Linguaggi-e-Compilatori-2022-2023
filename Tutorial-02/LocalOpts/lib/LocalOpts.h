@@ -4,9 +4,17 @@
 #include <llvm/IR/Constants.h>
 
 class TransformPass final
-    : public llvm::PassInfoMixin<TransformPass> {
+    : public llvm::PassInfoMixin<TransformPass>
+{
 public:
   llvm::PreservedAnalyses run(llvm::Module &,
                               llvm::ModuleAnalysisManager &);
 }; // class AlgebraicIdentityPass
 
+class AlgebraicIdentityPass final
+    : public llvm::PassInfoMixin<AlgebraicIdentityPass>
+{
+public:
+  llvm::PreservedAnalyses run(llvm::Module &,
+                              llvm::ModuleAnalysisManager &);
+};
