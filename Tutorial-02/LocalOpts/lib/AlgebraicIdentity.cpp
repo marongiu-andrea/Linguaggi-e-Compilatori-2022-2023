@@ -10,7 +10,7 @@ bool runOnBasicBlock2(BasicBlock &B) {
       if(Inst.getOpcode()==Instruction::Add){
           ConstantInt *CI=dyn_cast<ConstantInt>(Inst.getOperand(1));
            outs()<<"ADDIZIONE | ";
-           if(CI && CI->getValue()==0){
+           if(CI && (CI->getValue()).isZero()){
                 outs()<<"ADDIZIONE NULLA\n";
                 Inst.replaceAllUsesWith(Inst.getOperand(0));
             }
