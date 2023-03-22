@@ -24,35 +24,34 @@ bool runOnBasicBlock(BasicBlock &bb)
 
       if (opLeft)
       {
-        uint val = opLeft->getZExtValue();
-
+        APInt val = opLeft->getValue();
         outs() << "OpLeft: " << val << "\n";
-        if (val > 0 and isPowOfTwo(int(val)))
+        auto opType = opLeft->getType();
+        
+        auto newOperand = ConstantInt::get(opType, val.exactLogBase2());
+
+        if (newOperand->getValue().isNonNegative())
         {
           outs() << val << " è potenza del 2\n\n";
+          outs() << "shift di: " << newOperand->getZExtValue() << "\n\n";
 
-          Value *newOp = ConstantInt::get(IntegerType::get(bb.getContext(), 32), log2(val), false);
-
-          outs() << "shift di: " << dyn_cast<ConstantInt>(newOp)->getZExtValue() << "\n\n";
-
-          newInst = BinaryOperator::Create(Instruction::Shl, inst.getOperand(1), newOp);
+          newInst = BinaryOperator::Create(Instruction::Shl, inst.getOperand(1), newOperand);
         }
       }
       else if (opRight)
       {
-        uint val = opRight->getZExtValue();
+        APInt val = opRight->getValue();
+        outs() << "opRight: " << val << "\n";
+        auto opType = opRight->getType();
+        
+        auto newOperand = ConstantInt::get(opType, val.exactLogBase2());
 
-        outs() << "OpRight: " << val << "\n";
-
-        if (val > 0 and isPowOfTwo(val))
+        if (newOperand->getValue().isNonNegative())
         {
-          outs() << val << " è potenza del 2\n";
+          outs() << val << " è potenza del 2\n\n";
+          outs() << "shift di: " << newOperand->getZExtValue() << "\n\n";
 
-          Value *newOp = ConstantInt::get(IntegerType::get(bb.getContext(), 32), log2(val), false);
-
-          outs() << "shift di: " << dyn_cast<ConstantInt>(newOp)->getZExtValue() << "\n\n";
-
-          newInst = BinaryOperator::Create(Instruction::Shl, inst.getOperand(0), newOp);
+          newInst = BinaryOperator::Create(Instruction::Shl, inst.getOperand(0), newOperand);
         }
       }
       else
