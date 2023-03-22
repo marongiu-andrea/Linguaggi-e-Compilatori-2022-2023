@@ -31,6 +31,7 @@ extern "C" PassPluginLibraryInfo llvmGetPassPluginInfo() {
                   }
                   // TODO: Implementare gli stub per
 		  // Algebraic Identity
+      
 		  // Strength Reduction
 		  // Multi-instruction Operations
                   return false;
