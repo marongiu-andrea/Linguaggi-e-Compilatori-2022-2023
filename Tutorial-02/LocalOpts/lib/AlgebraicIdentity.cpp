@@ -13,8 +13,6 @@ bool runOnBasicBlockAlgebric(BasicBlock &B)
     Function *F = B.getParent();
     LLVMContext &context = F->getContext();
 
-    int index = 1;
-    Instruction *old_instr = nullptr;
     for (auto Iter = B.begin(); Iter != B.end(); ++Iter)
     {
         // Per ogni istruzione del BasicBlock
@@ -23,7 +21,7 @@ bool runOnBasicBlockAlgebric(BasicBlock &B)
 
         if (!strcmp(Inst.getOpcodeName(), "add"))
         {
-            // Se l'istruzione è una moltiplicazione o addizione
+            // Se l'istruzione è una addizione
 
             outs() << Inst << "\n";
             Value *operand_1 = Inst.getOperand(0);
@@ -33,33 +31,36 @@ bool runOnBasicBlockAlgebric(BasicBlock &B)
             ConstantInt *C2 = dyn_cast<ConstantInt>(operand_2);
             if (C2 && C2->getValue().isZero())
             {
-                outs() << "Istruzione rimpiazzata con " << *operand_1 << "\n";
+                outs() << "\tIstruzione rimpiazzata con " << *operand_1 << "\n";
                 Inst.replaceAllUsesWith(operand_1);
                 // Inst.eraseFromParent();
             }
-        }
-        outs() << "\n\n";
-        if (!strcmp(Inst.getOpcodeName(), "mul"))
+        } else if (!strcmp(Inst.getOpcodeName(), "mul"))
         {
-            // Se l'istruzione è una moltiplicazione o addizione
+            // Se l'istruzione è una moltiplicazione
 
-            int op_index = 0;
 
             outs() << Inst << "\n";
             Value *operand_1 = Inst.getOperand(0);
             Value *operand_2 = Inst.getOperand(1);
-            outs() << "\t" << *operand_1 << "\n\t" << *operand_2 << "\n\n";
+            outs() << "\t" << *operand_1 << "\n\t" << *operand_2 << "\n";
 
             ConstantInt *C1 = dyn_cast<ConstantInt>(operand_1);
             ConstantInt *C2 = dyn_cast<ConstantInt>(operand_2);
-            if (C2)
+            // la costante può essere nel primo o nel secondo
+            if (C2 && C2->getValue().getLimitedValue() == 1)
             {
-                APInt intVal = C2->getValue();
-
-                int Val = static_cast<float>(intVal.getLimitedValue());
+                outs() << "\tIstruzione rimpiazzata con " << *operand_1 << "\n";
+                Inst.replaceAllUsesWith(operand_1);
+                // Inst.eraseFromParent();
+            } else if (C1 && C1->getValue().getLimitedValue() == 1)
+            {
+                outs() << "\tIstruzione rimpiazzata con " << *operand_2 << "\n";
+                Inst.replaceAllUsesWith(operand_2);
+                // Inst.eraseFromParent();
             }
         }
-        old_instr = &(*Iter);
+        outs() << "\n";
     }
 
     return true;
