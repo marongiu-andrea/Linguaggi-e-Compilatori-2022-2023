@@ -10,3 +10,9 @@ public:
                               llvm::ModuleAnalysisManager &);
 }; // class AlgebraicIdentityPass
 
+class AlgebraicIdentityPass final
+    : public llvm::PassInfoMixin<TransformPass> {
+public:
+  llvm::PreservedAnalyses run(llvm::Module &,
+                              llvm::ModuleAnalysisManager &);
+};
