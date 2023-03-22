@@ -3,6 +3,10 @@
 
 using namespace llvm;
 
+bool isPowerOfTwo(ConstantInt *C) {
+		return C->getValue().isPowerOf2();
+	}
+
 bool runOnBasicBlock(BasicBlock &B) {
     
     // Preleviamo le prime due istruzioni del BB
@@ -53,6 +57,50 @@ bool runOnBasicBlock(BasicBlock &B) {
     // Si possono aggiornare le singole references separatamente?
     // Controlla la documentazione e prova a rispondere.
     Inst1st.replaceAllUsesWith(NewInst);
+    
+	int index=-1;
+	int pos_shift;
+	int counter=0;
+	std::vector <BinaryOperator*> mulToRemove;
+	std::vector <BinaryOperator*> shiftToAdd;
+    for (auto &instr : B) {
+		if(auto *BO = dyn_cast<BinaryOperator>(&instr)){
+			if (BO->getOpcode() == Instruction::Mul){
+				index=-1;
+				ConstantInt *CI1 = dyn_cast<ConstantInt>(BO->getOperand(0));
+				ConstantInt *CI2 = dyn_cast<ConstantInt>(BO->getOperand(1));
+				if((CI1 && isPowerOfTwo(CI1)) || (CI2 && isPowerOfTwo(CI2))) {
+					if (CI1 && isPowerOfTwo(CI1)){
+						index=1;
+						pos_shift=CI1->getValue().logBase2();
+						outs() << pos_shift << "\n";
+					}
+					if (CI2 && isPowerOfTwo(CI2)){
+						index=0; //vuol dire che la base dello shift e' l'altro operando
+						pos_shift=CI2->getValue().logBase2();
+						outs() << pos_shift << "\n";
+					}
+					outs() << "Sono arrivato fino a qui!\n";
+					outs() << "Dopo aver controlalto entrambi gli IF!\n";
+					if (index != -1){
+						//Type* i32Ty = Type::getInt32Ty(context);
+						Value* ShiftAmountValue = ConstantInt::get(Type::getInt32Ty(B.getContext()), pos_shift);
+						BinaryOperator *NewInst = BinaryOperator::CreateShl(BO->getOperand(index),ShiftAmountValue,"",BO);
+						shiftToAdd.push_back(NewInst);
+						mulToRemove.push_back(BO);
+						counter++;
+						//BO->replaceAllUsesWith(NewInst);
+						//BO->eraseFromParent();
+					}
+				}
+			}
+		}
+    }
+    
+    for (int i=0; i<counter; i++) {
+   		mulToRemove[i]->replaceAllUsesWith(shiftToAdd[i]);
+   		//mulToRemove[i]->eraseFromParent();
+    }
 
     return true;
   }
@@ -69,6 +117,9 @@ bool runOnBasicBlock(BasicBlock &B) {
 
     return Transformed;
   }
+  
+	
+
 
 
 
