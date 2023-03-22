@@ -28,12 +28,12 @@ extern "C" PassPluginLibraryInfo llvmGetPassPluginInfo() {
           if (Name == "transform") {
             MPM.addPass(TransformPass());
             return true;
+          } else if (Name == "strengthreduction") {
+            MPM.addPass(StrengthReductionPass());
+            return true;
+          } else {
+            return false;
           }
-          // TODO: Implementare gli stub per
-          // Algebraic Identity
-          // Strength Reduction
-          // Multi-instruction Operations
-          return false;
         });
     }   // RegisterPassBuilderCallbacks
   };    // struct PassPluginLibraryInfo

@@ -6,7 +6,7 @@
 using namespace llvm;
 
 
-bool runOnBasicBlock(BasicBlock &BB) {
+bool TransformPass::runOnBasicBlock(BasicBlock &BB) {
   // Itera attraverso le istruzioni del basic block.
   for(auto iter_inst = BB.begin(); iter_inst != BB.end(); ++iter_inst) {
     Instruction& I = *iter_inst;
@@ -85,7 +85,7 @@ bool runOnBasicBlock(BasicBlock &BB) {
 }
 
 
-bool runOnFunction(Function &F) {
+bool TransformPass::runOnFunction(Function &F) {
   bool Transformed = false;
 
   for (auto Iter = F.begin(); Iter != F.end(); ++Iter) {
@@ -108,4 +108,3 @@ PreservedAnalyses TransformPass::run([[maybe_unused]] Module &M, ModuleAnalysisM
 
   return PreservedAnalyses::none();
 }
-
