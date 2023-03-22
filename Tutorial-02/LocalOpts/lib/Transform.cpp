@@ -3,13 +3,14 @@
 
 using namespace llvm;
 
-bool runOnBasicBlock(BasicBlock &B) {
+bool runOnBasicBlock(BasicBlock &B) 
+{
     
     // Preleviamo le prime due istruzioni del BB
     Instruction &Inst1st = *B.begin(), &Inst2nd = *(++B.begin());
 
     // L'indirizzo della prima istruzione deve essere uguale a quello del 
-    // primo operando della seconda istruzione (per costruzione dell'esempio)
+    // primo operando della secocle nda istruzione (per costruzione dell'esempio)
     assert(&Inst1st == Inst2nd.getOperand(0));
 
     // Stampa la prima istruzione
@@ -26,12 +27,10 @@ bool runOnBasicBlock(BasicBlock &B) {
 
       if (Argument *Arg = dyn_cast<Argument>(Operand)) {
         outs() << "\t" << *Arg << ": SONO L'ARGOMENTO N. " << Arg->getArgNo() 
-	       <<" DELLA FUNZIONE" << Arg->getParent()->getName()
-               << "\n";
+	       <<" DELLA FUNZIONE" << Arg->getParent()->getName() << "\n";
       }
       if (ConstantInt *C = dyn_cast<ConstantInt>(Operand)) {
-        outs() << "\t" << *C << ": SONO UNA COSTANTE INTERA DI VALORE " << C->getValue()
-               << "\n";
+        outs() << "\t" << *C << ": SONO UNA COSTANTE INTERA DI VALORE " << C->getValue() << "\n";
       }
     }
 
@@ -73,8 +72,8 @@ bool runOnBasicBlock(BasicBlock &B) {
 
 
 
-PreservedAnalyses TransformPass::run([[maybe_unused]] Module &M,
-                                             ModuleAnalysisManager &) {
+PreservedAnalyses TransformPass::run([[maybe_unused]] Module &M,ModuleAnalysisManager &) 
+{
 
   // Un semplice passo di esempio di manipolazione della IR
   for (auto Iter = M.begin(); Iter != M.end(); ++Iter) {

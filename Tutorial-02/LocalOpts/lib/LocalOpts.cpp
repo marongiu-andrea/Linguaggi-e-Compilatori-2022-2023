@@ -1,7 +1,7 @@
-#include "LocalOpts.h"
-
 #include <llvm/Passes/PassBuilder.h>
 #include <llvm/Passes/PassPlugin.h>
+
+#include "LocalOpts.h"
 
 using namespace llvm;
 
@@ -23,18 +23,20 @@ extern "C" PassPluginLibraryInfo llvmGetPassPluginInfo() {
 		// LoopPass
 		// RegionPass
 		// BasicBlockPass
-		[](StringRef Name, ModulePassManager &MPM,
-                   ArrayRef<PassBuilder::PipelineElement>) -> bool {
-                  if (Name == "transform") {
-                    MPM.addPass(TransformPass());
-                    return true;
-                  }
-                  // TODO: Implementare gli stub per
-		  // Algebraic Identity
-		  // Strength Reduction
-		  // Multi-instruction Operations
-                  return false;
-                });
-          } // RegisterPassBuilderCallbacks
-  };        // struct PassPluginLibraryInfo
+		[](StringRef Name, ModulePassManager &MPM,ArrayRef<PassBuilder::PipelineElement>) -> bool 
+      {
+        if (Name == "transform") 
+        {
+          MPM.addPass(TransformPass());
+          return true;
+        }
+
+        // TODO: Implementare gli stub per
+        // Algebraic Identity
+        // Strength Reduction
+        // Multi-instruction Operations
+        return false;
+      });
+    } // RegisterPassBuilderCallbacks
+  }; // struct PassPluginLibraryInfo
 }
