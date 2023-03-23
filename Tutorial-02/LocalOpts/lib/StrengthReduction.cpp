@@ -97,9 +97,8 @@ bool runOnBasicBlockStrengthReduction(BasicBlock &B)
 
                             // Se il logaritmo è più grande di 1 rispetto alla costante nel secondo 
                             // parametro ed è ottenuto con calcolo del logaritmo per eccesso (Ceil)  
-                            if ((((*constant1).getValue().ceilLogBase2()<<(unsigned int)(log2((*constant1).getValue().ceilLogBase2()))) - (*constant1).getValue()) == 1) 
+                            if (((2<<((*constant1).getValue().ceilLogBase2()-1)) - (*constant1).getValue()) == 1) 
                             {
-
                                 // Crea una nuova istanza di un Value * contenente il valore newVal dello shift 
                                 LLVMContext &ctx = Iter.getOperand(1)->getContext();  
                                 ConstantInt *newVal = ConstantInt::get(ctx, APInt(32, (*constant1).getValue().ceilLogBase2()));  
@@ -124,7 +123,7 @@ bool runOnBasicBlockStrengthReduction(BasicBlock &B)
                             {
                                 // Se il logaritmo è più piccolo di 1 rispetto alla costante nel secondo 
                                 // parametro ed è ottenuto con calcolo del logaritmo per difetto (Floor)  
-                                if ((*constant1).getValue() - ((*constant1).getValue().logBase2()<<(unsigned int)(log2((*constant1).getValue().logBase2()))) == 1)
+                                if ((*constant1).getValue() - (2<<((*constant1).getValue().logBase2()-1)) == 1)
                                 {
                                     // Crea una nuova istanza di un Value * contenente il valore newVal dello shift 
                                     LLVMContext &ctx = Iter.getOperand(1)->getContext();  
