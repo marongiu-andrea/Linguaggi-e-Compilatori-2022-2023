@@ -34,7 +34,11 @@ extern "C" PassPluginLibraryInfo llvmGetPassPluginInfo() {
           } else if (Name == "mioptimization") {
             MPM.addPass(MIOptimizationPass());
             return true;
-          } else {
+          } else if(Name == "algebraic"){
+            MPM.addPass(AlgebraicIdentityPass());
+            return true;
+          }
+          else {
             return false;
           }
         });

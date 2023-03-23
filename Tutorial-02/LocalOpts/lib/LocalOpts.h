@@ -10,6 +10,12 @@ public:
   bool runOnFunction(llvm::Function &F);
   bool runOnBasicBlock(llvm::BasicBlock &BB);
 };
+class AlgebraicIdentityPass final : public llvm::PassInfoMixin<TransformPass> {
+public:
+  llvm::PreservedAnalyses run(llvm::Module &, llvm::ModuleAnalysisManager &);
+  bool runOnFunction(llvm::Function &F);
+  bool runOnBasicBlock(llvm::BasicBlock &BB);
+};
 
 class StrengthReductionPass final : public llvm::PassInfoMixin<StrengthReductionPass> {
 public:
