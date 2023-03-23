@@ -24,8 +24,7 @@ bool AlgebraicIdentityPass::runOnBasicBlock(BasicBlock &BB) {
         if (ConstantInt *C = dyn_cast<ConstantInt>(Operand)){ // se trovo una costante
           if(name == "add" || name == "sub"){
             if(C->getValue() == llvm::APInt(32, 0)){ // se la costante è uno 0 e siamo in 
-            // una addizione / sottrazione
-              replaceUsesOfElement(Iter, I);
+            // una addizione / sottrazione              
               if(Iter == I.op_begin()) PropOperand = *(++Iter);
               else {
                 auto IterCopy = Iter;
