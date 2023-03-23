@@ -68,7 +68,7 @@ bool runOnBasicBlockAlgebraicIdentity(BasicBlock &B)
                     outs()<<"Ho trovato una costante in posizione 0\n";
                     if ((*constant0).isOneValue()) // Se il primo operando è 1
                     {
-                        outs()<<"L'operatore in posizione 0 vale 0\n";
+                        outs()<<"L'operatore in posizione 0 vale 1\n";
                         Iter.replaceAllUsesWith(Iter.getOperand(1));
                     }                    
                 }
@@ -77,7 +77,7 @@ bool runOnBasicBlockAlgebraicIdentity(BasicBlock &B)
                     outs()<<"Ho trovato una costante in posizione 1 di valore "<<(*constant1).getValue()<<"\n";
                     if ((*constant1).isOneValue()) // Se il secondo operando è 1
                     {
-                        outs()<<"L'operatore in posizione 1 vale 0\n";
+                        outs()<<"L'operatore in posizione 1 vale 1\n";
                         Iter.replaceAllUsesWith(Iter.getOperand(0));
                     }
                 }
@@ -95,7 +95,7 @@ bool runOnBasicBlockAlgebraicIdentity(BasicBlock &B)
                     outs()<<"con una costante in posizione 1 di valore "<<(*constant1).getValue()<<" ";
                     if ((*constant1).isOneValue()) // Se il secondo operando è 1
                     {
-                        outs()<<"che vale 0\n";
+                        outs()<<"che vale 1\n";
                         Iter.replaceAllUsesWith(Iter.getOperand(0));
                     }
                 }
