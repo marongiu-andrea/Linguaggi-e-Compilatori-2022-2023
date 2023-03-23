@@ -35,10 +35,10 @@ bool runOnBasicBlockAlgebric(BasicBlock &B)
                 Inst.replaceAllUsesWith(operand_1);
                 // Inst.eraseFromParent();
             }
-        } else if (!strcmp(Inst.getOpcodeName(), "mul"))
+        }
+        else if (!strcmp(Inst.getOpcodeName(), "mul"))
         {
             // Se l'istruzione è una moltiplicazione
-
 
             outs() << Inst << "\n";
             Value *operand_1 = Inst.getOperand(0);
@@ -53,7 +53,8 @@ bool runOnBasicBlockAlgebric(BasicBlock &B)
                 outs() << "\tIstruzione rimpiazzata con " << *operand_1 << "\n";
                 Inst.replaceAllUsesWith(operand_1);
                 // Inst.eraseFromParent();
-            } else if (C1 && C1->getValue().getLimitedValue() == 1)
+            }
+            else if (C1 && C1->getValue().getLimitedValue() == 1)
             {
                 outs() << "\tIstruzione rimpiazzata con " << *operand_2 << "\n";
                 Inst.replaceAllUsesWith(operand_2);

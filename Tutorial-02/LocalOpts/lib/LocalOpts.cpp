@@ -49,10 +49,18 @@ extern "C" PassPluginLibraryInfo llvmGetPassPluginInfo()
                 MPM.addPass(AlgebraicIdentityPass());
                 return true;
               }
-              // TODO: Implementare gli stub per
-              // Algebraic Identity
-              // Strength Reduction
-              // Multi-instruction Operations
+              return false;
+            });
+        PB.registerPipelineParsingCallback(
+            [](StringRef Name, ModulePassManager &MPM,
+               ArrayRef<PassBuilder::PipelineElement>)
+                -> bool
+            {
+              if (Name == "strength_reduction")
+              {
+                MPM.addPass(StrengthReductionPass());
+                return true;
+              }
               return false;
             });
       } // RegisterPassBuilderCallbacks
