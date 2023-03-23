@@ -3,15 +3,15 @@
 #include <llvm/IR/PassManager.h>
 #include <llvm/IR/Constants.h>
 
-class TransformPass final
-    : public llvm::PassInfoMixin<TransformPass> {
+class TransformPass final : public llvm::PassInfoMixin<TransformPass> {
 public:
   llvm::PreservedAnalyses run(llvm::Module &,
                               llvm::ModuleAnalysisManager &);
 }; // class TransformPass
 
-class AlgebraicIdentityPass final : public PassInfoMixin<AlgebraicIdentityPass> {
+class AlgebraicIdentityPass final : public llvm::PassInfoMixin<AlgebraicIdentityPass> {
 public:
-  PreservedAnalyses run([[maybe_unused]] Module &M, ModuleAnalysisManager &)
+  llvm::PreservedAnalyses run(llvm::Module &,
+                              llvm::ModuleAnalysisManager &);
 };
 // class AlgebraicIdentityPass

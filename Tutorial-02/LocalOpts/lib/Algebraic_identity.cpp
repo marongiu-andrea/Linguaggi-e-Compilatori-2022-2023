@@ -31,17 +31,12 @@ bool runOnFunctionAIP(Function &F) {
   return Transformed;
 };
 
-class AlgebraicIdentityPass final : public PassInfoMixin<AlgebraicIdentityPass> {
-public:
-  PreservedAnalyses run([[maybe_unused]] Module &M, ModuleAnalysisManager &) {
-
+PreservedAnalyses  AlgebraicIdentityPass::run([[maybe_unused]] Module &M, ModuleAnalysisManager &) {
     for (auto &Iter : M) {
       if (runOnFunctionAIP(Iter)) {
         return PreservedAnalyses::none();
       }
     }
 
-    return PreservedAnalyses::all();
-  }
-};
-
+  return PreservedAnalyses::all();
+}
