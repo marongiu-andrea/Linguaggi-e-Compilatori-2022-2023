@@ -143,7 +143,8 @@ bool runOnBasicBlockStrength(BasicBlock &B) {
                         //outs() << valueInt << " " << operandInt << "\n";
                         if ((valueInt-operandInt) == 1) {
                             //outs() << "Sono arrivato fino a qui\n";
-                            Instruction* NewSub = BinaryOperator::CreateSub(ConstantInt::get(Type::getInt32Ty(B.getContext()), valueInt),BO->getOperand(1-constantIndex),"",BO);
+                            Instruction* NewShift = BinaryOperator::CreateShl(BO->getOperand(1-constantIndex),ConstantInt::get(Type::getInt32Ty(B.getContext()), pos_shift),"",BO);
+                            Instruction* NewSub = BinaryOperator::CreateSub(NewShift,BO->getOperand(1-constantIndex),"",BO);
                             BO->replaceAllUsesWith(NewSub);
                             flag=true;
                             instrToRemove=&instr;
