@@ -17,3 +17,10 @@ public:
   bool runOnFunction(llvm::Function &F);
   bool runOnBasicBlock(llvm::BasicBlock &BB);
 };
+
+class MIOptimizationPass final : public llvm::PassInfoMixin<MIOptimizationPass> {
+public:
+  llvm::PreservedAnalyses run(llvm::Module &, llvm::ModuleAnalysisManager &);
+  bool runOnFunction(llvm::Function &F);
+  bool runOnBasicBlock(llvm::BasicBlock &BB);
+};

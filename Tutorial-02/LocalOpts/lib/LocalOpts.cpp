@@ -31,6 +31,9 @@ extern "C" PassPluginLibraryInfo llvmGetPassPluginInfo() {
           } else if (Name == "strengthreduction") {
             MPM.addPass(StrengthReductionPass());
             return true;
+          } else if (Name == "mioptimization") {
+            MPM.addPass(MIOptimizationPass());
+            return true;
           } else {
             return false;
           }
