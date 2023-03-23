@@ -17,12 +17,12 @@ bool AlgebraicIdentityPass::runOnBasicBlock(BasicBlock &BB) {
     bool found;
     Value* PropOperand;
     std::string name = I.getOpcodeName();
-    if(name == "add" || name == "mul" || name == "div" || name == "sub"){
+    if(name == "add" || name == "mul"){
       // check if one of the two operands is neutral element
       for (auto *Iter = I.op_begin(); Iter != I.op_end(); ++Iter) {        
         Value *Operand = *Iter;
         if (ConstantInt *C = dyn_cast<ConstantInt>(Operand)){ // se trovo una costante
-          if(name == "add" || name == "sub"){
+          if(name == "add"){
             if(C->getValue() == llvm::APInt(32, 0)){ // se la costante è uno 0 e siamo in 
             // una addizione / sottrazione              
               if(Iter == I.op_begin()) PropOperand = *(++Iter);
@@ -35,7 +35,7 @@ bool AlgebraicIdentityPass::runOnBasicBlock(BasicBlock &BB) {
               I.replaceAllUsesWith(PropOperand);              
             }
           }        
-          if(name == "mul" || name == "div"){
+          if(name == "mul"){
             if(C->getValue() == llvm::APInt(32, 1)){
               if(Iter == I.op_begin()) PropOperand = *(++Iter);            
               else{
