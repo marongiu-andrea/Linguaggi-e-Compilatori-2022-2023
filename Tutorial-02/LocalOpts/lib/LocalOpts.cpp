@@ -34,7 +34,11 @@ extern "C" PassPluginLibraryInfo llvmGetPassPluginInfo() {
                     MPM.addPass(AlgebraicIdentityPass());
                     return true;
                   }
-		  // Strength Reduction
+                  if (Name == "strengthreduction") 
+                  {
+                    MPM.addPass(StrengthReductionPass());
+                    return true;
+                  }
 		  // Multi-instruction Operations
                   return false;
                 });
