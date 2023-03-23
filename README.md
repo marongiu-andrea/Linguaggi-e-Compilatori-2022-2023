@@ -4,3 +4,4 @@ Questo repository contiene i materiali per i laboratori del corso "Linguaggi e C
 Componenti attuali:
 - Ferrarini Alex Matr.152589
 - Hu Guoyong     Matr.152768
+- Pelloni Manuel Matr.154547
