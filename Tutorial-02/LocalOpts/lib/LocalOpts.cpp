@@ -29,6 +29,10 @@ extern "C" PassPluginLibraryInfo llvmGetPassPluginInfo() {
                     MPM.addPass(TransformPass());
                     return true;
                   }
+                  if (Name == "algebraic-identity") {
+                    MPM.addPass(AlgebraicIdentityPass());
+                    return true;
+                  }
                   // TODO: Implementare gli stub per
 		  // Algebraic Identity
 		  // Strength Reduction
