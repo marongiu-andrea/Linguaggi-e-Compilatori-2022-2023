@@ -23,8 +23,8 @@ extern "C" PassPluginLibraryInfo llvmGetPassPluginInfo() {
           PB.registerPipelineParsingCallback(
                [](StringRef Name, ModulePassManager &MPM,
                    ArrayRef<PassBuilder::PipelineElement>) -> bool {
-                  if(Name == "Algebraic_identity"){
-                    MPM.addPass(algerbraic_pass());
+                  if(Name == "algebraic-identity"){
+                    MPM.addPass(AlgebraicIdentityPass());
                     return true;
                   }
                   return false;
@@ -33,8 +33,8 @@ extern "C" PassPluginLibraryInfo llvmGetPassPluginInfo() {
           PB.registerPipelineParsingCallback(
                [](StringRef Name, ModulePassManager &MPM,
                    ArrayRef<PassBuilder::PipelineElement>) -> bool {
-                  if(Name == "Strength_reduction"){
-                    MPM.addPass(strength_pass());
+                  if(Name == "strength-reduction"){
+                    MPM.addPass(StrengthReductionPass());
                     return true;
                   }
                   return false;
@@ -43,8 +43,8 @@ extern "C" PassPluginLibraryInfo llvmGetPassPluginInfo() {
           PB.registerPipelineParsingCallback(
                [](StringRef Name, ModulePassManager &MPM,
                    ArrayRef<PassBuilder::PipelineElement>) -> bool {
-                  if(Name == "Multi_instruction"){
-                    MPM.addPass(multi_pass());
+                  if(Name == "multi-instruction-operations"){
+                    MPM.addPass(MultiInstructionOperationsPass());
                     return true;
                   }
                   return false;

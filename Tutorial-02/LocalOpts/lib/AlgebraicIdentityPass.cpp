@@ -7,10 +7,8 @@ bool algebric_transformation(BasicBlock &B){
 }
 
 
-PreservedAnalyses algerbraic_pass::run([[maybe_unused]] Module &M,
+PreservedAnalyses AlgebraicIdentityPass::run([[maybe_unused]] Module &M,
                                              ModuleAnalysisManager &) {
-        
-  
 
   return PreservedAnalyses::none();
 }

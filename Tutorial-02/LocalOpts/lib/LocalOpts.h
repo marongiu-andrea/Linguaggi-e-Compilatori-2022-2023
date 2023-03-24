@@ -8,21 +8,23 @@ class TransformPass final
 public:
   llvm::PreservedAnalyses run(llvm::Module &,
                               llvm::ModuleAnalysisManager &);
-}; // class AlgebraicIdentityPass
+};
 
-class algerbraic_pass final
+class AlgebraicIdentityPass final
     : public llvm::PassInfoMixin<TransformPass> {
 public:
   llvm::PreservedAnalyses run(llvm::Module &,
                               llvm::ModuleAnalysisManager &);
 };
-class strength_pass final
+
+class StrengthReductionPass final
     : public llvm::PassInfoMixin<TransformPass> {
 public:
   llvm::PreservedAnalyses run(llvm::Module &,
                               llvm::ModuleAnalysisManager &);
 };
-class multi_pass final
+
+class MultiInstructionOperationsPass final
     : public llvm::PassInfoMixin<TransformPass> {
 public:
   llvm::PreservedAnalyses run(llvm::Module &,
