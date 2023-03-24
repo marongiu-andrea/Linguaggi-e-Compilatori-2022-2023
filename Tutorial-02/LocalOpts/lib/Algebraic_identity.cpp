@@ -8,30 +8,23 @@ bool runOnBasicBlockAIP(BasicBlock &B) {
 
     for(auto *I = Inst.op_begin(); I != Inst.op_end(); ++I){
       int a;
+      Argument *Arg;
       if (ConstantInt *C = dyn_cast<ConstantInt>(I))
         a = C->getSExtValue();
+      else
+        Arg = dyn_cast<Argument>(I);
 
       if(a == 0 && (Inst.getOpcode() == Instruction::Add || Inst.getOpcode() == Instruction::Sub)){
-        outs()<< "Inutile in add/sub\n";
+        outs()<< "Inutile in add/sub: "<< Inst <<"\n";
+        Inst.replaceAllUsesWith(Arg);
 
       }
       else if(a == 1 && (Inst.getOpcode() == Instruction::Mul || Inst.getOpcode() == Instruction::SDiv)){
-        outs()<< "Inutile in mul/div\n";
-      }
-
-    }
-
-    /*outs() << "Istruzione: " << Inst << "\n";
-    outs() <<"\tOperandi: ";
-    for (auto *I = Inst.op_begin(); I != Inst.op_end(); ++I){
-      if (Argument *Arg = dyn_cast<Argument>(I)) {
-        outs() << "\t" << *Arg << ": Argument";
-      }
-      if (ConstantInt *C = dyn_cast<ConstantInt>(I)) {
-        outs() << "\t" << *C << ": Constant";
+        outs()<< "Inutile in mul/div\n"<< Inst <<"\n";
+        //Inst.replaceAllUsesWith(Arg);
+        //Questa cosa fa crashare llvm, DA FIXARE
       }
     }
-    outs()<<"\n";*/
   }
 };
 
