@@ -4,65 +4,69 @@
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/Constants.h"
 #include <string.h>
-#include <cmath>
+#include <math.h>
 #include <list>
 
 using namespace llvm;
 
-bool runOnBasicBlockStrengthReduction(BasicBlock &B)
+bool runOnBasicBlockStrengthReduction(BasicBlock &BB)
 {
-    Function *F = B.getParent();
-    LLVMContext &context = F->getContext();
-    std::list<Instruction *> instructionToRemove;
+    // Function *F = B.getParent();
+    // LLVMContext &context = F->getContext();
+    std::list<Instruction *> instructionsToBeRemove;
 
-    for (auto Iter = B.begin(); Iter != B.end(); ++Iter)
+    for (auto &inst : BB)
     {
-        // Per ogni istruzione del BasicBlock
-        Instruction &Inst = *Iter;
-        outs() << Inst << "\n";
-        Value *operand_1;
-        Value *operand_2;
 
-        switch (Inst.getOpcode())
+        outs() << inst << "\n";
+        if (inst.isBinaryOp())
         {
-        case Instruction::Mul:
-            outs() << "Moltiplicazione \n";
-            operand_1 = Inst.getOperand(0);
-            operand_2 = Inst.getOperand(1);
+            unsigned int opcode = inst.getOpcode();
 
-            // Controllo se il secondo operando è costante
-            ConstantInt *C2 = dyn_cast<ConstantInt>(operand_2);
+            Value *opLeft = inst.getOperand(0);
+            Value *opRight = inst.getOperand(1);
 
-            if (C2)
+            ConstantInt *costantLeft = dyn_cast<ConstantInt>(opLeft);
+            ConstantInt *costantRight = dyn_cast<ConstantInt>(opRight);
+
+            Instruction *newInst = nullptr;
+
+            switch (opcode)
             {
-                if (C2->getValue().isPowerOf2())
+            case Instruction::Mul:
+                outs() << "\tMoltiplicazione: \n";
+                if (costantRight)
                 {
+                    if (costantRight->getValue().isPowerOf2())
+                    {
+                        APInt value = costantRight->getValue();
+                        IntegerType *opType = costantRight->getType();
 
-                    Instruction *NewInst = BinaryOperator::Create(Instruction::Shl, operand_1, C2);
-                    outs() << "\tNuova istruzione" << *NewInst << "\n";
-                    NewInst->insertBefore(&Inst);
-                    Inst.replaceAllUsesWith(NewInst);
-                    instructionToRemove.push_back(&Inst);
+                        ConstantInt *numShift = ConstantInt::get(opType, value.exactLogBase2());
+                        if (value.isNonNegative())
+                        {
+                            newInst = BinaryOperator::Create(Instruction::Shl, opLeft, numShift);
+                            outs() << "\t Nuova istruzione" << *newInst << "\n";
+                        }
+                    }
                 }
-                // else if ((C2->getValue() + 1) % 2 == 0)
-                // {
-                // }
-                // else if ((C2->getValue() - 1) % 2 == 0)
-                // {
-                // }
+                break;
+
+            case Instruction::SDiv:
+            case Instruction::UDiv:
+                outs() << "\tDivisione: \n";
+                break;
             }
-            outs() << "\t" << *operand_1 << "\n\t" << *operand_2 << "\n";
-            for (auto i : instructionToRemove)
-                i->eraseFromParent();
-            break;
-
-            // case Instruction::SDiv:
-
-            //     break;
+            if (newInst)
+            {
+                newInst->insertBefore(&inst);
+                inst.replaceAllUsesWith(newInst);
+                instructionsToBeRemove.push_back(&inst);
+            }
         }
-
-        outs() << "\n";
     }
+    for (auto i : instructionsToBeRemove)
+        i->eraseFromParent();
 
     return true;
 }

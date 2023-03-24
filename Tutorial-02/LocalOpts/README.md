@@ -14,7 +14,7 @@
     
 ## Ottimiziamo il programma di test (StrengthReduction)
 
-    opt -load-pass-plugin=./libLocalOpts.so -passes=strength_reduction test/test.ll -o test.optimized.bc
+    opt -load-pass-plugin=./libLocalOpts.so -passes=strength_reduction test/test.ll -o test/test.optimized.bc
 
 ## Generiamo il file .ll per leggere il programma creato (test)
 
