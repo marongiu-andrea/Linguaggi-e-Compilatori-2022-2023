@@ -5,6 +5,7 @@
 #include "llvm/IR/Type.h"
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/IRBuilder.h"
+#include "vector"
 
 using namespace llvm;
 
@@ -61,6 +62,7 @@ bool runOnBasicBlockAlgebraic(BasicBlock &B) {
     
     */
    //variabile di posizione dell'operando neutro
+   std::vector<Instruction*> daEliminare;
     int neutro;
     Value* op0;
     Value* op1;
@@ -107,10 +109,14 @@ bool runOnBasicBlockAlgebraic(BasicBlock &B) {
           }
           if(neutro != -1){
             iter.replaceAllUsesWith(iter.getOperand(1-neutro));
+            daEliminare.push_back(&iter);
             printf("Ho sostituito l'operando\n");        
           } 
         
     };
+    for(int i=0; i < daEliminare.size(); i++){
+      daEliminare[i]->eraseFromParent();
+    }
 
     return true;
   }
