@@ -39,7 +39,11 @@ extern "C" PassPluginLibraryInfo llvmGetPassPluginInfo() {
                     MPM.addPass(StrengthReductionPass());
                     return true;
                   }
-		  // Multi-instruction Operations
+                  if (Name == "multiinstructionoptimization") 
+                  {
+                    MPM.addPass(MultiInstructionOptimizationPass());
+                    return true;
+                  }
                   return false;
                 });
           } // RegisterPassBuilderCallbacks
