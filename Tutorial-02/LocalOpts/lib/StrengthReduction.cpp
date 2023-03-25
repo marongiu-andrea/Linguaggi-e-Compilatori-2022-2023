@@ -1,6 +1,6 @@
 #include "LocalOpts.h"
 #include "llvm/IR/InstrTypes.h"
-#include <cmath>
+
 using namespace llvm;
 
 //opt -load-pass-plugin=./libLocalOpts.so -passes=strengthreduction test/test.ll -o test/test.strengthreduction.optimized.bc
@@ -20,7 +20,7 @@ bool runOnBasicBlockStrengthReduction(BasicBlock &B)
 
                 if (constant0 && (!constant1)) // Se solo il primo operando è una costante
                 {
-                    outs()<<"Ho trovato una costante in posizione 0 di valore "<<(*constant0).getValue()<<"\n";
+                    outs()<<"Solo il primo operando è una costante di valore "<<(*constant0).getValue()<<"\n";
                     if ((*constant0).getValue().exactLogBase2() != -1) // Se il primo operando è una potenza del 2
                     {
                         outs()<<"Ho trovato una potenza del 2 nel primo operando\n";
@@ -66,7 +66,7 @@ bool runOnBasicBlockStrengthReduction(BasicBlock &B)
                 }
                 if (constant1 && (!constant0)) // Se solo il secondo operando è una costante 
                 {
-                    outs()<<"Ho trovato una costante in posizione 1 di valore "<<(*constant1).getValue()<<"\n";
+                    outs()<<"Solo il secondo operando è una costante di valore "<<(*constant1).getValue()<<"\n";
                     if ((*constant1).getValue().exactLogBase2() != -1) // Se il secondo operando è una potenza del 2
                     {
                         outs()<<"Ho trovato una potenza del 2 nel secondo operando\n";
@@ -144,9 +144,6 @@ bool runOnBasicBlockStrengthReduction(BasicBlock &B)
 
                     }
                 }
-
-
-
                 break;
             }
             case Instruction::SDiv: // Se l'operazione è una SDiv
@@ -157,7 +154,7 @@ bool runOnBasicBlockStrengthReduction(BasicBlock &B)
 
                 if (constant1 && (!constant0)) //Se solo il secondo operando è una costante 
                 {
-                    outs()<<"\nLa SDiv ha una costante in posizione 1 di valore "<<(*constant1).getValue()<<" ";
+                    outs()<<"\nSolo il secondo operando è una costante di valore "<<(*constant1).getValue()<<" ";
                     
                     if ((*constant1).getValue().exactLogBase2() != -1) // Se il secondo operando è una potenza del 2
                     {
@@ -187,12 +184,8 @@ bool runOnBasicBlockStrengthReduction(BasicBlock &B)
             }           
         }
     }
-
     return true;    
 }
-
-
-
 
 bool runOnFunctionStrengthReduction(Function &F) 
 {
@@ -208,9 +201,6 @@ bool runOnFunctionStrengthReduction(Function &F)
 
     return Transformed;
 }
-
-
-
 
 PreservedAnalyses StrengthReductionPass::run([[maybe_unused]] Module &M, ModuleAnalysisManager &) 
 {
