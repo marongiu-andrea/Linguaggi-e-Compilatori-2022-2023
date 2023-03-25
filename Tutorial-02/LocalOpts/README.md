@@ -10,7 +10,7 @@
 
 ## Ottimiziamo il programma di test (Algebric)
 
-    opt -load-pass-plugin=./libLocalOpts.so -passes=algebric test/test.ll -o test.optimized.bc
+    opt -load-pass-plugin=./libLocalOpts.so -passes=algebric test/test.ll -o test/test.optimized.bc
     
 ## Ottimiziamo il programma di test (StrengthReduction)
 
