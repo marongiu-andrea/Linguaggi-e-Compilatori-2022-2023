@@ -175,9 +175,9 @@ bool runOnBasicBlockStrengthReduction(BasicBlock &B)
                         Iter.replaceAllUsesWith(NewRightShift);
                     }                    
                 }
-
                 break;
-            }   
+            }  
+             
             default:
             {
                 break;
