@@ -11,7 +11,7 @@ using namespace llvm;
 
 std::list<Instruction *> instructionsToBeRemoved;
 
-void check_and_create(ConstantInt *operand, Value *operand_to_shift,std::string position, LLVMContext &context, Instruction &inst)
+void check_and_create_mul(ConstantInt *operand, Value *operand_to_shift,std::string position, LLVMContext &context, Instruction &inst)
 {
     
     Instruction *newShiftInst = nullptr;
@@ -21,7 +21,6 @@ void check_and_create(ConstantInt *operand, Value *operand_to_shift,std::string 
     if (value.isPowerOf2())
     {
 
-        
         IntegerType *opType = operand->getType();
 
         ConstantInt *numShift = ConstantInt::get(opType, value.exactLogBase2());
@@ -44,7 +43,6 @@ void check_and_create(ConstantInt *operand, Value *operand_to_shift,std::string 
         //esempio 15 avrà 4 e 17 avrà 5
 
         outs() << "\tThe number of shifts of value " << value_int << " is " << shift_len << "\n";
-        //int power_of_log = pow(2,static_cast<int>(shift_len));
         int shift_len_int = static_cast<int>(shift_len);
        
 
@@ -80,6 +78,34 @@ void check_and_create(ConstantInt *operand, Value *operand_to_shift,std::string 
     
 }
 
+void check_and_create_div(ConstantInt *operand, Value *operand_to_shift, LLVMContext &context, Instruction &inst)
+{
+    Instruction *newShiftInst = nullptr;
+    APInt value = operand->getValue();
+
+    if (value.isPowerOf2())
+    {
+
+        IntegerType *opType = operand->getType();
+
+        ConstantInt *numShift = ConstantInt::get(opType, value.exactLogBase2());
+        if (value.isNonNegative())
+        {
+            //questo si fa nel caso abbiamo una potenza esatta di 2
+            newShiftInst = BinaryOperator::Create(Instruction::AShr, operand_to_shift, numShift);
+            outs() << "\t Nuova istruzione di shift a destra di passi: " << numShift->getValue() << "\n";
+
+        }
+
+        if(newShiftInst)
+        {
+            newShiftInst->insertAfter(&inst);
+            inst.replaceAllUsesWith(newShiftInst);
+            instructionsToBeRemoved.push_back(&inst);
+        }
+    }
+}
+
 bool runOnBasicBlockStrengthReduction(BasicBlock &BB)
 {
     Function *F = BB.getParent();
@@ -106,16 +132,21 @@ bool runOnBasicBlockStrengthReduction(BasicBlock &BB)
                 outs() << "\tMoltiplicazione: \n";
                 if (costantRight)
                 {   
-                    check_and_create(costantRight,opLeft,"destra",context,inst);
+                    check_and_create_mul(costantRight,opLeft,"destra",context,inst);
                 } 
                 else if (costantLeft)
                 {
-                    check_and_create(costantLeft,opRight,"sinistra",context,inst);
+                    check_and_create_mul(costantLeft,opRight,"sinistra",context,inst);
                 }
                 break;
 
             case Instruction::SDiv:
                 outs() << "\tDivisione: \n";
+
+                 if (costantRight)
+                {
+                    check_and_create_div(costantRight,opLeft,context,inst);
+                }
 
                 break;
             }
