@@ -112,7 +112,7 @@ bool runOnBB(BasicBlock &bb)
           }
           else
           {
-            outs() << "Nothing done here\n\n";
+            outs() << "Nothing done here\\n\n";
           }
         }
       }

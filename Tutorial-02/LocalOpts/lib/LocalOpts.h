@@ -25,3 +25,11 @@ public:
   llvm::PreservedAnalyses run(llvm::Module &,
                               llvm::ModuleAnalysisManager &);
 };
+
+// class MultiOpPass
+class MultiOpPass final
+    : public llvm::PassInfoMixin<MultiOpPass> {
+public:
+  llvm::PreservedAnalyses run(llvm::Module &,
+                              llvm::ModuleAnalysisManager &);
+};

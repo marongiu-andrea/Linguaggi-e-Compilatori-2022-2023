@@ -39,7 +39,11 @@ extern "C" PassPluginLibraryInfo llvmGetPassPluginInfo() {
                     MPM.addPass(StrengthReductionPass());
                     return true;
                   }
-                  
+                  else if(Name == "multiop")
+                  {
+                    MPM.addPass(MultiOpPass());
+                    return true;
+                  } 
                   return false;
                 });
           } // RegisterPassBuilderCallbacks
