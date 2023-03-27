@@ -46,6 +46,7 @@ bool runOnBasicBlock(BasicBlock &bb)
     i->eraseFromParent();
   }
 
+  outs() << "Identity pass terminated\n\n";
   return true;
 }
 

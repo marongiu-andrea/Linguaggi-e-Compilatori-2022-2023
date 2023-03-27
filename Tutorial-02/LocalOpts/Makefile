@@ -13,3 +13,4 @@ $(OPTIMIZER): $(OBJs)
 .PHONY: clean
 clean:
 	$(RM) $(OPTIMIZER) $(OBJs)
+	rm *myopt.ll
