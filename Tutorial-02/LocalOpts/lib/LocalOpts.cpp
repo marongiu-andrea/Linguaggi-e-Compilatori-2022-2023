@@ -63,6 +63,18 @@ extern "C" PassPluginLibraryInfo llvmGetPassPluginInfo()
               }
               return false;
             });
+        PB.registerPipelineParsingCallback(
+            [](StringRef Name, ModulePassManager &MPM,
+               ArrayRef<PassBuilder::PipelineElement>)
+                -> bool
+            {
+              if (Name == "multi_instruction")
+              {
+                MPM.addPass(MultiInstructonPass());
+                return true;
+              }
+              return false;
+            });
       } // RegisterPassBuilderCallbacks
   };    // struct PassPluginLibraryInfo
 }

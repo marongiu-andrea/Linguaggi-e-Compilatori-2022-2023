@@ -25,3 +25,10 @@ public:
   llvm::PreservedAnalyses run(llvm::Module &,
                               llvm::ModuleAnalysisManager &);
 };
+class MultiInstructonPass final
+    : public llvm::PassInfoMixin<MultiInstructonPass>
+{
+public:
+  llvm::PreservedAnalyses run(llvm::Module &,
+                              llvm::ModuleAnalysisManager &);
+};
