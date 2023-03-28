@@ -27,23 +27,50 @@ Value* get_other_operand_if_one_is(Instruction& instruction, const std::function
   return nullptr;
 }
 
+/**
+ * @note Assumes the instruction is a binary operation.
+ * @returns If the second operand of the instruction is of type ValueType and matches the predicate,
+ *          it returns the first operand;
+ *          otherwise, it returns null.
+*/
+template <typename ValueType>
+Value* get_first_operand_if_second_is(Instruction& instruction, const std::function<bool(ValueType*)> predicate) {
+  Value* op1 = instruction.getOperand(1);
+
+  if (auto* val1 = dyn_cast<ValueType>(op1))
+    if (predicate(val1))
+      return instruction.getOperand(0);
+    
+  return nullptr;
+}
+
+
 Value* shouldBeReplacedWith(Instruction& inst) {
   switch (inst.getOpcode()) {
+    // With commutativity
+
     case Instruction::Add:  // Integer add
     case Instruction::Sub:  // Integer sub
-    case Instruction::Shl:  // Logical shift left
-    case Instruction::LShr: // Logical shift right
-    case Instruction::AShr: // Arithmetic shift right
       return get_other_operand_if_one_is<ConstantInt>(inst, &ConstantInt::isZero);
 
     case Instruction::Mul:  // Integer multiplication
-    case Instruction::SDiv: // Signed division
-    case Instruction::UDiv: // Unsigned division
       return get_other_operand_if_one_is<ConstantInt>(inst, &ConstantInt::isOne);
     
     case Instruction::FAdd: // Floating point add
     case Instruction::FSub: // Floating point sub
       return get_other_operand_if_one_is<ConstantFP>(inst, &ConstantFP::isZero);
+
+
+    // Without commutativity
+
+    case Instruction::SDiv: // Signed division
+    case Instruction::UDiv: // Unsigned division
+      return get_first_operand_if_second_is<ConstantInt>(inst, &ConstantInt::isOne);
+
+    case Instruction::Shl:  // Logical shift left
+    case Instruction::LShr: // Logical shift right
+    case Instruction::AShr: // Arithmetic shift right
+      return get_first_operand_if_second_is<ConstantInt>(inst, &ConstantInt::isZero);
 
     default:
       return nullptr;

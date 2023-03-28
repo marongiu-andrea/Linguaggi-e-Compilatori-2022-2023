@@ -2,8 +2,8 @@
 PASSES_STRING := function(algebraic-identity),strength-reduction,multi-instruction-operations
 
 TO_OPTIMIZE_SRC := test/test.ll
-OPTIMIZED_BYTECODE := ./test.optimized.bc
-OPTIMIZED_LL := ./test.optimized.ll
+OPTIMIZED_BYTECODE := test.optimized.bc
+OPTIMIZED_LL := test.optimized.ll
 
 OPTIMIZER := libLocalOpts.so
 OBJs := $(subst .cpp,.o,$(wildcard lib/*.cpp))
