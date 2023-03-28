@@ -14,4 +14,10 @@ class AlgebraicIdentityPass final
 public:
   llvm::PreservedAnalyses run(llvm::Module &,
                               llvm::ModuleAnalysisManager &);
+};//class Multi Instruction Optimization
+class MultiInstrPass final
+    : public llvm::PassInfoMixin<MultiInstrPass> {
+public:
+  llvm::PreservedAnalyses run(llvm::Module &,
+                              llvm::ModuleAnalysisManager &);
 };
