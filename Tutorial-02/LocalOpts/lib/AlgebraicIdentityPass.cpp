@@ -12,7 +12,7 @@ using namespace llvm;
  *          otherwise, it returns null.
 */
 template <typename ValueType>
-Value* get_other_operand_if_one_is(Instruction& instruction, const std::function<bool(ValueType*)> predicate) {
+static Value* get_other_operand_if_one_is(Instruction& instruction, const std::function<bool(ValueType*)> predicate) {
   Value* op0 = instruction.getOperand(0);
   Value* op1 = instruction.getOperand(1);
 
@@ -34,7 +34,7 @@ Value* get_other_operand_if_one_is(Instruction& instruction, const std::function
  *          otherwise, it returns null.
 */
 template <typename ValueType>
-Value* get_first_operand_if_second_is(Instruction& instruction, const std::function<bool(ValueType*)> predicate) {
+static Value* get_first_operand_if_second_is(Instruction& instruction, const std::function<bool(ValueType*)> predicate) {
   Value* op1 = instruction.getOperand(1);
 
   if (auto* val1 = dyn_cast<ValueType>(op1))
@@ -45,7 +45,7 @@ Value* get_first_operand_if_second_is(Instruction& instruction, const std::funct
 }
 
 
-Value* shouldBeReplacedWith(Instruction& inst) {
+static Value* shouldBeReplacedWith(Instruction& inst) {
   switch (inst.getOpcode()) {
     // With commutativity
 
