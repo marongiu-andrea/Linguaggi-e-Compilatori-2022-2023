@@ -1,9 +1,8 @@
 OPTIMIZER := libLocalOpts.so
 OBJs := $(subst .cpp,.o,$(wildcard lib/*.cpp))
 
-LLVM_VERSION ?= 14
-
-CXXFLAGS := $(shell llvm-config-$(LLVM_VERSION) --cxxflags) -fPIC
+CXX = /usr/bin/clang++
+CXXFLAGS = $(shell llvm-config --cxxflags) -fPIC -std=c++20 -Wall -Werror -pedantic-errors
 
 all: $(OPTIMIZER) 
 

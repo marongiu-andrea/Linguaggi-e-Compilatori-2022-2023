@@ -1,4 +1,4 @@
 *.o
 *.so
-ir
+Tutorial-01/TestPass/ir
 .vscode
