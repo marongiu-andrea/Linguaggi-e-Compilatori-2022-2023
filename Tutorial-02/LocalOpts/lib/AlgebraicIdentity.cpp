@@ -13,9 +13,16 @@ bool runOnBasicBlock2(BasicBlock &B) {
            if(CI && (CI->getValue()).isZero()){
                 outs()<<"ADDIZIONE NULLA\n";
                 Inst.replaceAllUsesWith(Inst.getOperand(0));
-            }
-
-    }
+            } 
+        }
+      if(Inst.getOpcode()==Instruction::Mul){
+        ConstantInt *c1 = dyn_cast<ConstantInt>(Inst.getOperand(0));
+        ConstantInt *c2 = dyn_cast<ConstantInt>(Inst.getOperand(1));
+        if (c1 && c1->getValue().isOneValue())
+          Inst.replaceAllUsesWith(Inst.getOperand(1));    
+        else if (c2 && c2->getValue().isOneValue())
+          Inst.replaceAllUsesWith(Inst.getOperand(0));   
+      }
   }
 
     return true;
