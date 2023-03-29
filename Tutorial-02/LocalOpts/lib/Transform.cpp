@@ -3,7 +3,7 @@
 
 using namespace llvm;
 
-bool runOnBasicBlock(BasicBlock &B) {
+bool TransformPass::runOnBasicBlock(BasicBlock &B) {
     
     // Preleviamo le prime due istruzioni del BB
     Instruction &Inst1st = *B.begin(), &Inst2nd = *(++B.begin());
@@ -26,7 +26,7 @@ bool runOnBasicBlock(BasicBlock &B) {
 
       if (Argument *Arg = dyn_cast<Argument>(Operand)) {
         outs() << "\t" << *Arg << ": SONO L'ARGOMENTO N. " << Arg->getArgNo() 
-	       <<" DELLA FUNZIONE" << Arg->getParent()->getName()
+           <<" DELLA FUNZIONE" << Arg->getParent()->getName()
                << "\n";
       }
       if (ConstantInt *C = dyn_cast<ConstantInt>(Operand)) {
@@ -51,38 +51,19 @@ bool runOnBasicBlock(BasicBlock &B) {
 
     NewInst->insertAfter(&Inst1st);
     // Si possono aggiornare le singole references separatamente?
+    // A:
+    // ottengo tutti gli utilizzi di un'istruzione Inst1st.use_begin()
+    // da ogni utilizzo posso risalire all'utilizzatore -> User *Use::getUser()
+    // ora nell'utilizzatore posso cambiare l'utilizzo -> bool User::replaceUsesOfWith(Value *From, Value *To)
+    for (auto iter = Inst1st.use_begin(); iter != Inst1st.use_end(); ++iter)
+    {
+        Use &u = *iter;
+        User *usr = u.getUser();
+        usr->replaceUsesOfWith(&Inst1st, NewInst);
+    }
     // Controlla la documentazione e prova a rispondere.
-    Inst1st.replaceAllUsesWith(NewInst);
+    //Inst1st.replaceAllUsesWith(NewInst);
 
     return true;
   }
-
-
-  bool runOnFunction(Function &F) {
-    bool Transformed = false;
-
-    for (auto Iter = F.begin(); Iter != F.end(); ++Iter) {
-      if (runOnBasicBlock(*Iter)) {
-        Transformed = true;
-      }
-    }
-
-    return Transformed;
-  }
-
-
-
-
-PreservedAnalyses TransformPass::run([[maybe_unused]] Module &M,
-                                             ModuleAnalysisManager &) {
-
-  // Un semplice passo di esempio di manipolazione della IR
-  for (auto Iter = M.begin(); Iter != M.end(); ++Iter) {
-    if (runOnFunction(*Iter)) {
-      return PreservedAnalyses::none();
-    }
-  }
-
-  return PreservedAnalyses::none();
-}
 
