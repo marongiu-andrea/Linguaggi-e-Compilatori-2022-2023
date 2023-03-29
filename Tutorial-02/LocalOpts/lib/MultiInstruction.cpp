@@ -6,6 +6,7 @@
 #include <string.h>
 #include <math.h>
 #include <list>
+#include "llvm/IR/IRBuilder.h"
 
 using namespace llvm;
 
@@ -13,6 +14,7 @@ bool runOnBasicBlockMultiInstructon(BasicBlock &BB)
 {
     Function *F = BB.getParent();
     LLVMContext &context = F->getContext();
+    llvm::IRBuilder<> builder(context);
 
     std::list<Instruction *> instructionsToBeRemoved;
 
@@ -27,13 +29,33 @@ bool runOnBasicBlockMultiInstructon(BasicBlock &BB)
             Value *opLeft = inst.getOperand(0);
             Value *opRight = inst.getOperand(1);
 
-            ConstantInt *costantLeft = dyn_cast<ConstantInt>(opLeft);
-            ConstantInt *costantRight = dyn_cast<ConstantInt>(opRight);
+            ConstantInt *constantLeft = dyn_cast<ConstantInt>(opLeft);
+            ConstantInt *constantRight = dyn_cast<ConstantInt>(opRight);
+
+            BinaryOperator *binOpLeft = dyn_cast<BinaryOperator>(opLeft);
+            BinaryOperator *binOpRight = dyn_cast<BinaryOperator>(opRight);
 
             switch (opcode)
             {
             case Instruction::Add:
                 outs() << "Add \n";
+
+                if (binOpLeft && binOpLeft->getOpcode() == Instruction::Sub)
+                {
+                    Value *subOpRight = binOpLeft->getOperand(1);
+                    if (subOpRight == opRight)
+                    {
+
+                        // inst.replaceAllUsesWith(binOpLeft->getOperand(0));
+
+                        // elimina instr
+
+                        outs() << "padre  " << val0 << " \n";
+                    }
+                }
+                outs() << "op1: " << *opLeft << " \n";
+                outs() << "op2: " << opRight->getValueID() << *opRight << " \n";
+
                 break;
 
             case Instruction::Sub:

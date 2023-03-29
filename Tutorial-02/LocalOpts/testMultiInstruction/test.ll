@@ -8,7 +8,11 @@
 ;   int r3 = r2 - 10;
 ;   int r4 = r3 + 10;
 ;   int r5 = r0 - 10;
+;   int r6 = r5 + 8;
 ; }
+
+
+
 
 
 define dso_local void @foo(i32 noundef %0) {
@@ -18,6 +22,8 @@ define dso_local void @foo(i32 noundef %0) {
   %5 = sub nsw i32 %4, 10
   %6 = add nsw i32 %5, 10
   %7 = sub nsw i32 %2, 10
+  %8 = add nsw i32 %7, 8
+  %9 = add nsw i32 %7, 8
   ret void
 }
 
