@@ -2,8 +2,8 @@
 #include "llvm/IR/InstrTypes.h"
 using namespace llvm;
 
-PreservedAnalyses MultiInstructionOperationsPass::run([[maybe_unused]] Module &M,
-                                             ModuleAnalysisManager &) {
+PreservedAnalyses MultiInstructionOperationsPass::run(Function &F,
+                                                      FunctionAnalysisManager &) {
   // TODO: Implement the pass
   outs() << "MultiInstructionOperations\n";
   return PreservedAnalyses::none();

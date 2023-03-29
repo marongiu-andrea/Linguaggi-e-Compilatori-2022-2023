@@ -1,5 +1,5 @@
 # https://llvm.org/docs/NewPassManager.html#invoking-opt
-PASSES_STRING := function(algebraic-identity),strength-reduction,multi-instruction-operations
+PASSES_STRING := function(algebraic-identity,strength-reduction,multi-instruction-operations)
 
 TO_OPTIMIZE_SRC := test/test.ll
 OPTIMIZED_BYTECODE := test.optimized.bc

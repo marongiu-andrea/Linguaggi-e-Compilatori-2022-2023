@@ -20,12 +20,6 @@ extern "C" PassPluginLibraryInfo llvmGetPassPluginInfo() {
             if (Name == "transform")
               MPM.addPass(TransformPass());
 
-            else if(Name == "strength-reduction")
-              MPM.addPass(StrengthReductionPass());
-
-            else if(Name == "multi-instruction-operations")
-              MPM.addPass(MultiInstructionOperationsPass());
-
             else
               return false;
 
@@ -39,6 +33,12 @@ extern "C" PassPluginLibraryInfo llvmGetPassPluginInfo() {
             
             if(Name == "algebraic-identity")
               FPM.addPass(AlgebraicIdentityPass());
+
+            else if(Name == "strength-reduction")
+              FPM.addPass(StrengthReductionPass());
+
+            else if(Name == "multi-instruction-operations")
+              FPM.addPass(MultiInstructionOperationsPass());
 
             else
               return false;

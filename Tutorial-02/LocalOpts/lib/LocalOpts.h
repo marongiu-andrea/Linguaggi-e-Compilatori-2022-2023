@@ -18,15 +18,15 @@ public:
 };
 
 class StrengthReductionPass final
-    : public llvm::PassInfoMixin<TransformPass> {
+    : public llvm::PassInfoMixin<StrengthReductionPass> {
 public:
-  llvm::PreservedAnalyses run(llvm::Module &,
-                              llvm::ModuleAnalysisManager &);
+  llvm::PreservedAnalyses run(llvm::Function &F,
+                              llvm::FunctionAnalysisManager &);
 };
 
 class MultiInstructionOperationsPass final
-    : public llvm::PassInfoMixin<TransformPass> {
+    : public llvm::PassInfoMixin<MultiInstructionOperationsPass> {
 public:
-  llvm::PreservedAnalyses run(llvm::Module &,
-                              llvm::ModuleAnalysisManager &);
+  llvm::PreservedAnalyses run(llvm::Function &F,
+                              llvm::FunctionAnalysisManager &);
 };
