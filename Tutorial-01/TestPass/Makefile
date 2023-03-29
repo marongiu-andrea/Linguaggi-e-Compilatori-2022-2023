@@ -15,4 +15,4 @@ clean:
 	$(RM) $(OPTIMIZER) $(OBJs)
 
 format:
-	clang-format -i -style=LLVM lib/*.cpp 
+	clang-format -i -style=LLVM lib/*.cpp  --sort-includes
