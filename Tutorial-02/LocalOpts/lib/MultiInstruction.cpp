@@ -10,6 +10,24 @@
 
 using namespace llvm;
 
+void optimizeMultiInstruction(Value *opWithInstruction, Value *opConstant, Instruction &inst, std::list<Instruction *> &instructionsToBeRemoved, unsigned typeInstruction)
+{
+    BinaryOperator *binOpWithInstruction = dyn_cast<BinaryOperator>(opWithInstruction);
+
+    if (binOpWithInstruction && binOpWithInstruction->getOpcode() == typeInstruction)
+    {
+        Value *subOpConstant = binOpWithInstruction->getOperand(1);
+        if (subOpConstant == opConstant)
+        {
+
+            inst.replaceAllUsesWith(binOpWithInstruction->getOperand(0));
+            instructionsToBeRemoved.push_back(&inst);
+
+            outs() << "\tElimino istruzione e rimpiazzo con " << *(binOpWithInstruction->getOperand(0)) << " \n";
+        }
+    }
+}
+
 bool runOnBasicBlockMultiInstructon(BasicBlock &BB)
 {
     Function *F = BB.getParent();
@@ -29,38 +47,18 @@ bool runOnBasicBlockMultiInstructon(BasicBlock &BB)
             Value *opLeft = inst.getOperand(0);
             Value *opRight = inst.getOperand(1);
 
-            ConstantInt *constantLeft = dyn_cast<ConstantInt>(opLeft);
             ConstantInt *constantRight = dyn_cast<ConstantInt>(opRight);
-
-            BinaryOperator *binOpLeft = dyn_cast<BinaryOperator>(opLeft);
-            BinaryOperator *binOpRight = dyn_cast<BinaryOperator>(opRight);
 
             switch (opcode)
             {
             case Instruction::Add:
-                outs() << "Add \n";
-
-                if (binOpLeft && binOpLeft->getOpcode() == Instruction::Sub)
-                {
-                    Value *subOpRight = binOpLeft->getOperand(1);
-                    if (subOpRight == opRight)
-                    {
-
-                        // inst.replaceAllUsesWith(binOpLeft->getOperand(0));
-
-                        // elimina instr
-
-                        outs() << "padre  " << val0 << " \n";
-                    }
-                }
-                outs() << "op1: " << *opLeft << " \n";
-                outs() << "op2: " << opRight->getValueID() << *opRight << " \n";
-
+                if (constantRight)
+                    optimizeMultiInstruction(opLeft, opRight, inst, instructionsToBeRemoved, Instruction::Sub);
                 break;
 
             case Instruction::Sub:
-                outs() << "Sub \n";
-
+                if (constantRight)
+                    optimizeMultiInstruction(opLeft, opRight, inst, instructionsToBeRemoved, Instruction::Add);
                 break;
             }
         }
