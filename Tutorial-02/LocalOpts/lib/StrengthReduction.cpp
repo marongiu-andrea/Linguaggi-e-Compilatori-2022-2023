@@ -16,22 +16,33 @@ bool StrengthReductionPass::runOnBasicBlock(BasicBlock &B) {
     {
          // cerco le istruzioni di moltiplicazione 
         Instruction &i = *iter;
+        outs() << "sto iterando..." << "\n";
         if (i.getOpcode() == Instruction::Mul)
         {
+            outs() << "trovata moltiplicazione con " << i.getNumOperands() << " operandi: " << i << "\n";
+            if (isa<Constant>(i.getOperand(1)))
+                outs() << "trovata costante: " << *(i.getOperand(1)) << "\n";
             Value *other_op;
             ConstantInt *const_int = nullptr;
             unsigned int pos = 0;
-            for (auto iter = i.op_begin(); iter != i.op_end(); ++iter)
+            int cnt = 0;
+            for (auto& it : i.operands())
             {
-                if (!(const_int = dyn_cast<ConstantInt>(iter)))
+                outs() << "operando " << cnt << ": " << *it << "\n";
+                if (isa<Constant>(&*it))
+                    outs() << "trovata moltiplicazione con costante: " << *it << "\n";
+                if (nullptr != (const_int = dyn_cast<ConstantInt>(it)))
                 {
+                    outs() << "trovata costante come operatore: " << *it << "\n";
                     break;
                 }
                 ++pos;
+                ++cnt;
             }
             // lavoro con solo due operandi, quindi se pos è 0, l'altro operando è alla posizione 1 e viceversa. per trovare la posizione dell'altro faccio 1-pos
             if (const_int)
             {
+                
                 other_op = i.getOperand(1-pos);
             }
             else
@@ -46,7 +57,10 @@ bool StrengthReductionPass::runOnBasicBlock(BasicBlock &B) {
             }
             else if (const_val.isPowerOf2())
             {
+                // TODO: studiare differenza tra flag nsw e nuw
                 Instruction *shl = BinaryOperator::Create(Instruction::Shl, other_op, ConstantInt::get(const_int->getType(), const_val.logBase2()));
+                shl->insertAfter(&i);
+                outs() << "sto creando una nuova istruzione" << "\n";
                 inst_to_replace.push_back(std::pair<Instruction*, Instruction*>(&i, shl));
             }
         }
@@ -54,7 +68,9 @@ bool StrengthReductionPass::runOnBasicBlock(BasicBlock &B) {
     
     for (auto& instrs : inst_to_replace)
     {
-        ReplaceInstWithInst(instrs.first, instrs.second);
+        outs() << "sostituisco istruzione (" << *(instrs.first) << ") con (" << *(instrs.second) << ")\n";
+        instrs.first->replaceAllUsesWith(instrs.second);
+        instrs.first->eraseFromParent();
     }
 
     return true;
