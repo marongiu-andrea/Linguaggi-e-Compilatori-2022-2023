@@ -1,17 +1,9 @@
 #include "LocalOpts.h"
-#include <algorithm>
-#include <bits/ranges_util.h>
-#include <llvm/ADT/APInt.h>
 #include <llvm/ADT/STLExtras.h>
-#include <llvm/ADT/iterator_range.h>
 #include <llvm/IR/BasicBlock.h>
 #include <llvm/IR/Constants.h>
-#include <llvm/IR/Function.h>
 #include <llvm/IR/Instruction.h>
-#include <llvm/IR/PassManager.h>
-#include <llvm/Support/Casting.h>
 #include <llvm/Transforms/Utils/BasicBlockUtils.h>
-#include <tuple>
 #include <vector>
 
 using namespace llvm;
