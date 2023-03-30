@@ -81,7 +81,7 @@ bool runOnBasicBlockMultiple(BasicBlock &B) {
 
 
     
-    //MARK: implementazione punto 2 della consegna
+    //MARK: implementazione punto 3 della consegna
 
 	ConstantInt* CI1;
 	ConstantInt* CI2;
@@ -114,12 +114,12 @@ bool runOnBasicBlockMultiple(BasicBlock &B) {
 		          	//outs() << userInstruction << "\n";
 		          	if(auto *subInstr = dyn_cast<BinaryOperator>(userInstruction)){ //se sono sicuro di aver trovato uno user che e' una BinaryOperator
 		          		if(subInstr->getOpcode() == Instruction::Sub){//verifico se e' una sottrazione
-		          			ConstantInt* Op2 = dyn_cast<ConstantInt>(subInstr->getOperand(1));
+		          			ConstantInt* Op2 = dyn_cast<ConstantInt>(subInstr->getOperand(1)); //devo farlo cosi' per forza perche' tanto per avere la differenza la costante si trovera' sempre come secondo operando, nel caso ci sia
 		          				if(Op2){ //se il cast e' andato a buon fine
 				      				constantSub = Op2->getValue(); //prendo il valore della costante di tipo APInt
 				      				if(constantAdd == constantSub){ //se i due valori delle costanti coincidono	
-						  				subInstr->replaceAllUsesWith(BO); //sostituisco tutti gli usi con la variabile risultato della somma
-						  				instrToRemove=subInstr; //mi segno quale e' la prossima istruzione da rimuovere
+                                        instrToRemove=subInstr; //mi segno quale e' la prossima istruzione da rimuovere
+						  				subInstr->replaceAllUsesWith(BO->getOperand(1-constantIndexAdd)); //sostituisco tutti gli usi con la variabile risultato della somma
 						  				flag=true;
 						  				continue;
 		          					}
