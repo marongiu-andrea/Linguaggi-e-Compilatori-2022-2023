@@ -1,4 +1,4 @@
-OPTIMIZER := libLocalOpts.so
+OPTIMIZER := libLocalOpts
 OBJs := $(subst .cpp,.o,$(wildcard lib/*.cpp))
 
 LLVM_VERSION ?= 14
@@ -13,3 +13,6 @@ $(OPTIMIZER): $(OBJs)
 .PHONY: clean
 clean:
 	$(RM) $(OPTIMIZER) $(OBJs)
+
+format:
+	clang-format -i -style=LLVM lib/*.cpp lib/*.h --sort-includes
