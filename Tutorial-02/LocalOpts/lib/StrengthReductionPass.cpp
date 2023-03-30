@@ -10,9 +10,11 @@ int getSign(APInt value) {
 }
 
 int64_t getSignedValueWithSaturation(APInt value) {
+  constexpr uint INT64_BITWIDTH = sizeof(int64_t) * CHAR_BIT;
+
   // If we're dealing with a big num, truncate it with signed saturation
-  if (value.getBitWidth() > sizeof(int64_t) * CHAR_BIT)
-    value = value.truncSSat(sizeof(int64_t) * CHAR_BIT);
+  if (value.getBitWidth() > INT64_BITWIDTH)
+    value = value.truncSSat(INT64_BITWIDTH);
 
   // Then get the sign extended value
   return value.getSExtValue();
@@ -21,9 +23,10 @@ int64_t getSignedValueWithSaturation(APInt value) {
 struct FactorDecomposition {
   int64_t mulAbs;
   uint shift;
-  int16_t factorSign;
-  int16_t mulSign;
+  ushort factorSign;
+  ushort mulSign;
 };
+
 FactorDecomposition decomposeFactor(APInt factor) {
   FactorDecomposition ans;
 
@@ -46,9 +49,10 @@ FactorDecomposition decomposeFactor(APInt factor) {
 
   // Create the minimum-sized APInt representing the nearest power of two
   APInt nearestPowerOfTwo = APInt::getOneBitSet(shift + 1, shift);
+  APInt diff = factor - nearestPowerOfTwo;
 
-  ans.mulSign = getSign(nearestPowerOfTwo);
-  ans.mulAbs = llabs(getSignedValueWithSaturation(factor - nearestPowerOfTwo));
+  ans.mulSign = getSign(diff);
+  ans.mulAbs = llabs(getSignedValueWithSaturation(diff));
 
   return ans;
 }
@@ -95,77 +99,110 @@ static Optional<OperandInfo> getLowestMulOperand(Instruction& inst) {
 }
 
 
-#define MUL_FACTOR_THRESH 1
+static Optional<BasicBlock::iterator> mulStrenghtReduction(LLVMContext& ctx, Instruction& instr) {
+  constexpr int MUL_FACTOR_THRESH = 1;
+
+  if (Optional<OperandInfo> opInfo = getLowestMulOperand(instr)) {
+    // At least one operand is a constant.
+
+    if (opInfo->factorDecomp.factorSign == 0) {
+      // Multiplication by 0...
+      // Replace all uses with the constant 0 and delete the instruction.
+      instr.replaceAllUsesWith(opInfo->factor);
+      return instr.eraseFromParent();
+
+    } else if (opInfo->factorDecomp.mulAbs <= MUL_FACTOR_THRESH) {
+      // The multiplication factor is low enough that it makes sense to apply strength reduction.
+      IRBuilder<> builder(&instr);
+      
+      // ans <- otherOperand << shift
+      Value* ans = builder.CreateShl(opInfo->otherOperand, opInfo->factorDecomp.shift);
+
+      if (opInfo->factorDecomp.mulSign > 0) {
+        // ans <- ans + otherOperand * mul
+
+        for (int i = 0; i < opInfo->factorDecomp.mulAbs; ++i)
+          ans = builder.CreateAdd(ans, opInfo->otherOperand);
+
+      } else if (opInfo->factorDecomp.mulSign < 0) {
+        // ans <- ans - otherOperand * mul
+
+        for (int i = 0; i < opInfo->factorDecomp.mulAbs; ++i)
+          ans = builder.CreateSub(ans, opInfo->otherOperand);
+      }
+
+      if (opInfo->factorDecomp.factorSign < 0) {
+        // ans <- -ans = 0 -  ans
+        ans = builder.CreateSub(ConstantInt::get(ctx, APInt(1, 0, false)), ans);
+      }
+
+      instr.replaceAllUsesWith(ans);
+      instr.eraseFromParent();
+
+      return ++BasicBlock::iterator(dyn_cast<Instruction>(ans));
+    }
+  }
+
+  return {};
+}
+
+static Optional<BasicBlock::iterator> divStrengthReduction(LLVMContext& ctx, Instruction& instr) {
+  if (ConstantInt* val1 = dyn_cast<ConstantInt>(instr.getOperand(1))) {
+    bool isUnsignedDiv = instr.getOpcode() == Instruction::UDiv;
+    auto fd = decomposeFactor(val1->getValue());
+
+    // Division can't be reduced unless the denominator is a power of two
+    if (fd.mulSign != 0)
+      return {};
+
+    // Don't apply strength reduction for undefined cases:
+    // division by 0
+    // unsigned division with negative denominator
+    if (fd.factorSign == 0 || (fd.factorSign < 0 && isUnsignedDiv))
+      return {};
+    
+    // We apply strength reduction.
+    IRBuilder<> builder(&instr);
+
+    // ans <- op0 >> shift
+    Value* ans = builder.CreateAShr(instr.getOperand(0), fd.shift);
+
+    if (fd.factorSign < 0) {
+        // ans <- -ans = 0 - ans
+        ans = builder.CreateSub(ConstantInt::get(ctx, APInt(1, 0, false)), ans);
+    }
+
+    // Delete the old div instruction.
+    instr.replaceAllUsesWith(ans);
+    instr.eraseFromParent();
+
+    return ++BasicBlock::iterator(dyn_cast<Instruction>(ans));
+  }
+
+  return {};
+}
 
 static void runOnBasicBlock(BasicBlock& bb) {
   auto ii = bb.begin();
+  LLVMContext& ctx = bb.getContext();
 
   while (ii != bb.end()) {
-    outs() << *ii << "\n";
+    Optional<BasicBlock::iterator> newIi;
+
     switch (ii->getOpcode()) {
       case Instruction::Mul:
-        if (Optional<OperandInfo> opInfo = getLowestMulOperand(*ii)) {
-          if (opInfo->factorDecomp.factorSign == 0) {
-            // Multiplication by 0...
-            // Replace all uses with the constant 0 and delete the instruction.
-            ii->replaceAllUsesWith(opInfo->factor);
-            ii = ii->eraseFromParent();
-            break;
-
-          } else if (opInfo->factorDecomp.mulAbs <= MUL_FACTOR_THRESH) {
-            // The multiplication factor is low enough that it makes sense to apply strength reduction.
-
-            Instruction& oldMulInst = *ii;
-
-            IRBuilder<> builder(&(*ii));
-            
-            // ans <- otherOperand << shift
-            Value* ans = builder.CreateShl(opInfo->otherOperand, opInfo->factorDecomp.shift);
-
-            if (opInfo->factorDecomp.mulSign > 0) {
-              // ans <- ans + otherOperand * mul
-
-              for (int i = 0; i < opInfo->factorDecomp.mulAbs; ++i)
-                ans = builder.CreateAdd(ans, opInfo->otherOperand);
-
-            } else if (opInfo->factorDecomp.mulSign < 0) {
-              // ans <- ans - otherOperand * mul
-
-              for (int i = 0; i < opInfo->factorDecomp.mulAbs; ++i)
-                ans = builder.CreateSub(ans, opInfo->otherOperand);
-            }
-
-            if (opInfo->factorDecomp.factorSign < 0) {
-              // ans <- -ans = 0 -  ans
-              ans = builder.CreateSub(ConstantInt::get(bb.getContext(), APInt(1, 0, false)), ans);
-            }
-
-            oldMulInst.replaceAllUsesWith(ans);
-            oldMulInst.eraseFromParent();
-            break;
-          }
-        }
-
+        newIi = mulStrenghtReduction(ctx, *ii);
         break;
 
       case Instruction::SDiv:
       case Instruction::UDiv:
-        /*
-        x = the first operand
-        y = the second operand
-
-        if y.mulAbs == 0:
-          delete ans = x * y
-          add ans = x >> y.shift
-
-          if y.factorSign < 0:
-            add ans = 0 - ans
-        */
-      
-        break;
+        newIi = divStrengthReduction(ctx, *ii);
     }
 
-    ++ii;
+    if (newIi.hasValue())
+      ii = *newIi;
+    else
+      ++ii;
   }
 }
 
