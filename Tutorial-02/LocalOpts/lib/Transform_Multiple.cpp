@@ -1,5 +1,6 @@
 #include "LocalOpts.h"
 #include "llvm/IR/InstrTypes.h"
+#include <vector>
 
 using namespace llvm;
 
@@ -85,12 +86,13 @@ bool runOnBasicBlockMultiple(BasicBlock &B) {
 
 	ConstantInt* CI1;
 	ConstantInt* CI2;
-	Instruction* instrToRemove;
+	Instruction* instrToRemove_;
 	APInt constantSub;
 	APInt constantAdd;
 	int constantIndexAdd=-1;
 	int constantIndexSub=-1;
 	bool flag=false;
+  std::vector<Instruction*> instrToRemove;
     for (auto &instr : B) {
           if(auto *BO = dyn_cast<BinaryOperator>(&instr)){
             if(BO->getOpcode() == Instruction::Add){ //Verifico se si tratta di una ADD
@@ -107,7 +109,7 @@ bool runOnBasicBlockMultiple(BasicBlock &B) {
               	//outs() << constantAdd << "\n";
 		          for (auto instrUsed = BO->user_begin(); instrUsed != BO->user_end(); ++instrUsed){ //scorro tutti gli user della somma
 		          	if (flag==true){
-    					instrToRemove->eraseFromParent();
+    					instrToRemove_->eraseFromParent();
     					flag=false;
     				}
 		          	Instruction* userInstruction = dyn_cast<Instruction>(*instrUsed);
@@ -118,7 +120,7 @@ bool runOnBasicBlockMultiple(BasicBlock &B) {
 		          				if(Op2){ //se il cast e' andato a buon fine
 				      				constantSub = Op2->getValue(); //prendo il valore della costante di tipo APInt
 				      				if(constantAdd == constantSub){ //se i due valori delle costanti coincidono	
-                                        instrToRemove=subInstr; //mi segno quale e' la prossima istruzione da rimuovere
+                        instrToRemove.push_back(subInstr); //mi segno quale e' la prossima istruzione da rimuovere, non posso rimuoverla subito perchè in Foo.ll istruzioni possono dipendere da istruzioni contenute in questo vettore
 						  				subInstr->replaceAllUsesWith(BO->getOperand(1-constantIndexAdd)); //sostituisco tutti gli usi con la variabile risultato della somma
 						  				flag=true;
 						  				continue;
@@ -130,6 +132,10 @@ bool runOnBasicBlockMultiple(BasicBlock &B) {
               }
             }
 		  }
+    }
+    
+    for (auto instr : instrToRemove) {
+      instr->eraseFromParent();
     }
 
     return true;
