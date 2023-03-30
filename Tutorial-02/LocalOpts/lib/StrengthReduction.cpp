@@ -46,7 +46,7 @@ bool runOnBB(BasicBlock &bb)
 
               int nearestLog2 = val.nearestLogBase2();    
 
-              APInt remainder = val- pow(2,nearestLog2);
+              APInt remainder = val - pow(2,nearestLog2);
               
               outs() << "nearest Log2: " << nearestLog2 << "\n";
               outs() << "remainder: " << remainder << "\n";
