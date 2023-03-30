@@ -100,11 +100,13 @@ bool runOnBasicBlockMultiInstr(BasicBlock &B) {
     */
    //variabile di posizione dell'operando neutro
    std::vector<Instruction*> daEliminare;
-    bool debug = true;
-    int theNumb, numeroNumb, valoreIntero;
+   //vuoi messaggi per capire dove sei
+    bool debug = false;
+    int theNumb, numeroNumb, valoreIntero, theNumb2;
     numeroNumb = 0;
     Value* op0;
     Value* op1;
+    Value* opNuovo;
     Value* opReg;
     unsigned tipoistr;
     
@@ -158,25 +160,46 @@ bool runOnBasicBlockMultiInstr(BasicBlock &B) {
               //intero dell'uso di riferimento
               //se è così allora posso propagare opReg al posto del valore del nuovo utilizzatore
               //a=b+1, c=a-1 > a=b+1; c=b
-
+              theNumb2=-1;
               //controllo che sia l'operazione opposta all'istruzione
               //Sta roba non funziona e che cazzo???
-              if(Instruction *userInst = dyn_cast<Instruction>(uso)){
+              if(Instruction *userInst = dyn_cast<Instruction>(*uso)){
+                if(isOpOpposta(I->getOpcode(),userInst->getOpcode())){
+                  if(debug)
+                    printf("E' opposto \n");
+                  
+                  if(ConstantInt *C = dyn_cast<ConstantInt>(userInst->getOperand(0))){
+                    theNumb2=0;
+                  }else if(ConstantInt *C = dyn_cast<ConstantInt>(userInst->getOperand(1))){
+                    theNumb2=1;
+                  }
+                  
+                  if(theNumb2 != -1){
+                    if(I->getOperand(theNumb) == userInst->getOperand(theNumb2)){
+                      if(debug)
+                        printf("E' da eliminare \n");
 
+                      userInst->replaceAllUsesWith(opReg);
+                      daEliminare.push_back(userInst);
+                    }
+                  }
+
+                }
               }
               
 
             }
-          }*/
+          }
         }
       }
 
           
         
     };
-    /*for(int i=0; i < daEliminare.size(); i++){
+
+    for(int i=0; i < daEliminare.size(); i++){
       daEliminare[i]->eraseFromParent();
-    }*/
+    }
 
     return true;
   }
