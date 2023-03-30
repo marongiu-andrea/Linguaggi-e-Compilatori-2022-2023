@@ -1,4 +1,4 @@
-OPTIMIZER := libLocalOpts
+OPTIMIZER := libLocalOpts.so
 OBJs := $(subst .cpp,.o,$(wildcard lib/*.cpp))
 
 LLVM_VERSION ?= 14
