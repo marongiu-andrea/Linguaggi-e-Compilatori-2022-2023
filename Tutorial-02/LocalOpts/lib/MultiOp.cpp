@@ -3,12 +3,6 @@
 
 using namespace llvm;
 
-/*
-        var     cost
-b   =   a   +   1;
-
-c   =   b   -   1               -->            c=a*/
-
 bool runOnBBMultiOP(BasicBlock &bb)
 {
   std::list<Instruction*> toBeRemoved;
