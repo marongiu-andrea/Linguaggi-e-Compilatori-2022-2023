@@ -86,12 +86,10 @@ bool runOnBasicBlockMultiple(BasicBlock &B) {
 
 	ConstantInt* CI1;
 	ConstantInt* CI2;
-	Instruction* instrToRemove_;
 	APInt constantSub;
 	APInt constantAdd;
 	int constantIndexAdd=-1;
 	int constantIndexSub=-1;
-	bool flag=false;
   std::vector<Instruction*> instrToRemove;
     for (auto &instr : B) {
           if(auto *BO = dyn_cast<BinaryOperator>(&instr)){
@@ -108,10 +106,6 @@ bool runOnBasicBlockMultiple(BasicBlock &B) {
               	}
               	//outs() << constantAdd << "\n";
 		          for (auto instrUsed = BO->user_begin(); instrUsed != BO->user_end(); ++instrUsed){ //scorro tutti gli user della somma
-		          	if (flag==true){
-    					instrToRemove_->eraseFromParent();
-    					flag=false;
-    				}
 		          	Instruction* userInstruction = dyn_cast<Instruction>(*instrUsed);
 		          	//outs() << userInstruction << "\n";
 		          	if(auto *subInstr = dyn_cast<BinaryOperator>(userInstruction)){ //se sono sicuro di aver trovato uno user che e' una BinaryOperator
@@ -122,7 +116,6 @@ bool runOnBasicBlockMultiple(BasicBlock &B) {
 				      				if(constantAdd == constantSub){ //se i due valori delle costanti coincidono	
                         instrToRemove.push_back(subInstr); //mi segno quale e' la prossima istruzione da rimuovere, non posso rimuoverla subito perchè in Foo.ll istruzioni possono dipendere da istruzioni contenute in questo vettore
 						  				subInstr->replaceAllUsesWith(BO->getOperand(1-constantIndexAdd)); //sostituisco tutti gli usi con la variabile risultato della somma
-						  				flag=true;
 						  				continue;
 		          					}
 		          				}
