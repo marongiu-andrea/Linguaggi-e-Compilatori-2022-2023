@@ -9,7 +9,6 @@ class TransformPass final : public llvm::PassInfoMixin<TransformPass>
   public:
     llvm::PreservedAnalyses run(llvm::Module &, llvm::ModuleAnalysisManager &);
 
-
 }; // class AlgebraicIdentityPass
 
 #endif

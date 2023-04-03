@@ -23,7 +23,9 @@ extern "C" PassPluginLibraryInfo llvmGetPassPluginInfo() {
 		// LoopPass
 		// RegionPass
 		// BasicBlockPass
-		[](StringRef Name, ModulePassManager &MPM,ArrayRef<PassBuilder::PipelineElement>) -> bool 
+		[](StringRef Name, 
+      ModulePassManager &MPM,
+      ArrayRef<PassBuilder::PipelineElement>) -> bool 
       {
         if (Name == "transform") 
         {
