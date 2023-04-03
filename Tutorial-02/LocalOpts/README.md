@@ -11,19 +11,8 @@ Nel caso di addizione e sottrazione si trova come
 $$x = x + 0$$
 $$x = x - 0$$
 Nel caso di motliplicazione e divisione invece avremo
-$$ x = x * 1 $$
-$$ x = x / 1$$
-Nel caso trovassimo istruzioni del genere le elimineremo.
-
-<h2>Identità algebrica</h2>
-
-Se si trova un'identità algebrica allora conviene semplificarla in quanto è un'istruzione inutile. <br>
-Nel caso di addizione e sottrazione si trova come
-$$x = x + 0$$
-$$x = x - 0$$
-Nel caso di motliplicazione e divisione invece avremo
-$$ x = x * 1 $$
-$$ x = x / 1$$
+$$x = x * 1$$
+$$x = x / 1$$
 Nel caso trovassimo istruzioni del genere le elimineremo.
 
 <h2> Strength Reduction </h2>
