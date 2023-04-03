@@ -4,12 +4,17 @@
 
 using namespace llvm;
 
-
+/**
+ * @returns The sign of the parameter; equivalent to "value / abs(value)"
+*/
 int getSign(APInt value) {
   return value.isZero()? 0 : (value.isNegative()? -1 : 1);
 }
 
-int64_t getSignedValueWithSaturation(APInt value) {
+/**
+ * @returns The APInt value clamped to the int64 range, returned as an int64.
+*/
+int64_t clampToInt64(APInt value) {
   constexpr uint INT64_BITWIDTH = sizeof(int64_t) * CHAR_BIT;
 
   // If we're dealing with a big num, truncate it with signed saturation
@@ -21,12 +26,24 @@ int64_t getSignedValueWithSaturation(APInt value) {
 }
 
 struct FactorDecomposition {
-  int64_t mulAbs;
   uint shift;
+
+  // The original sign of the factor
   short factorSign;
+
+  // The absolute value of the mul component.
+  int64_t mulAbs;
+
+  // The sign of the mul component.
   short mulSign;
 };
 
+/**
+ * @returns The factor decomposition of factor, into a shift and mul component.
+ *          For example, 14 will be decomposed into mul = -2 and shift = +4,
+ *          because multiplying a value x by 14 is equivalent
+ *          to (x << 4) - x * 2 = (x << 4) - x - x
+*/
 FactorDecomposition decomposeFactor(APInt factor) {
   FactorDecomposition ans;
 
@@ -37,6 +54,7 @@ FactorDecomposition decomposeFactor(APInt factor) {
   if (ans.factorSign == 0) {
     ans.shift = 0;
     ans.mulAbs = 0;
+    ans.mulSign = 0;
     return ans;
   }
 
@@ -52,19 +70,26 @@ FactorDecomposition decomposeFactor(APInt factor) {
   APInt diff = factor - nearestPowerOfTwo;
 
   ans.mulSign = getSign(diff);
-  ans.mulAbs = llabs(getSignedValueWithSaturation(diff));
+  ans.mulAbs = llabs(clampToInt64(diff));
 
   return ans;
 }
 
 
-
+/**
+ * @brief The operands of an instruction:
+ *        Identifies the (constant) factor and the other operand.
+ *        Also contains the factor decomposition of the factor.
+*/
 struct OperandInfo {
   FactorDecomposition factorDecomp;
   Value* factor;
   Value* otherOperand;
 };
 
+/**
+ * @brief In a commutative operation, identifies the (constant) factor with the factor decomposition having the lowest mul component.
+*/
 static Optional<OperandInfo> getLowestMulOperand(Instruction& inst) {
   OperandInfo ans;
 
@@ -99,7 +124,10 @@ static Optional<OperandInfo> getLowestMulOperand(Instruction& inst) {
     return {};
 }
 
-
+/**
+ * @brief Applies strength reduction to a mul operation.
+ * @returns What the next analyzed instruction should be, or an empty optional if it did not change the flow of the analysis.
+*/
 static Optional<BasicBlock::iterator> mulStrenghtReduction(LLVMContext& ctx, Instruction& instr) {
   /* 
   MUL_FACTOR_THRESH is the maximum multiplier factor,
@@ -155,6 +183,10 @@ static Optional<BasicBlock::iterator> mulStrenghtReduction(LLVMContext& ctx, Ins
   return {};
 }
 
+/**
+ * @brief Applies strength reduction to a div operation.
+ * @returns What the next analyzed instruction should be, or an empty optional if it did not change the flow of the analysis.
+*/
 static Optional<BasicBlock::iterator> divStrengthReduction(LLVMContext& ctx, Instruction& instr) {
   if (ConstantInt* val1 = dyn_cast<ConstantInt>(instr.getOperand(1))) {
     bool isUnsignedDiv = instr.getOpcode() == Instruction::UDiv;

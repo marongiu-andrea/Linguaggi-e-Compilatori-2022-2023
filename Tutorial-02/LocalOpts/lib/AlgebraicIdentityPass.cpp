@@ -44,7 +44,10 @@ static Value* get_first_operand_if_second_is(Instruction& instruction, const std
   return nullptr;
 }
 
-
+/**
+ * @returns If the instruction has to be deleted, returns the value which should replace all of its uses.
+ *          Otherwise, it returns a null pointer.
+*/
 static Value* shouldBeReplacedWith(Instruction& inst) {
   switch (inst.getOpcode()) {
     // With commutativity
