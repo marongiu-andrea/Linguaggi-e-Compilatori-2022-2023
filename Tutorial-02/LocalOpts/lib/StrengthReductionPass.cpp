@@ -23,8 +23,8 @@ int64_t getSignedValueWithSaturation(APInt value) {
 struct FactorDecomposition {
   int64_t mulAbs;
   uint shift;
-  ushort factorSign;
-  ushort mulSign;
+  short factorSign;
+  short mulSign;
 };
 
 FactorDecomposition decomposeFactor(APInt factor) {
@@ -85,6 +85,7 @@ static Optional<OperandInfo> getLowestMulOperand(Instruction& inst) {
 
     // If the first operand was not a constant or this constant's mulAbs factor is lower
     if (!ansValid || op1fd.mulAbs < ans.factorDecomp.mulAbs) {
+      // Then return this decomposition instead
       ans.factorDecomp = op1fd;
       ans.factor = op1;
       ans.otherOperand = op0;
@@ -100,6 +101,13 @@ static Optional<OperandInfo> getLowestMulOperand(Instruction& inst) {
 
 
 static Optional<BasicBlock::iterator> mulStrenghtReduction(LLVMContext& ctx, Instruction& instr) {
+  /* 
+  MUL_FACTOR_THRESH is the maximum multiplier factor,
+  aka the maximum amount of adds/subs to put after a shift to replace a mul.
+  For example x * 14:
+  with THRESH = 1, no strength reduction is applied.
+  with THRESH = 2, becomes x << 4 - x - x
+  */
   constexpr int MUL_FACTOR_THRESH = 1;
 
   if (Optional<OperandInfo> opInfo = getLowestMulOperand(instr)) {
@@ -131,6 +139,7 @@ static Optional<BasicBlock::iterator> mulStrenghtReduction(LLVMContext& ctx, Ins
           ans = builder.CreateSub(ans, opInfo->otherOperand);
       }
 
+      // We also flip the result sign if the factor sign is negative.
       if (opInfo->factorDecomp.factorSign < 0) {
         // ans <- -ans = 0 -  ans
         ans = builder.CreateSub(ConstantInt::get(ctx, APInt(1, 0, false)), ans);
@@ -189,6 +198,11 @@ static void runOnBasicBlock(BasicBlock& bb) {
   while (ii != bb.end()) {
     Optional<BasicBlock::iterator> newIi;
 
+    /*
+     Functions should return an empty optional
+     if they do not change which instruction should be considered next,
+     otherwise they should return a new iterator.
+    */
     switch (ii->getOpcode()) {
       case Instruction::Mul:
         newIi = mulStrenghtReduction(ctx, *ii);
@@ -210,11 +224,6 @@ PreservedAnalyses StrengthReductionPass::run(Function &F,
                                              FunctionAnalysisManager &) {
   // TODO: Implement the pass
   outs() << "Strength Reduction\n";
-
-
-
-  //FactorDecomposition dec = decomposeFactor(factor);
-  //outs() << dec.mulAbs << ", " << dec.shift << ", " << dec.factorSign << "\n";
 
   for (auto bb = F.begin(); bb != F.end(); ++bb)
     runOnBasicBlock(*bb);
