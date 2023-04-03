@@ -128,7 +128,7 @@ static Optional<OperandInfo> getLowestMulOperand(Instruction& inst) {
  * @brief Applies strength reduction to a mul operation.
  * @returns What the next analyzed instruction should be, or an empty optional if it did not change the flow of the analysis.
 */
-static Optional<BasicBlock::iterator> mulStrenghtReduction(LLVMContext& ctx, Instruction& instr) {
+static Optional<BasicBlock::iterator> mulStrengthReduction(LLVMContext& ctx, Instruction& instr) {
   /* 
   MUL_FACTOR_THRESH is the maximum multiplier factor,
   aka the maximum amount of adds/subs to put after a shift to replace a mul.
@@ -237,7 +237,7 @@ static void runOnBasicBlock(BasicBlock& bb) {
     */
     switch (ii->getOpcode()) {
       case Instruction::Mul:
-        newIi = mulStrenghtReduction(ctx, *ii);
+        newIi = mulStrengthReduction(ctx, *ii);
         break;
 
       case Instruction::SDiv:
