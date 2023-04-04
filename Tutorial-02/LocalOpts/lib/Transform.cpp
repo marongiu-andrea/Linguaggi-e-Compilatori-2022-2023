@@ -65,10 +65,6 @@ bool runOnBasicBlock(BasicBlock &B)
   return true;
 }
 
-
-
-
-
 bool runOnFunction(Function &F)
 {
   bool Transformed = false;

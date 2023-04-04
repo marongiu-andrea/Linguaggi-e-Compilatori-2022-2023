@@ -7,8 +7,20 @@
 class TransformPass final : public llvm::PassInfoMixin<TransformPass> 
 {
   public:
-    llvm::PreservedAnalyses run(llvm::Module &, llvm::ModuleAnalysisManager &);
+    llvm::PreservedAnalyses run(llvm::Module&, llvm::ModuleAnalysisManager&);
 
-}; // class AlgebraicIdentityPass
+};
+
+class AlgebricIdentityPass final : public llvm::PassInfoMixin<TransformPass> 
+{
+  public:
+    llvm::PreservedAnalyses run(llvm::Module&, llvm::ModuleAnalysisManager&);
+}; 
+
+class MultiInstructionPass final : public llvm::PassInfoMixin<TransformPass> 
+{
+  public:
+    llvm::PreservedAnalyses run(llvm::Module&, llvm::ModuleAnalysisManager&);
+}; 
 
 #endif
