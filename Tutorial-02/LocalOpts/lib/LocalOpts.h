@@ -8,10 +8,15 @@ class TransformPass final : public llvm::PassInfoMixin<TransformPass>
 {
   public:
     llvm::PreservedAnalyses run(llvm::Module&, llvm::ModuleAnalysisManager&);
-
 };
 
 class AlgebricIdentityPass final : public llvm::PassInfoMixin<TransformPass> 
+{
+  public:
+    llvm::PreservedAnalyses run(llvm::Module&, llvm::ModuleAnalysisManager&);
+}; 
+
+class StrengthReductionPass final : public llvm::PassInfoMixin<TransformPass> 
 {
   public:
     llvm::PreservedAnalyses run(llvm::Module&, llvm::ModuleAnalysisManager&);

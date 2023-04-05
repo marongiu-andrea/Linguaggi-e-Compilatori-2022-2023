@@ -24,17 +24,17 @@ extern "C" PassPluginLibraryInfo llvmGetPassPluginInfo() {
       // BasicBlockPass
       [](StringRef Name, ModulePassManager &MPM,ArrayRef<PassBuilder::PipelineElement>) -> bool 
       {
-        if (Name == "algebric_identity") 
+        if (Name == "ai") 
         {
           MPM.addPass(AlgebricIdentityPass());
           return true;
         }
-        if (Name == "strength_reduction") 
+        if (Name == "sr") 
         {
-          MPM.addPass(TransformPass());
+          MPM.addPass(StrengthReductionPass());
           return true;
         }
-        if (Name == "multi_instruction") 
+        if (Name == "mi") 
         {
           MPM.addPass(MultiInstructionPass());
           return true;
