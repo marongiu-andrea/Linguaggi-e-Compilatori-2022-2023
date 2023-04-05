@@ -1,6 +1,6 @@
 #! /bin/bash
 
-pass=$1 
+pass=$1
 
 if [[ ! -z $pass ]]
 then

@@ -6,83 +6,56 @@ using namespace llvm;
 
 bool algebricIdentity(BasicBlock& B) 
 {
-  int operands;
-
+  // itero sulle istruzioni del basic block
   for(BasicBlock::iterator itBB = B.begin(); itBB != B.end(); ++itBB) 
   {
     Instruction& instruction = *itBB;
-    operands = 0;
+    outs() << instruction << "\n";
+
+    if(instruction.getNumOperands() <= 1) continue;
+
+    Value* op1 = instruction.getOperand(0);
+    Value* op2 = instruction.getOperand(1);
+    outs() << "\toperand 1=" << op1 << "\n";
+    outs() << "\toperand 2=" << op2 << "\n";
 
     const uint32_t opcode = instruction.getOpcode();
-    
     switch(opcode)
     {
       case Instruction::Mul:  {
+        const ConstantInt* valNum = dyn_cast<ConstantInt>(op1);
+        
+        // case 1 x var
+        if (valNum && valNum->getValue() == 1) 
+          instruction.replaceAllUsesWith(op2);
+        // case var x 1
+        else
+          instruction.replaceAllUsesWith(op1);
 
-        for (auto itInstr = instruction.op_begin(); itInstr != instruction.op_end(); ++itInstr) 
-        {
-          const Value* op = *itInstr;
-          const ConstantInt* num = dyn_cast<ConstantInt>(op);
+        --itBB;
+        instruction.eraseFromParent();
 
-          if (num && num->getValue() == 1) 
-          {
-            instruction.replaceAllUsesWith(instruction.getOperand(1 - operands));
-            --itBB;
-            instruction.eraseFromParent();
-          } 
-          else 
-            operands++;
-        }
         break;
       }
       
       case Instruction::Add:  {
-
-        for (auto itInstr = instruction.op_begin(); itInstr != instruction.op_end(); ++itInstr) 
-        {
-          const Value* op = *itInstr;
-          const ConstantInt* num = dyn_cast<ConstantInt>(op);
-
-          if (num && num->getValue() == 0) 
-          {
-            instruction.replaceAllUsesWith(instruction.getOperand(1 - operands));
-            --itBB;
-            instruction.eraseFromParent();
-          } 
-          else 
-            operands++;
-        }
-      
-        break;
-      }
-
-      case Instruction::Sub:  {
-        const Value* op = instruction.getOperand(1); 
-        const ConstantInt* num = dyn_cast<ConstantInt>(op);
+        const ConstantInt* valNum = dyn_cast<ConstantInt>(op1);
         
-        if (num && num->getValue() == 0) 
-        {
-          instruction.replaceAllUsesWith(instruction.getOperand(0));
-          --itBB;
-          instruction.eraseFromParent();
-        }
+        // case 0 + var
+        if (valNum && valNum->getValue() == 0) 
+          instruction.replaceAllUsesWith(op2);
+        // case var + 0
+        else
+          instruction.replaceAllUsesWith(op1);
 
-        break;
-      }
-
-      case Instruction::SDiv: {
-        const Value* op = instruction.getOperand(1); 
-        const ConstantInt* num = dyn_cast<ConstantInt>(op);
-        if (num && num->getValue() == 1)
-        {
-          instruction.replaceAllUsesWith(instruction.getOperand(0));
-          --itBB;
-          instruction.eraseFromParent();
-        }
+        --itBB;
+        instruction.eraseFromParent();
 
         break;
       }
     } 
+
+    outs() << "\n ---------------- \n";
   }
   return true;
 }
