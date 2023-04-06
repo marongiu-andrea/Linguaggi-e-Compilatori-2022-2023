@@ -4,6 +4,7 @@
 #include <llvm/ADT/APInt.h>
 #include <llvm/Transforms/Utils/BasicBlockUtils.h>
 #include <llvm/IR/Instruction.h>
+#include <llvm/IR/IRBuilder.h>
 #include <cmath>
 
 using namespace llvm;
@@ -16,24 +17,16 @@ bool StrengthReductionPass::runOnBasicBlock(BasicBlock &B) {
     {
          // cerco le istruzioni di moltiplicazione 
         Instruction &i = *iter;
-        outs() << "sto iterando..." << "\n";
         if (i.getOpcode() == Instruction::Mul)
         {
-            outs() << "trovata moltiplicazione con " << i.getNumOperands() << " operandi: " << i << "\n";
-            if (isa<Constant>(i.getOperand(1)))
-                outs() << "trovata costante: " << *(i.getOperand(1)) << "\n";
             Value *other_op;
             ConstantInt *const_int = nullptr;
             unsigned int pos = 0;
             int cnt = 0;
             for (auto& it : i.operands())
             {
-                outs() << "operando " << cnt << ": " << *it << "\n";
-                if (isa<Constant>(&*it))
-                    outs() << "trovata moltiplicazione con costante: " << *it << "\n";
                 if (nullptr != (const_int = dyn_cast<ConstantInt>(it)))
                 {
-                    outs() << "trovata costante come operatore: " << *it << "\n";
                     break;
                 }
                 ++pos;
@@ -57,18 +50,17 @@ bool StrengthReductionPass::runOnBasicBlock(BasicBlock &B) {
             }
             else if (const_val.isPowerOf2())
             {
-                // TODO: studiare differenza tra flag nsw e nuw
-                Instruction *shl = BinaryOperator::Create(Instruction::Shl, other_op, ConstantInt::get(const_int->getType(), const_val.logBase2()));
-                shl->insertAfter(&i);
-                outs() << "sto creando una nuova istruzione" << "\n";
-                inst_to_replace.push_back(std::pair<Instruction*, Instruction*>(&i, shl));
+                // utilizzo classe builder di LLVM: l'istruzione passata diventa il punto di inserimento per nuove istruzioni
+                IRBuilder builder(&i);
+                // considero consistenza dei flag nsw e nuw della nuova istruzione con quella che andrò a sostituire
+                Value *shl = builder.CreateShl(other_op, const_val.logBase2(), "sr", i.hasNoUnsignedWrap(), i.hasNoSignedWrap());
+                inst_to_replace.push_back(std::pair<Instruction*, Instruction*>(&i, cast<Instruction>(shl)));
             }
         }
     }
     
     for (auto& instrs : inst_to_replace)
     {
-        outs() << "sostituisco istruzione (" << *(instrs.first) << ") con (" << *(instrs.second) << ")\n";
         instrs.first->replaceAllUsesWith(instrs.second);
         instrs.first->eraseFromParent();
     }
