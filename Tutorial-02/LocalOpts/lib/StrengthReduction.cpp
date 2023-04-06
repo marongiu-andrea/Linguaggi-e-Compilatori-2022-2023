@@ -56,6 +56,28 @@ bool StrengthReductionPass::runOnBasicBlock(BasicBlock &B) {
                 Value *shl = builder.CreateShl(other_op, const_val.logBase2(), "sr", i.hasNoUnsignedWrap(), i.hasNoSignedWrap());
                 inst_to_replace.push_back(std::pair<Instruction*, Instruction*>(&i, cast<Instruction>(shl)));
             }
+            
+            else if (const_val == (1 << const_val.nearestLogBase2()) + 1)
+            {
+                IRBuilder builder(&i);
+                Value *shl = builder.CreateShl(other_op, const_val.logBase2(), "sr", i.hasNoUnsignedWrap(), i.hasNoSignedWrap());
+                // la costante per cui viene moltiplicato il valore è 1 in più di una potenza di 2 -> ottengo il risultato della moltiplicazione
+                // aggiungendo il valore dell'operando non costante al risultato della shift
+                Value *addV = builder.CreateAdd(other_op, shl, "addv", i.hasNoUnsignedWrap(), i.hasNoSignedWrap());
+                outs() << "sto creando una nuova istruzione" << "\n";
+                inst_to_replace.push_back(std::pair<Instruction*, Instruction*>(&i, cast<Instruction>(addV)));
+            }
+            else if (const_val == (1 << const_val.nearestLogBase2()) - 1)
+            {
+                IRBuilder builder(&i);
+                // considero consistenza dei flag nsw e nuw della nuova istruzione con quella che andrò a sostituire
+                Value *shl = builder.CreateShl(other_op, const_val.logBase2(), "sr", i.hasNoUnsignedWrap(), i.hasNoSignedWrap());
+                // la costante per cui viene moltiplicato il valore è 1 meno di una potenza di 2 -> ottengo il risultato della moltiplicazione
+                // sottraendo il valore dell'operando non costante al risultato della shift
+                Value *subV = builder.CreateSub(other_op, shl, "subv", i.hasNoUnsignedWrap(), i.hasNoSignedWrap());
+                outs() << "sto creando una nuova istruzione" << "\n";
+                inst_to_replace.push_back(std::pair<Instruction*, Instruction*>(&i, cast<Instruction>(subV)));
+            }
         }
     }
     
