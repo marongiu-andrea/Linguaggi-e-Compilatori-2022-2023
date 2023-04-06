@@ -6,7 +6,7 @@ using namespace llvm;
  * controls left operand of instruction passed and replace usee of passed instruction with operand 1 of usee operands if both instructions
  * have same constant but different operation 
 */
-bool checkUseeInstruction(Value *opL, Value *opR, Instruction &inst, unsigned int opcode){
+static bool checkUseeInstruction(Value *opL, Value *opR, Instruction &inst, unsigned int opcode){
   BinaryOperator *opLbinaryIns = dyn_cast<BinaryOperator>(opL);
   if (opLbinaryIns) {
     unsigned int opcodeopL = opLbinaryIns->getOpcode();
@@ -34,7 +34,7 @@ bool checkUseeInstruction(Value *opL, Value *opR, Instruction &inst, unsigned in
  * this function performs iteration on instructions of basic block, checks instruction if it is addition or subtraction
  *  
 */
-bool runOnBasicBlockMulti(BasicBlock &B){
+static bool runOnBasicBlock(BasicBlock &B){
   std::vector<Instruction*> instRemove;
 
   for (auto &inst : B) {
@@ -63,11 +63,11 @@ bool runOnBasicBlockMulti(BasicBlock &B){
   return true;
 }
 
-bool runOnFunctionMulti(Function &F){
+static bool runOnFunction(Function &F){
   bool Transformed = false;
 
   for (auto Iter = F.begin(); Iter != F.end(); ++Iter) {
-    if (runOnBasicBlockMulti(*Iter)) {
+    if (runOnBasicBlock(*Iter)) {
       Transformed = true;
     }
   }
@@ -80,11 +80,14 @@ PreservedAnalyses MultiInstructionOperationsPass::run([[maybe_unused]] Module &M
 
   outs() << "MultiInstructionOperations\n";
 
+  bool transformed = false;
   for (auto Iter = M.begin(); Iter != M.end(); ++Iter) {
-    if (runOnFunctionMulti(*Iter)) {
-      return PreservedAnalyses::none();
-    }
+    transformed |= runOnFunction(*Iter);
   }
-  
-  return PreservedAnalyses::none();
+
+  if (transformed) {
+    return PreservedAnalyses::none();
+  } else {
+    return PreservedAnalyses::all();
+  }
 }
