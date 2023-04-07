@@ -3,11 +3,11 @@
 
 using namespace llvm;
 
+// Prende valore e ritorna con la potenza 2
 bool isPowerOfTwoAlgebraic(ConstantInt *C) {
 		return C->getValue().isPowerOf2();
 	}
 
-//MARK: passo di ottimizzazione 
 bool runOnBasicBlockAlgebraic(BasicBlock &B) {
 
 
@@ -15,6 +15,7 @@ bool runOnBasicBlockAlgebraic(BasicBlock &B) {
 	int counter=0;
 	std::vector <BinaryOperator*> mulToRemove;
 	std::vector <BinaryOperator*> shiftToAdd;
+	// ciclo per modificare l'istruzione
     for (auto &instr : B) {
 		if(auto *BO = dyn_cast<BinaryOperator>(&instr)){
 			index=-1;
@@ -54,7 +55,7 @@ bool runOnBasicBlockAlgebraic(BasicBlock &B) {
     return true;
   }
 
-
+// Controlla se la funzione è stata trasdormata o meno
   bool runOnFunctionAlgebraic(Function &F) {
     bool Transformed = false;
 
@@ -76,7 +77,7 @@ bool runOnBasicBlockAlgebraic(BasicBlock &B) {
 PreservedAnalyses AlgebraicPass::run([[maybe_unused]] Module &M,
                                              ModuleAnalysisManager &) {
 
-  // Un semplice passo di esempio di manipolazione della IR
+  // Un passo di esempio di manipolazione della IR
   for (auto Iter = M.begin(); Iter != M.end(); ++Iter) {
     if (runOnFunctionAlgebraic(*Iter)) {
       return PreservedAnalyses::none();
