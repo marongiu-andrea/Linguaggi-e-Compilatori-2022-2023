@@ -35,6 +35,8 @@ define dso_local void @foo(i32 noundef %0) {
   %16 = mul nsw i32 %15, 7 ; strength reduction (with sub)
   %17 = add nsw i32 4, 0 ; algebraic identity with two constants
   %18 = sub nsw i32 %17, 5
+  %19 = mul nsw i32 2, 8 ; strength reduction with two constants
+  %20 = add nsw i32 %19, 3
   ret void
 }
 
