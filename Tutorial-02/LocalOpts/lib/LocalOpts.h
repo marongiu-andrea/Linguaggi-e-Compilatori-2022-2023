@@ -17,12 +17,6 @@ class LocalOpts
     llvm::PreservedAnalyses run(llvm::Module&, llvm::ModuleAnalysisManager&);
 };
 
-class TransformPass final : public llvm::PassInfoMixin<TransformPass>, public LocalOpts
-{
-  protected:
-    bool runOnBasicBlock(llvm::BasicBlock&) override;
-};
-
 class AlgebraicIdentityPass final : public llvm::PassInfoMixin<AlgebraicIdentityPass>, public LocalOpts
 {
   protected:
