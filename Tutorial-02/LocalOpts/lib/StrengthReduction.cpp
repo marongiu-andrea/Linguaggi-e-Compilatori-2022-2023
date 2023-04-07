@@ -2,6 +2,7 @@
 #include "llvm/IR/InstrTypes.h"
 #include "llvm/IR/Value.h"
 #include "llvm/Support/MathExtras.h"
+#include <cmath>
 #include <cstdint>
 #include <math.h>
 #include <string.h>
@@ -15,19 +16,21 @@ bool runOnBasicBlock3(BasicBlock &B) {
       ConstantInt *c1 = dyn_cast<ConstantInt>(Inst.getOperand(0));
       ConstantInt *c2 = dyn_cast<ConstantInt>(Inst.getOperand(1));
       if (c1) {
-        if (isPowerOf2_32(c1->getZExtValue())) {
-          //Value *NewInst = BinaryOperator::CreateShl(c2, c1, "", &Inst);
-          //Inst.replaceAllUsesWith(NewInst);
-          //Inst.removeFromParent();
+        if ((c1->getValue()).logBase2()) {
+          outs()<<"Potenza Rilevata\n";
+          Value *NewInst = BinaryOperator::CreateShl(c2, c1,"",&Inst);
+          Inst.replaceAllUsesWith(NewInst);
+          Inst.removeFromParent();
         } else {
           // todo
         }
 
       } else if (c2) {
-        if (isPowerOf2_32(c2->getZExtValue())) {
-          //Value *NewInst = BinaryOperator::CreateShl(c1, c2, "", &Inst);
-          //Inst.replaceAllUsesWith(NewInst);
-          //Inst.removeFromParent();
+        if ((c2->getValue()).logBase2()) {
+         outs()<<"Potenza Rilevata\n";
+          Value *NewInst = BinaryOperator::CreateShl(c1, c2,"");
+          Inst.replaceAllUsesWith(NewInst);
+          Inst.removeFromParent();
         }else{
             //todo
         }
