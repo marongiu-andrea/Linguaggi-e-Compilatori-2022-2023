@@ -10,7 +10,7 @@ bool runOnBasicBlockMultiInstructionOptimization(BasicBlock &B)
 {
     for (auto &Iter : B) // Itera sulle istruzioni del Basic Block
     {
-        switch(Iter.getOpcode()) // TODO: CONTROLLARE CHE LA COSTANTE DELL'ADD(SINISTRA O DESTRA) SIA UGUALE ALLA COSTANTE DELLA SUB
+        switch(Iter.getOpcode())
         {
             case Instruction::Add: // Se la prima operazione è una Add
             {
@@ -138,7 +138,7 @@ bool runOnBasicBlockMultiInstructionOptimization(BasicBlock &B)
 
                 break;
             }
-            case Instruction::Mul: //Se l'operazione è una Mul
+            case Instruction::Mul: // Se l'operazione è una Mul
             {
                 outs()<<"Ho trovato una Mul\n";
                 ConstantInt * constant0 = dyn_cast<ConstantInt>(Iter.getOperand(0));
@@ -146,7 +146,7 @@ bool runOnBasicBlockMultiInstructionOptimization(BasicBlock &B)
 
                 break;
             }
-            case Instruction::SDiv: //Se l'operazione è una SDiv
+            case Instruction::SDiv: // Se l'operazione è una SDiv
             {
                 outs()<<"Ho trovato una SDiv\n";
                 ConstantInt * constant0 = dyn_cast<ConstantInt>(Iter.getOperand(0));
@@ -165,8 +165,6 @@ bool runOnBasicBlockMultiInstructionOptimization(BasicBlock &B)
 }
 
 
-
-
 bool runOnFunctionMultiInstructionOptimization(Function &F) 
 {
     bool Transformed = false;
@@ -181,8 +179,6 @@ bool runOnFunctionMultiInstructionOptimization(Function &F)
 
     return Transformed;
 }
-
-
 
 
 PreservedAnalyses MultiInstructionOptimizationPass::run([[maybe_unused]] Module &M, ModuleAnalysisManager &) 
