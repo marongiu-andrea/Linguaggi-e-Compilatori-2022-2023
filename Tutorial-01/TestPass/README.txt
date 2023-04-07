@@ -17,7 +17,7 @@ Contenuto:
 └── Tutorial-01
     ├── README.md
     └── TestPass
-        ├── Assignment1_Marras_Colli_Lazzarini.pdf : PDF contenente l'esercizio 1
+        ├── Assignment1_Tutorial_01_Marras_Colli_Lazzarini.pdf : PDF contenente l'esercizio 1
         ├── lib
         │   ├── TestPass.cpp
         │   └── TestPass.o

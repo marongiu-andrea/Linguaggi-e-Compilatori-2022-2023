@@ -15,3 +15,15 @@ class AlgebraicIdentityPass final : public llvm::PassInfoMixin<TransformPass>
   		llvm::PreservedAnalyses run(llvm::Module &, llvm::ModuleAnalysisManager &);
 };
 
+class StrengthReductionPass final : public llvm::PassInfoMixin<TransformPass> 
+{
+	public:
+  		llvm::PreservedAnalyses run(llvm::Module &, llvm::ModuleAnalysisManager &);
+};
+
+class MultiInstructionOptimizationPass final : public llvm::PassInfoMixin<TransformPass> 
+{
+	public:
+  		llvm::PreservedAnalyses run(llvm::Module &, llvm::ModuleAnalysisManager &);
+};
+
