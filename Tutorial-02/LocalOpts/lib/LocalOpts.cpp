@@ -4,32 +4,8 @@
 #include <llvm/IR/PassManager.h>
 #include <llvm/Passes/PassBuilder.h>
 #include <llvm/Passes/PassPlugin.h>
-#include <tuple>
 
 using namespace llvm;
-
-std::tuple<Value*, ConstantInt*> LocalOpts::getVariableAndConstantOperandsFromBinaryInstruction(Instruction& instr)
-{
-    Value* variable = nullptr;
-    ConstantInt* constant = nullptr;
-
-    if (instr.isBinaryOp())
-    {
-        Value* left = instr.getOperand(0);
-        Value* right = instr.getOperand(1);
-
-        variable = left;
-        constant = dyn_cast<ConstantInt>(right);
-
-        if (constant == nullptr)
-        {
-            variable = right;
-            constant = dyn_cast<ConstantInt>(left);
-        }
-    }
-
-    return {variable, constant};
-}
 
 bool LocalOpts::runOnFunction(Function& function)
 {
@@ -78,14 +54,8 @@ extern "C" PassPluginLibraryInfo llvmGetPassPluginInfo()
                     // LoopPass
                     // RegionPass
                     // BasicBlockPass
-                    [](StringRef name, ModulePassManager& passManager,
-                       ArrayRef<PassBuilder::PipelineElement>) -> bool {
-                        if (name == "transform")
-                        {
-                            passManager.addPass(TransformPass());
-                            return true;
-                        }
-                        else if (name == "algebraic-identity")
+                    [](StringRef name, ModulePassManager& passManager, ArrayRef<PassBuilder::PipelineElement>) -> bool {
+                        if (name == "algebraic-identity")
                         {
                             passManager.addPass(AlgebraicIdentityPass());
                             return true;
@@ -101,12 +71,7 @@ extern "C" PassPluginLibraryInfo llvmGetPassPluginInfo()
                             return true;
                         }
 
-                        // TODO: Implementare gli stub per
-                        // Algebraic Identity
-                        // Strength Reduction
-                        // Multi-instruction Operations
                         return false;
                     });
-            } // RegisterPassBuilderCallbacks
-    }; // struct PassPluginLibraryInfo
+            }};
 }

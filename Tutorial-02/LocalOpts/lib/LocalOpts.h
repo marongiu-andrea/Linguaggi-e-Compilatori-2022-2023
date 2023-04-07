@@ -4,7 +4,6 @@
 #include <llvm/IR/Constants.h>
 #include <llvm/IR/Module.h>
 #include <llvm/IR/PassManager.h>
-#include <tuple>
 
 class LocalOpts
 {
@@ -12,8 +11,6 @@ class LocalOpts
     bool runOnFunction(llvm::Function&);
 
   protected:
-    static std::tuple<llvm::Value*, llvm::ConstantInt*> getVariableAndConstantOperandsFromBinaryInstruction(llvm::Instruction&);
-
     virtual bool runOnBasicBlock(llvm::BasicBlock&) = 0;
 
   public:

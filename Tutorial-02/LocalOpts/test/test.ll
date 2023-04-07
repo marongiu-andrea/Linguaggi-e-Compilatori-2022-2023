@@ -16,16 +16,25 @@
 
 
 define dso_local void @foo(i32 noundef %0) {
-  %2 = add nsw i32 %0, 0
-  %3 = mul nsw i32 %2, 16
+  %2 = add nsw i32 %0, 0 ; algebraic identity
+  %3 = mul nsw i32 %2, 16 ; strength reduction
   %4 = mul nsw i32 %3, %2
   %5 = sdiv i32 %4, %0
   %6 = sdiv i32 %4, 10
   %7 = mul nsw i32 1, %5
-  %8 = sdiv i32 %6, 128
+  %8 = sdiv i32 %6, 128 ; strength reduction
   %9 = sdiv i32 %7, 54
-  %10 = sdiv i32 %6, 1
-  %11 = sub nsw i32 %9, 0
+  %10 = sdiv i32 %6, 1 ; algebraic identity
+  %11 = sub nsw i32 %9, 0 ; algebraic identity
+  ; multi instruction optimization
+  %12 = add nsw i32 %0, 10
+  %13 = sub nsw i32 %12, 10
+  ; ---
+  %14 = sub nsw i32 %13, 7 ; first operand should be replaced with %0
+  %15 = mul nsw i32 %14, 9 ; strength reduction (with add)
+  %16 = mul nsw i32 %15, 7 ; strength reduction (with sub)
+  %17 = add nsw i32 4, 0 ; algebraic identity with two constants
+  %18 = sub nsw i32 %17, 5
   ret void
 }
 

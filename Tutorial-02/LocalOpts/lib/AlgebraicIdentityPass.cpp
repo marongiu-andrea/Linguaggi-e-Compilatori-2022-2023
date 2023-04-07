@@ -11,7 +11,16 @@ using namespace llvm;
 static bool isEligibleForAlgebraicIdentityOptimization(Instruction& instr, ConstantInt* constant)
 {
     return ((instr.getOpcode() == Instruction::Add || instr.getOpcode() == Instruction::Sub) && constant->isZero()) ||
-           ((instr.getOpcode() == Instruction::Mul || instr.getOpcode() == Instruction::SDiv) && constant->isOne());
+           ((instr.getOpcode() == Instruction::Mul || instr.getOpcode() == Instruction::SDiv || instr.getOpcode() == Instruction::UDiv) && constant->isOne());
+}
+
+static bool isOpcodeValidForAlgebraicIdentityOptimization(const Instruction& instr)
+{
+    return instr.getOpcode() == Instruction::Add ||
+           instr.getOpcode() == Instruction::Sub ||
+           instr.getOpcode() == Instruction::Mul ||
+           instr.getOpcode() == Instruction::SDiv ||
+           instr.getOpcode() == Instruction::UDiv;
 }
 
 bool AlgebraicIdentityPass::runOnBasicBlock(BasicBlock& bb)
@@ -21,38 +30,29 @@ bool AlgebraicIdentityPass::runOnBasicBlock(BasicBlock& bb)
     // salvo le istruzioni da rimuovere in questo vettore temporaneo perché non posso cancellarle mentre ci sto iterando sopra
     std::vector<std::pair<Instruction*, Value*>> instructionsToReplace;
 
-    auto bbBinaryInstructions = make_filter_range(bb, [](Instruction& instr) {
-        return instr.isBinaryOp();
-    });
-
-    for (auto& instr : bbBinaryInstructions)
+    for (auto& instr : bb)
     {
-        Value* left = instr.getOperand(0);
-        Value* right = instr.getOperand(1);
-
-        // di default assumo che l'operando di sinistra sia una variabile e quello di destra una costante
-        Value* variable = left;
-        ConstantInt* constant = dyn_cast<ConstantInt>(right);
-
-        if (constant == nullptr && instr.isCommutative())
+        if (isOpcodeValidForAlgebraicIdentityOptimization(instr))
         {
-            // se l'istruzione è commutativa e l'assunzione di prima era sbagliata, provo a controllare se i ruoli sono invertiti
-            // (a sinistra la costante e a destra la variabile)
-            variable = right;
-            constant = dyn_cast<ConstantInt>(left);
-        }
+            Value* left = instr.getOperand(0);
+            Value* right = instr.getOperand(1);
+            Value* operand = left;
+            ConstantInt* constant = dyn_cast<ConstantInt>(right); // assumo che l'operando di destra sia una costante
 
-        if (constant != nullptr && dyn_cast<ConstantInt>(variable) == nullptr)
-        {
-            // operazione tra una variabile ed una costante - può essere una candidata per l'ottimizzazione
-
-            if (isEligibleForAlgebraicIdentityOptimization(instr, constant))
+            if (constant == nullptr && instr.isCommutative())
             {
-                // ho trovato un'istruzione da rimuovere
+                operand = right;
+                constant = dyn_cast<ConstantInt>(left); // se l'operando di destra non è una costante, provo a verificare se lo è quello di sinistra
+            }
 
-                instructionsToReplace.push_back(std::pair(&instr, variable));
+            if (constant != nullptr) // l'algebraic identity si può fare solo se uno dei due operandi è una costante
+            {
+                if (isEligibleForAlgebraicIdentityOptimization(instr, constant))
+                {
+                    instructionsToReplace.emplace_back(&instr, operand);
 
-                transformed = true;
+                    transformed = true;
+                }
             }
         }
     }
