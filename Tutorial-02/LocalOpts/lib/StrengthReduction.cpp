@@ -4,6 +4,7 @@
 #include <llvm/ADT/APInt.h>
 #include <llvm/Transforms/Utils/BasicBlockUtils.h>
 #include <llvm/IR/Instruction.h>
+#include <llvm/IR/IRBuilder.h>
 #include <cmath>
 
 using namespace llvm;
@@ -21,17 +22,20 @@ bool StrengthReductionPass::runOnBasicBlock(BasicBlock &B) {
             Value *other_op;
             ConstantInt *const_int = nullptr;
             unsigned int pos = 0;
-            for (auto iter = i.op_begin(); iter != i.op_end(); ++iter)
+            int cnt = 0;
+            for (auto& it : i.operands())
             {
-                if (!(const_int = dyn_cast<ConstantInt>(iter)))
+                if (nullptr != (const_int = dyn_cast<ConstantInt>(it)))
                 {
                     break;
                 }
                 ++pos;
+                ++cnt;
             }
             // lavoro con solo due operandi, quindi se pos è 0, l'altro operando è alla posizione 1 e viceversa. per trovare la posizione dell'altro faccio 1-pos
             if (const_int)
             {
+                
                 other_op = i.getOperand(1-pos);
             }
             else
@@ -46,15 +50,19 @@ bool StrengthReductionPass::runOnBasicBlock(BasicBlock &B) {
             }
             else if (const_val.isPowerOf2())
             {
-                Instruction *shl = BinaryOperator::Create(Instruction::Shl, other_op, ConstantInt::get(const_int->getType(), const_val.logBase2()));
-                inst_to_replace.push_back(std::pair<Instruction*, Instruction*>(&i, shl));
+                // utilizzo classe builder di LLVM: l'istruzione passata diventa il punto di inserimento per nuove istruzioni
+                IRBuilder builder(&i);
+                // considero consistenza dei flag nsw e nuw della nuova istruzione con quella che andrò a sostituire
+                Value *shl = builder.CreateShl(other_op, const_val.logBase2(), "sr", i.hasNoUnsignedWrap(), i.hasNoSignedWrap());
+                inst_to_replace.push_back(std::pair<Instruction*, Instruction*>(&i, cast<Instruction>(shl)));
             }
         }
     }
     
     for (auto& instrs : inst_to_replace)
     {
-        ReplaceInstWithInst(instrs.first, instrs.second);
+        instrs.first->replaceAllUsesWith(instrs.second);
+        instrs.first->eraseFromParent();
     }
 
     return true;
