@@ -30,42 +30,56 @@ bool runOnBasicBlock3(BasicBlock &B) {
         if (c1->getValue().isPowerOf2()){
           outs() <<"MUL: "<< c1->getValue() << " op1 è una pow di 2\n";
           outs() << "Faccio left shift di " << c1->getValue().logBase2() << "\n";
-          Value* newInst = BinaryOperator::CreateShl(Inst.getOperand(1),ConstantInt::get(c1->getType(),c1->getValue().logBase2()),"", &Inst);
+          Instruction* newInst = BinaryOperator::CreateShl(Inst.getOperand(1),ConstantInt::get(c1->getType(),c1->getValue().logBase2()));
+          newInst->insertAfter(&Inst);
           Inst.replaceAllUsesWith(newInst);
         } else {
           outs() << "MUL: op1 " << c1->getValue() << " non è pow di 2\n";
+          int nPow2 = pow(2, floor(c1->getValue().logBase2()) + 1);
+
+          //shift di log2(nPow2)
+          ConstantInt *numShift = ConstantInt::get(context, APInt(32,log2(nPow2)));
+          Instruction *partialMul = BinaryOperator::CreateShl(Inst.getOperand(1),numShift);  
+          
+          partialMul->insertAfter(&Inst);   
+          Instruction *newInst = BinaryOperator::CreateSub(partialMul,Inst.getOperand(1));
+          newInst->insertAfter(partialMul);
+          Inst.replaceAllUsesWith(newInst);  
 
         }
       else if (c2)
         if (c2->getValue().isPowerOf2()){
           outs() <<"MUL: "<< c2->getValue() << " op2 è una pow di 2\n";
           outs() << "Faccio left shift di " << c2->getValue().logBase2() << "\n";
-          Value* newInst = BinaryOperator::CreateShl(Inst.getOperand(0),ConstantInt::get(c2->getType(),c2->getValue().logBase2()),"", &Inst);
+          Instruction* newInst = BinaryOperator::CreateShl(Inst.getOperand(0),ConstantInt::get(c2->getType(),c2->getValue().logBase2()));
+          newInst->insertAfter(&Inst);
           Inst.replaceAllUsesWith(newInst);
         } else { 
           outs() << "MUL: op2 " << c2->getValue() << " non è pow di 2\n";
+
           //calcolo pow 2 più vicina maggiore di op2
           int nPow2 = pow(2, floor(c2->getValue().logBase2()) + 1);
 
-          outs() << nPow2 << "\n";
-          int64_t resto = nPow2 - c2->getSExtValue();
-          
-          int64_t op1 = Inst.getOperand(0);
-
-          outs() << resto << "   " << op1 << "\n";
-
-          int numToSub = resto * op1;
-
           //shift di log2(nPow2)
           ConstantInt *numShift = ConstantInt::get(context, APInt(32,log2(nPow2)));
-          Instruction *partialMul = BinaryOperator::CreateShl(Inst.getOperand(0),numShift,"",&Inst);
+          Instruction *partialMul = BinaryOperator::CreateShl(Inst.getOperand(0),numShift);     
           
-          ConstantInt *cNumToShift = ConstantInt::get(context,APInt(32,numToSub));
-          Value *newInst = BinaryOperator::CreateSub(partialMul,cNumToShift,"",&Inst);
-          Inst.replaceAllUsesWith(newInst);
-          
-          
+          partialMul->insertAfter(&Inst);
+          Instruction *newInst = BinaryOperator::CreateSub(partialMul,Inst.getOperand(0));
+          newInst->insertAfter(partialMul);
+          Inst.replaceAllUsesWith(newInst);   
         }  
+    }
+    if (Inst.getOpcode() == Instruction::SDiv){
+      ConstantInt *c2 = dyn_cast<ConstantInt>(Inst.getOperand(1));
+      if (c2 && !c2->getValue().isZero()){
+        if (c2->getValue().isPowerOf2()){
+          outs() << "Sono nella divisione\n op2= " << c2->getValue() << "\n";
+          Instruction *newInst = BinaryOperator::CreateLShr(Inst.getOperand(0),ConstantInt::get(c2->getType(),c2->getValue().logBase2()));
+          newInst->insertAfter(&Inst);
+          Inst.replaceAllUsesWith(newInst);
+        }
+      }
     }
   
 }
