@@ -6,7 +6,19 @@ using namespace llvm;
 bool runOnBasicBlockSRP(BasicBlock &B) {
     for(auto &Inst : B){
         if(Inst.getOpcode() == Instruction::Mul){
+            ConstantInt *op1 = dyn_cast<ConstantInt>(Inst.getOperand(0));
+            ConstantInt *op2 = dyn_cast<ConstantInt>(Inst.getOperand(1));
+            if (op1 && !op1->getValue().isOneValue() && isPowerOf2_32(op1->getZExtValue())){
+                outs()<<"Riduzione di mul per: "<<Inst<<"\n";
+                Value* red_inst = BinaryOperator::CreateShl(op2, ConstantInt::get(op1->getType(),op1->getValue().logBase2()),"",&Inst);
+                Inst.replaceAllUsesWith(red_inst);
+            }
+            else if(op2 && !op2->getValue().isOneValue() && isPowerOf2_32(op2->getZExtValue())){
+                outs()<<"Riduzione di mul per: "<<Inst<<"\n";
+                Value* red_inst = BinaryOperator::CreateShl(op1, ConstantInt::get(op2->getType(),op2->getValue().logBase2()),"",&Inst);
+                Inst.replaceAllUsesWith(red_inst);
 
+            }
         }
     }
 }
