@@ -1,14 +1,15 @@
 OPTIMIZER := libLocalOpts.so
 OBJs := $(subst .cpp,.o,$(wildcard lib/*.cpp))
 
-LLVM_VERSION ?= 14
 
-CXXFLAGS := $(shell llvm-config-$(LLVM_VERSION) --cxxflags) -fPIC
 
-all: $(OPTIMIZER) 
+CXXFLAGS := $(shell llvm-config --cxxflags) -fPIC -I/opt/homebrew/opt/llvm@14/include
+LDFLAGS := -L/opt/homebrew/opt/llvm@14/lib -lLLVM
+
+all: $(OPTIMIZER)
 
 $(OPTIMIZER): $(OBJs)
-	$(CXX) -dylib -shared $^ -o $@
+	$(CXX) -dylib -shared $^ -o $@ $(LDFLAGS)
 
 .PHONY: clean
 clean:
@@ -16,3 +17,4 @@ clean:
 
 format:
 	clang-format -i -style=LLVM lib/*.cpp lib/*.h --sort-includes
+

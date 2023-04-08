@@ -8,14 +8,13 @@ define dso_local void @foo(i32 noundef %0) {
   %5 = mul nsw i32 %3, %2
   %6 = sdiv i32 %5, %0
   %7 = sdiv i32 %5, 10
-  %8 = mul nsw i32 1, %6
-  %9 = sdiv i32 %7, 128
-  %10 = sdiv i32 %8, 54
-  %11 = sdiv i32 %7, 1
-  %12 = sub nsw i32 %10, 0
-  %13 = shl i32 %12, 4
-  %14 = add i32 %13, -1
-  %15 = mul nsw i32 %12, 15
-  %16 = add nsw i32 %14, 3
+  %8 = shl i32 %6, 0
+  %9 = mul nsw i32 1, %6
+  %10 = sdiv i32 %7, 128
+  %11 = sdiv i32 %8, 54
+  %12 = sdiv i32 %7, 1
+  %13 = sub nsw i32 %11, 0
+  %14 = mul nsw i32 %13, 15
+  %15 = add nsw i32 %14, 3
   ret void
 }
