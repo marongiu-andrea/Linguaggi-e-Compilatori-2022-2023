@@ -5,25 +5,26 @@ using namespace llvm;
 
 bool runOnBasicBlockAIP(BasicBlock &B) {
   for(auto &Inst : B){
+    if(Inst.getOpcode() == Instruction::Add || Inst.getOpcode() == Instruction::Sub){
 
-    for(auto *I = Inst.op_begin(); I != Inst.op_end(); ++I){
-      int a;
-      Argument *Arg;
-      if (ConstantInt *C = dyn_cast<ConstantInt>(I))
-        a = C->getSExtValue();
-      else
-        Arg = dyn_cast<Argument>(I);
+      ConstantInt *op2 = dyn_cast<ConstantInt>(Inst.getOperand(1));
 
-      if(a == 0 && (Inst.getOpcode() == Instruction::Add || Inst.getOpcode() == Instruction::Sub)){
-        outs()<< "Inutile in add/sub: "<< Inst <<"\n";
-        Inst.replaceAllUsesWith(Arg);
+      outs()<< "Inutile in add/sub: "<< Inst <<"\n";
 
-      }
-      else if(a == 1 && (Inst.getOpcode() == Instruction::Mul || Inst.getOpcode() == Instruction::SDiv)){
-        outs()<< "Inutile in mul/div\n"<< Inst <<"\n";
-        //Inst.replaceAllUsesWith(Arg);
-        //Questa cosa fa crashare llvm, DA FIXARE
-      }
+      if(op2 && op2->getValue().isZero())
+        Inst.replaceAllUsesWith(Inst.getOperand(0));
+    }
+    if(Inst.getOpcode() == Instruction::Mul || Inst.getOpcode() == Instruction::SDiv){
+
+      ConstantInt *op1 = dyn_cast<ConstantInt>(Inst.getOperand(0));
+      ConstantInt *op2 = dyn_cast<ConstantInt>(Inst.getOperand(1));
+
+      outs()<< "Inutile in mul/div: "<< Inst <<"\n";
+
+      if(op2 && op2->getValue().isOneValue())
+        Inst.replaceAllUsesWith(Inst.getOperand(0));
+      if(op1 && op1->getValue().isOneValue())
+        Inst.replaceAllUsesWith(Inst.getOperand(1));
     }
   }
 };
@@ -36,7 +37,6 @@ bool runOnFunctionAIP(Function &F) {
         Transformed = true;
       }
     }
-
   return Transformed;
 };
 

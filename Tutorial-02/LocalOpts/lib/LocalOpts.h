@@ -14,4 +14,10 @@ public:
   llvm::PreservedAnalyses run(llvm::Module &,
                               llvm::ModuleAnalysisManager &);
 };
-// class AlgebraicIdentityPass
+
+class StrengthReductionPass final : public llvm::PassInfoMixin<StrengthReductionPass> {
+public:
+  llvm::PreservedAnalyses run(llvm::Module &,
+                              llvm::ModuleAnalysisManager &);
+};
+// class StrengthReductionPass
