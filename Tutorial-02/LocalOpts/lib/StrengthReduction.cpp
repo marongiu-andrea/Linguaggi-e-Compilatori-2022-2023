@@ -32,88 +32,88 @@ bool runOnBB(BasicBlock &bb)
         kept = inst.getOperand(0);
       }
 
-      if(kept && (opcode == Instruction::Mul || opcode == Instruction::SDiv || opcode == Instruction::UDiv))
+      if(!(kept && (opcode == Instruction::Mul || opcode == Instruction::SDiv || opcode == Instruction::UDiv)))
+        continue;
+
+      if(!val.isZero())   // because of a bug, the parameter %0 is considered null at runtime, this is a temporary fix
       {
-        if(!val.isZero())   // because of a bug, the parameter %0 is considered null at runtime, this is a temporary fix
+        int log2OfVal = val.exactLogBase2();
+
+        outs() << inst << "\n";
+
+        if(opcode == Instruction::Mul && log2OfVal < 0)   // val is not an exact power of two
         {
-          int log2OfVal = val.exactLogBase2();
+            outs() << "Applying advanced strength reduction\n";
 
-          outs() << inst << "\n";
+            int nearestLog2 = val.nearestLogBase2();    
 
-          if(opcode == Instruction::Mul && log2OfVal < 0)   // val is not an exact power of two
-          {
-              outs() << "Applying advanced strength reduction\n";
+            APInt remainder = val - pow(2,nearestLog2);
+            
+            outs() << "nearest Log2: " << nearestLog2 << "\n";
+            outs() << "remainder: " << remainder << "\n";
 
-              int nearestLog2 = val.nearestLogBase2();    
-
-              APInt remainder = val - pow(2,nearestLog2);
-              
-              outs() << "nearest Log2: " << nearestLog2 << "\n";
-              outs() << "remainder: " << remainder << "\n";
-
-              if(remainder.abs().isOne())
-              {
-                  IntegerType* type = dyn_cast<IntegerType>(kept->getType());
-
-                  if(type)
-                  {
-                      ConstantInt* newOperand = ConstantInt::get(type, nearestLog2);
-
-                      Instruction* shiftInst = BinaryOperator::Create(Instruction::Shl, kept, newOperand);
-                      outs() << "Addying shl op\n";
-
-                      Instruction* remInst;
-
-                      if(remainder.isOne())
-                      {
-                          remInst = BinaryOperator::Create(Instruction::Add, shiftInst, kept);
-                          outs() << "addying add op\n\n";
-                      }
-                      else
-                      {
-                          remInst = BinaryOperator::Create(Instruction::Sub, shiftInst, kept);
-                          outs() << "addying sub op\n\n";
-                      }
-
-                      if(shiftInst && remInst)
-                      {
-                          shiftInst->insertBefore(&inst);
-                          remInst->insertAfter(shiftInst);
-
-                          inst.replaceAllUsesWith(remInst);
-                          toBeRemoved.push_back(&inst);
-                      }
-                  }
-              }
-          }
-          else if(log2OfVal > 0)  // standard strength reduction
-          {
-            outs() << "Applying standard strength reduction\n\n";
-
-            IntegerType* type = dyn_cast<IntegerType>(kept->getType());
-            if(type)
+            if(remainder.abs().isOne())
             {
-              ConstantInt* newOperand = ConstantInt::get(type, log2OfVal);
+                IntegerType* type = dyn_cast<IntegerType>(kept->getType());
 
-              Instruction* shiftInst;
+                if(type)
+                {
+                    ConstantInt* newOperand = ConstantInt::get(type, nearestLog2);
 
-              if(opcode == Instruction::Mul)
-                shiftInst = BinaryOperator::Create(Instruction::Shl, kept, newOperand);
-              else
-                shiftInst = BinaryOperator::Create(Instruction::AShr, kept, newOperand);
+                    Instruction* shiftInst = BinaryOperator::Create(Instruction::Shl, kept, newOperand);
+                    outs() << "Addying shl op\n";
 
-              if(shiftInst)
-              {
-                shiftInst->insertBefore(&inst);
-                inst.replaceAllUsesWith(shiftInst);
-                toBeRemoved.push_back(&inst);
-              }
+                    Instruction* remInst;
+
+                    if(remainder.isOne())
+                    {
+                        remInst = BinaryOperator::Create(Instruction::Add, shiftInst, kept);
+                        outs() << "addying add op\n\n";
+                    }
+                    else
+                    {
+                        remInst = BinaryOperator::Create(Instruction::Sub, shiftInst, kept);
+                        outs() << "addying sub op\n\n";
+                    }
+
+                    if(shiftInst && remInst)
+                    {
+                        shiftInst->insertBefore(&inst);
+                        remInst->insertAfter(shiftInst);
+
+                        inst.replaceAllUsesWith(remInst);
+                        toBeRemoved.push_back(&inst);
+                    }
+                }
+            }
+        }
+        else if(log2OfVal > 0)  // standard strength reduction
+        {
+          outs() << "Applying standard strength reduction\n\n";
+
+          IntegerType* type = dyn_cast<IntegerType>(kept->getType());
+          if(type)
+          {
+            ConstantInt* newOperand = ConstantInt::get(type, log2OfVal);
+
+            Instruction* shiftInst;
+
+            if(opcode == Instruction::Mul)
+              shiftInst = BinaryOperator::Create(Instruction::Shl, kept, newOperand);
+            else
+              shiftInst = BinaryOperator::Create(Instruction::AShr, kept, newOperand);
+
+            if(shiftInst)
+            {
+              shiftInst->insertBefore(&inst);
+              inst.replaceAllUsesWith(shiftInst);
+              toBeRemoved.push_back(&inst);
             }
           }
-          else
-          {
-            outs() << "Nothing done here\\n\n";
-          }
+        }
+        else
+        {
+          outs() << "Nothing done here\\n\n";
         }
       }
     }
