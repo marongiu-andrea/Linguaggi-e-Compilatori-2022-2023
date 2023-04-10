@@ -19,6 +19,7 @@ static bool isOpcodeValidForStrengthReductionOptimization(const Instruction& ins
 bool StrengthReductionPass::runOnBasicBlock(BasicBlock& bb)
 {
     std::vector<std::pair<Instruction*, Value*>> instructionsToReplace;
+    bool transformed = false;
 
     for (auto& instr : bb)
     {
@@ -101,7 +102,8 @@ bool StrengthReductionPass::runOnBasicBlock(BasicBlock& bb)
         BasicBlock::iterator it(pair.first);
 
         ReplaceInstWithValue(bb.getInstList(), it, pair.second);
+        transformed = true;
     }
 
-    return true;
+    return transformed;
 }
