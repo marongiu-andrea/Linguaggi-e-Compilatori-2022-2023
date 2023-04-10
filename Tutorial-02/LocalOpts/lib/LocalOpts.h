@@ -8,5 +8,11 @@ class TransformPass final
 public:
   llvm::PreservedAnalyses run(llvm::Module &,
                               llvm::ModuleAnalysisManager &);
-}; // class AlgebraicIdentityPass
+}; 
 
+class MultiInstructionPass final
+    : public llvm::PassInfoMixin<MultiInstructionPass> {
+public:
+  llvm::PreservedAnalyses run(llvm::Module &,
+                              llvm::ModuleAnalysisManager &);
+};
