@@ -14,7 +14,7 @@ $(OPTIMIZER): $(OBJs)
 clean:
 	$(RM) $(OPTIMIZER) $(OBJs)
 setup:
-	opt -load-pass-plugin=./libLocalOpts.so -passes=mioptimization $(firstrepr) -o $(bcfile)
+	opt -load-pass-plugin=./libLocalOpts.so -passes=algebraic $(firstrepr) -o $(bcfile)
 	llvm-dis $(bcfile) -o $(optrepr)
 
 .PHONY: auto
