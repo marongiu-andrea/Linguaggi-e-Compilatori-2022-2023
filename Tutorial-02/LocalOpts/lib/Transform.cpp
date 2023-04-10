@@ -3,7 +3,6 @@
 
 #include <cmath>
 #include <stdint.h>
-#include <vector>
 
 using namespace llvm;
 #if 0
