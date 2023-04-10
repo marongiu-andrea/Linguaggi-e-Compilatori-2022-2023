@@ -37,6 +37,7 @@ extern "C" PassPluginLibraryInfo llvmGetPassPluginInfo() {
                     MPM.addPass(MultiInstructionPass());
                     return true;
                   }
+                  
                   if (Name == "strength-reduction") {
                     MPM.addPass(StrengthReductionPass());
                     return true;
