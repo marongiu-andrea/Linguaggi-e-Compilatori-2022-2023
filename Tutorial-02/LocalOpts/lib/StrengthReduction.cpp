@@ -4,7 +4,6 @@
 
 using namespace llvm;
 
-
 void optimizeInstMul(Instruction&);
 void optimizeInstDiv(Instruction&);
 void optimize(ConstantInt*, Value*, Instruction&);
@@ -13,7 +12,6 @@ void optimize(ConstantInt*, Value*, Instruction&);
 bool StrengthReductionPass::runOnBasicBlock(BasicBlock &BB) {
   // Itera attraverso le istruzioni del basic block.
   for(auto iter_inst = BB.begin(); iter_inst != BB.end(); ++iter_inst) {
-    Instruction& I = *iter_inst;
 
     // Se l'operazione ha un operatore binario.
     if (auto *op = dyn_cast<BinaryOperator>(&*iter_inst)) {
@@ -23,7 +21,6 @@ bool StrengthReductionPass::runOnBasicBlock(BasicBlock &BB) {
         {"mul", 1},
         {"udiv", 2}
       };
-
       switch (pairings[opcd]) {
         case 1:
 					optimizeInstMul(I);

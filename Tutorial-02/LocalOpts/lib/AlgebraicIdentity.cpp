@@ -2,49 +2,37 @@
 #include "llvm/IR/InstrTypes.h"
 #include <stack>
 #include <math.h>
+#include <map>
 
 using namespace llvm;
 bool AlgebraicIdentityPass::runOnBasicBlock(BasicBlock &BB) {
   // Itera attraverso le istruzioni del basic block.
   // Se trova un'istruzione che è:
-  // - o una moltiplicazione/divisione in cui uno dei due operandi è 1;
-  // - o una addizione/sottrazione in cui uno dei due operandi è 0;
+  // - o una moltiplicazione in cui uno dei due operandi è 1;
+  // - o una addizione in cui uno dei due operandi è 0;
   // sostituisce, in tutte le istruzioni successive, il registro destinazione
-  // della istruzione "inutile" con l'altro operando dell'istruzione.
-  // ad esempio: %5 = %4 + 0 --> sostituisco tutti gli usi di %5 con %4.
+  // della istruzione "useless" con l'altro operando dell'istruzione.
+  // ad esempio: %5 = %4 + 0 --> vengono sostituiti tutti gli usi di %5 con %4.
   for(auto iter_inst = BB.begin(); iter_inst != BB.end(); ++iter_inst) {
     Instruction& I = *iter_inst;
     bool found;
     Value* PropOperand;
     std::string name = I.getOpcodeName();
+    std::map<std::string, int> m; // hash map che memorizza l'elemento neutrale per ogni operazione di interesse
+    m["add"] = 0;
+    m["mul"] = 1;
     if(name == "add" || name == "mul"){
       // check if one of the two operands is neutral element
       for (auto *Iter = I.op_begin(); Iter != I.op_end(); ++Iter) {        
         Value *Operand = *Iter;
-        if (ConstantInt *C = dyn_cast<ConstantInt>(Operand)){ // se trovo una costante
-          if(name == "add"){
-            if(C->getValue() == llvm::APInt(32, 0)){ // se la costante è uno 0 e siamo in 
-            // una addizione / sottrazione              
-              if(Iter == I.op_begin()) PropOperand = *(++Iter);
-              else {
-                auto IterCopy = Iter;
-                PropOperand = *(--IterCopy);
-              }
-              // old = lhs of instruction
-              outs()<<"Replacing uses of: "<<I<<"\n";
-              I.replaceAllUsesWith(PropOperand);              
+        if (ConstantInt *C = dyn_cast<ConstantInt>(Operand)){ // nel caso in cui si trova una costante        
+          if(C->getValue() == llvm::APInt(32, m[name])){
+            if(Iter == I.op_begin()) PropOperand = *(++Iter);
+            else {
+              auto IterCopy = Iter;
+              PropOperand = *(--IterCopy);
             }
-          }        
-          if(name == "mul"){
-            if(C->getValue() == llvm::APInt(32, 1)){
-              if(Iter == I.op_begin()) PropOperand = *(++Iter);            
-              else{
-                auto IterCopy = Iter;
-                PropOperand = *(--IterCopy);                              
-              }
-              outs()<<"Replacing uses of: "<<I<<"\n";
-              I.replaceAllUsesWith(PropOperand);              
-            }
+            I.replaceAllUsesWith(PropOperand);              
           }
         }
       }
@@ -62,7 +50,6 @@ bool AlgebraicIdentityPass::runOnFunction(Function &F) {
       Transformed = true;
     }
   }
-
   return Transformed;
 }
 
