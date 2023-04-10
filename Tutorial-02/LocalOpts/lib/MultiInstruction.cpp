@@ -33,7 +33,8 @@ static bool runOnBasicBlock4(BasicBlock &B) {
     /*
         The register of the 'leftOperand' might contains a bynary operation, eg:
             a = 5 + x
-            b = a + 1  -> the register that contains 'a' contains '5+x' that is a binary operation
+            b = a + 1  -> the register that contains 'a' contains '5+x' that is
+       a binary operation
     */
     auto binaryOperation = dyn_cast<BinaryOperator>(leftOperand);
     auto constant = dyn_cast<ConstantInt>(rightOperand);
