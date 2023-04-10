@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "exception": "cpp",
+        "type_traits": "cpp"
+    }
+}
