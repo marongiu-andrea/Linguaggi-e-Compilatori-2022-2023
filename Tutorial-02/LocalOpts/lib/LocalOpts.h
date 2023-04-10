@@ -10,6 +10,13 @@ public:
                               llvm::ModuleAnalysisManager &);
 }; 
 
+class AlgebraicIdentityPass final
+    : public llvm::PassInfoMixin<AlgebraicIdentityPass> {
+public:
+  llvm::PreservedAnalyses run(llvm::Module &,
+                              llvm::ModuleAnalysisManager &);
+};
+
 class MultiInstructionPass final
     : public llvm::PassInfoMixin<MultiInstructionPass> {
 public:
