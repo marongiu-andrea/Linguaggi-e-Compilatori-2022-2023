@@ -21,3 +21,9 @@ public:
                               llvm::ModuleAnalysisManager &);
 };
 // class StrengthReductionPass
+class MultiInstructionPass final : public llvm::PassInfoMixin<MultiInstructionPass> {
+public:
+  llvm::PreservedAnalyses run(llvm::Module &,
+                              llvm::ModuleAnalysisManager &);
+};
+// class MultiInstructionPass
