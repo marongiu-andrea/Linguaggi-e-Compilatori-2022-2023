@@ -28,9 +28,6 @@ static bool runOnInstruction(Instruction *instr)
         else if (op2const && op2const->getSExtValue() == 0)
             newValue = operand1;
 
-        if (newValue)
-            instr->print(errs(), true);
-
         break;
     
     case Instruction::Mul:
