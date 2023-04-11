@@ -12,7 +12,7 @@ void optimize(ConstantInt*, Value*, Instruction&);
 bool StrengthReductionPass::runOnBasicBlock(BasicBlock &BB) {
   // Itera attraverso le istruzioni del basic block.
   for(auto iter_inst = BB.begin(); iter_inst != BB.end(); ++iter_inst) {
-
+    Instruction& I = *iter_inst;
     // Se l'operazione ha un operatore binario.
     if (auto *op = dyn_cast<BinaryOperator>(&*iter_inst)) {
       std::string opcd = iter_inst->getOpcodeName();
