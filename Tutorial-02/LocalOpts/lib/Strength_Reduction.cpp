@@ -8,13 +8,13 @@ bool runOnBasicBlockSRP(BasicBlock &B) {
         if(Inst.getOpcode() == Instruction::Mul){
             ConstantInt *op1 = dyn_cast<ConstantInt>(Inst.getOperand(0));
             ConstantInt *op2 = dyn_cast<ConstantInt>(Inst.getOperand(1));
-            if (op1 && !op1->getValue().isOneValue() && isPowerOf2_32(op1->getZExtValue())){
+            if (op1 && !op1->getValue().isOneValue() && op1->getValue().isPowerOf2()){
                 outs()<<"Riduzione di mul per: "<<Inst<<"\n";
                 Instruction *red_inst = BinaryOperator::CreateShl(Inst.getOperand(1), ConstantInt::get(op1->getType(),op1->getValue().logBase2()));
                 red_inst->insertAfter(&Inst);
                 Inst.replaceAllUsesWith(red_inst);
             }
-            else if(op2 && !op2->getValue().isOneValue() && isPowerOf2_32(op2->getZExtValue())){
+            else if(op2 && !op2->getValue().isOneValue() && op2>getValue().isPowerOf2()){
                 outs()<<"Riduzione di mul per: "<<Inst<<"\n";
                 Instruction *red_inst = BinaryOperator::CreateShl(Inst.getOperand(0), ConstantInt::get(op2->getType(),op2->getValue().logBase2()));
                 red_inst->insertAfter(&Inst);
