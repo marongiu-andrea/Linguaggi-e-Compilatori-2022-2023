@@ -1,0 +1,5 @@
+*.o
+*.so
+Tutorial-01/TestPass/ir
+Tutorial-02/LocalOpts/testTransform/*opt.*
+.vscode
