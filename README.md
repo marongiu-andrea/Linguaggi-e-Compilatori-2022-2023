@@ -4,3 +4,4 @@ Questo repository contiene i materiali per i laboratori del corso "Linguaggi e C
 Componenti Gruppo:
     -Buchignani Davide
     -Bondavalli Samuel
+    -Manfredini Ilaria
