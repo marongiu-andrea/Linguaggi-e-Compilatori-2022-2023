@@ -1,4 +1,4 @@
-OPTIMIZER := libLocalOpts.so
+OPTIMIZER := libTestPass.so
 OBJs := $(subst .cpp,.o,$(wildcard lib/*.cpp))
 
 LLVM_VERSION ?= 14

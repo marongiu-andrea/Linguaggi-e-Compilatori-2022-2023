@@ -1,10 +1,13 @@
+<<<<<<< HEAD
 # Lab 1 - Introduzione ai passi LLVM 
 
 Il repository contiene la cartella "lib" e la cartella "test".
-Nella prima si trova lo scheletro del passo TestPass (TestPass.cpp), che dovrï¿½ essere esteso come da consegna (vedi punti TODO nel codice)
+Nella prima si trova lo scheletro del passo TestPass (TestPass.cpp), che dovrà essere esteso come da consegna (vedi punti TODO nel codice)
 Nella seconda si trovano due programmi di test (Loop.c, Fibonacci.c), che utilizzeremo per validare il passo.
+=======
 # Lab 1 - Introduzione ai passi LLVM 
 
 Il repository contiene la cartella "lib" e la cartella "test".
-Nella prima si trova lo scheletro del passo TestPass (TestPass.cpp), che dovrï¿½ essere esteso come da consegna (vedi punti TODO nel codice)
+Nella prima si trova lo scheletro del passo TestPass (TestPass.cpp), che dovrà essere esteso come da consegna (vedi punti TODO nel codice)
 Nella seconda si trovano due programmi di test (Loop.c, Fibonacci.c), che utilizzeremo per validare il passo.
+>>>>>>> c5d02f7dddf98802317b08c4202c8e22736db5d5
