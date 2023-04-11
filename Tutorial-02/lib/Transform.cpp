@@ -1,6 +1,3 @@
-#Osservazioni 
-
-
 #include "LocalOpts.h"
 #include "llvm/IR/InstrTypes.h"
 #include <math.h>

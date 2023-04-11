@@ -1,0 +1,24 @@
+while prog changed:
+{
+    used = {}
+
+    for instr in BB:
+        used += instr.args;
+
+    for instr in BB:
+        if instr.dest &&
+            instr.dest not in used:
+                delete instruction;
+}   
+----------------------------------------------------------------------------------------------------------
+last_def = {}
+
+//Check for uses
+for instr in BB:
+    last_def == instr.args;
+
+//Check for definitions
+for instr in BB:
+    if instr.dest in last_def:
+        delete last_def[instr.dest];
+    last_def[instr.dest] = instr;
