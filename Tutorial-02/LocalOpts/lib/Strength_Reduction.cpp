@@ -10,12 +10,14 @@ bool runOnBasicBlockSRP(BasicBlock &B) {
             ConstantInt *op2 = dyn_cast<ConstantInt>(Inst.getOperand(1));
             if (op1 && !op1->getValue().isOneValue() && isPowerOf2_32(op1->getZExtValue())){
                 outs()<<"Riduzione di mul per: "<<Inst<<"\n";
-                Value* red_inst = BinaryOperator::CreateShl(op2, ConstantInt::get(op1->getType(),op1->getValue().logBase2()),"",&Inst);
+                Instruction *red_inst = BinaryOperator::CreateShl(Inst.getOperand(1), ConstantInt::get(op1->getType(),op1->getValue().logBase2()));
+                red_inst->insertAfter(&Inst);
                 Inst.replaceAllUsesWith(red_inst);
             }
             else if(op2 && !op2->getValue().isOneValue() && isPowerOf2_32(op2->getZExtValue())){
                 outs()<<"Riduzione di mul per: "<<Inst<<"\n";
-                Value* red_inst = BinaryOperator::CreateShl(op1, ConstantInt::get(op2->getType(),op2->getValue().logBase2()),"",&Inst);
+                Instruction *red_inst = BinaryOperator::CreateShl(Inst.getOperand(0), ConstantInt::get(op2->getType(),op2->getValue().logBase2()));
+                red_inst->insertAfter(&Inst);
                 Inst.replaceAllUsesWith(red_inst);
 
             }
