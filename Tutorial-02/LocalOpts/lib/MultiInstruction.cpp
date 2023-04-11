@@ -38,10 +38,22 @@ inline bool IsCommutative(Instruction* instr)
     return false;
 }
 
+inline bool IsSame(Value* value1, Value* value2)
+{
+    auto value1Const = dyn_cast<ConstantInt>(value1);
+    auto value2Const = dyn_cast<ConstantInt>(value2);
+    
+    bool result = false;
+    result |= value1 == value2;
+    result |= value1Const && value2Const &&
+        value1Const->getSExtValue() == value2Const->getSExtValue();
+    return result;
+}
+
 // NOTE: works with non-constant operands
 static bool runOnInstruction(Instruction *instr) {
     // Only for debugging purposes
-    static int count = 0;
+    static int count = -1;
     ++count;
     
     if(!instr->isBinaryOp())
@@ -54,27 +66,44 @@ static bool runOnInstruction(Instruction *instr) {
     auto operand1 = instr->getOperand(0);
     auto operand2 = instr->getOperand(1);
     
+    if(count == 18)
+        outs() << "prova\n";
+    
     auto toAnalyze = operand1;
     // Analyze definitions
     for(int i = 0; i < 2; ++i) {
+        if(count == 18)
+            outs() << "prova1\n";
+        
         auto defInstr = dyn_cast<Instruction>(toAnalyze);
-        if(!defInstr || !defInstr->isBinaryOp()) break;
-        if(defInstr->getOpcode() != oppositeOpcode) break;
+        if(!defInstr || !defInstr->isBinaryOp()) continue;
+        if(defInstr->getOpcode() != oppositeOpcode) continue;
         
         auto defInstrOp1 = defInstr->getOperand(0);
         auto defInstrOp2 = defInstr->getOperand(1);
         
-        auto otherOperand = toAnalyze == operand1 ? operand2 : operand1;
+        auto otherOperand = (toAnalyze == operand1 ? operand2 : operand1);
         
         bool isCommutative = IsCommutative(defInstr);
         Value* swapWith = 0;
         // Compare first operand only if the instruction is commutative
-        if(isCommutative && otherOperand == defInstrOp1)
+        if(isCommutative && IsSame(otherOperand, defInstrOp1))
+        {
             swapWith = defInstrOp2;
-        else if(otherOperand == defInstrOp2)
+            if(count == 18)
+                outs() << "prova2\n";
+        }
+        else if(IsSame(otherOperand, defInstrOp2))
+        {
             swapWith = defInstrOp1;
+            if(count == 18)
+                outs() << "prova3\n";
+        }
         
         if(swapWith) {
+            if(count == 18)
+                outs() << "prova4\n";
+            
             // Remove 'instr', and replace all of its uses
             instr->replaceAllUsesWith(swapWith);
             instr->eraseFromParent();
