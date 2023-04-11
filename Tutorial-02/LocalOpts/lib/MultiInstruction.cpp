@@ -25,33 +25,22 @@ inline int64_t GetOppositeOpcode(Instruction* instr)
 
 inline bool IsCommutative(Instruction* instr)
 {
-    return instr->getOpcode() == Instruction::SDiv ||
-        instr->getOpcode() == Instruction::Sub;
-}
-
-static ConstantInt* GetConstOperand(Instruction* instr) {
-    auto operand1 = instr->getOperand(0);
-    auto operand2 = instr->getOperand(1);
-    ConstantInt* op1Const = dyn_cast<ConstantInt>(operand1);
-    ConstantInt* op2Const = dyn_cast<ConstantInt>(operand2);
+    switch(instr->getOpcode())
+    {
+        case Instruction::Mul:
+        case Instruction::Add:
+        return true;
+        
+        default: return false;
+    }
     
-    if(op1Const) return op1Const;
-    if(op2Const) return op2Const;
-    return 0;
+    assert(false && "Unreachable code");
+    return false;
 }
 
-static Value* GetVarOperand(Instruction* instr) {
-    auto operand1 = instr->getOperand(0);
-    auto operand2 = instr->getOperand(1);
-    ConstantInt* op1Const = dyn_cast<ConstantInt>(operand1);
-    ConstantInt* op2Const = dyn_cast<ConstantInt>(operand2);
-    
-    if(op1Const) return operand2;
-    if(op2Const) return operand1;
-    return 0;
-}
-
+// NOTE: works with non-constant operands
 static bool runOnInstruction(Instruction *instr) {
+    // Only for debugging purposes
     static int count = 0;
     ++count;
     
@@ -62,46 +51,37 @@ static bool runOnInstruction(Instruction *instr) {
     if(oppositeOpcode == -1)
         return false;
     
-    ConstantInt *constOp = GetConstOperand(instr);
     auto operand1 = instr->getOperand(0);
     auto operand2 = instr->getOperand(1);
     
-    if(!constOp) return false;
-    
-    // Ignore these cases: const / var, const - var
-    if(!IsCommutative(instr) && constOp == operand1)
-        return false;
-    
-    Instruction *defInstr = 0; 
-    ConstantInt *opConst = 0;
-    if(constOp == operand1)
-        defInstr = dyn_cast<Instruction>(operand2);
-    else
-        defInstr = dyn_cast<Instruction>(operand1);
-    
-    // Analyze definition
-    {
-        if(!defInstr) return false;
+    auto toAnalyze = operand1;
+    // Analyze definitions
+    for(int i = 0; i < 2; ++i) {
+        auto defInstr = dyn_cast<Instruction>(toAnalyze);
+        if(!defInstr || !defInstr->isBinaryOp()) break;
+        if(defInstr->getOpcode() != oppositeOpcode) break;
         
-        if(!defInstr->isBinaryOp())
-            return false;
+        auto defInstrOp1 = defInstr->getOperand(0);
+        auto defInstrOp2 = defInstr->getOperand(1);
         
-        ConstantInt *defConstOp = GetConstOperand(defInstr);
-        Value *defVarOp = GetVarOperand(defInstr);
-        auto defOpcode = defInstr->getOpcode();
-        if(!defConstOp || !defVarOp) return false;
+        auto otherOperand = toAnalyze == operand1 ? operand2 : operand1;
         
-        // Ignore these cases: const / var, const - var
-        if(!IsCommutative(defInstr) && defConstOp == defInstr->getOperand(0))
-            return false;
+        bool isCommutative = IsCommutative(defInstr);
+        Value* swapWith = 0;
+        // Compare first operand only if the instruction is commutative
+        if(isCommutative && otherOperand == defInstrOp1)
+            swapWith = defInstrOp2;
+        else if(otherOperand == defInstrOp2)
+            swapWith = defInstrOp1;
         
-        if(defOpcode == oppositeOpcode && defConstOp->getZExtValue() == constOp->getZExtValue()) {
+        if(swapWith) {
             // Remove 'instr', and replace all of its uses
-            instr->replaceAllUsesWith(defVarOp);
+            instr->replaceAllUsesWith(swapWith);
             instr->eraseFromParent();
-            
             return true;
         }
+        
+        toAnalyze = operand2;
     }
     
     return false;
