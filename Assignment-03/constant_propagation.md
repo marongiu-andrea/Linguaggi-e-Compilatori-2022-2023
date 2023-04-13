@@ -2,7 +2,53 @@
 | ----------------------- | ------------------------------------------------------------------------------------------------------- |
 | Domain                  | set of pairs $\left(\text{variable}, \text{ constant value}\right)$                                     |
 | Direction               | Forward:<br/>$\text{in}[b] = \land \text{ out}[\text{pred}(b)]$<br/>$\text{out}[b] = f_b(\text{in}[b])$ |
-| Transfer function       | $f_b = \text{Gen}_b \cup \left(x - \text{Kill}_b\right)$                                                |
+| Transfer function       | $f_b(x) = \text{Gen}_b \cup \left(x - \text{Kill}_b\right)$                                             |
 | Meet operator ($\land$) | $\cap$                                                                                                  |
 | Boundary condition      | $\text{out}[\text{entry}] = \emptyset$                                                                  |
 | Initial interior points | $\text{out}[b] = \mathcal{U}$                                                                           |
+
+# Esercizio
+
+![](assets/constant_propagation.png)
+
+## Iterazione 1
+
+| &nbsp; | Gen<sub>b</sub>                             | Kill<sub>b</sub>    | in[b]                                                                                                      | out[b]                                                                                                         |
+| ------ | ------------------------------------------- | ------------------- | ---------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| entry  | $\emptyset$                                 | $\emptyset$         | $\emptyset$                                                                                                | $\emptyset$                                                                                                    |
+| BB1    | $\left(k, 2\right)$                         | $\emptyset$         | out[entry]                                                                                                 | $\left\{\left(k, 2\right)\right\}$                                                                             |
+| BB2    | $\emptyset$                                 | $\emptyset$         | out[BB1]                                                                                                   | $\left\{\left(k, 2\right)\right\}$                                                                             |
+| BB3    | $\left(a, k + 2 = 4\right)$                 | $\emptyset$         | out[BB2]                                                                                                   | $\left\{\left(a, 4\right), \left(k, 2\right)\right\}$                                                          |
+| BB4    | $\left(x, 5\right)$                         | $\emptyset$         | out[BB3]                                                                                                   | $\left\{\left(x, 5\right), \left(a, 4\right), \left(k, 2\right)\right\}$                                       |
+| BB5    | $\left(a, k\cdot 2 = 4\right)$              | $\emptyset$         | out[BB2]                                                                                                   | $\left\{\left(a, 4\right), \left(k, 2\right)\right\}$                                                          |
+| BB6    | $\left(x, 8\right)$                         | $\emptyset$         | out[BB5]                                                                                                   | $\left\{\left(x, 8\right), \left(a, 4\right), \left(k, 2\right)\right\}$                                       |
+| BB7    | $\left(k, a = 4\right)$                     | $\left(k, 2\right)$ | $\text{out}[\text{BB4}] \cap \text{out}[\text{BB6}] = \left\{\left(a, 4\right), \left(k, 2\right)\right\}$ | $\left\{\left(a, 4\right), \left(k, 4\right)\right\}$                                                          |
+| BB8    | $\emptyset$                                 | $\emptyset$         | out[BB7]                                                                                                   | $\left\{\left(a, 4\right), \left(k, 4\right)\right\}$                                                          |
+| BB9    | $\left(b, 2\right)$                         | $\emptyset$         | out[BB8]                                                                                                   | $\left\{\left(b, 2\right), \left(a, 4\right), \left(k, 4\right)\right\}$                                       |
+| BB10   | $\left(x, a + k = 4 + 4 = 8\right)$         | $\emptyset$         | out[BB9]                                                                                                   | $\left\{\left(x, 8\right), \left(b, 2\right), \left(k, 4\right), \left(a, 4\right)\right\}$                    |
+| BB11   | $\left(y, a \cdot b = 4 \cdot 2 = 8\right)$ | $\emptyset$         | out[BB10]                                                                                                  | $\left\{\left(y, 8\right), \left(x, 8\right), \left(b, 2\right), \left(k, 4\right), \left(a, 4\right)\right\}$ |
+| BB12   | $\left(k, k + 1 = 5\right)$                 | $\left(k, 4\right)$ | out[BB11]                                                                                                  | $\left\{\left(k, 5\right), \left(y, 8\right), \left(x, 8\right), \left(b, 2\right), \left(a, 4\right)\right\}$ |
+| BB13   | $\emptyset$                                 | $\emptyset$         | out[BB7]                                                                                                   | $\left\{\left(a, 4\right), \left(k, 4\right)\right\}$                                                          |
+| exit   | $\emptyset$                                 | $\emptyset$         | out[BB13]                                                                                                  | $\left\{\left(a, 4\right), \left(k, 4\right)\right\}$                                                          |
+
+C'è stato un cambiamento negli $\text{out}$ di un basic block. Eseguo una seconda iterazione.
+
+## Iterazione 2
+
+| &nbsp; | Gen<sub>b</sub>                | Kill<sub>b</sub>    | in[b]                                                                                                      | out[b]                                                                   |
+| ------ | ------------------------------ | ------------------- | ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| entry  | $\emptyset$                    | $\emptyset$         | $\emptyset$                                                                                                | $\emptyset$                                                              |
+| BB1    | $\left(k, 2\right)$            | $\emptyset$         | out[entry]                                                                                                 | $\left\{\left(k, 2\right)\right\}$                                       |
+| BB2    | $\emptyset$                    | $\emptyset$         | out[BB1]                                                                                                   | $\left\{\left(k, 2\right)\right\}$                                       |
+| BB3    | $\left(a, k + 2 = 4\right)$    | $\emptyset$         | out[BB2]                                                                                                   | $\left\{\left(a, 4\right), \left(k, 2\right)\right\}$                    |
+| BB4    | $\left(x, 5\right)$            | $\emptyset$         | out[BB3]                                                                                                   | $\left\{\left(x, 5\right), \left(a, 4\right), \left(k, 2\right)\right\}$ |
+| BB5    | $\left(a, k\cdot 2 = 4\right)$ | $\emptyset$         | out[BB2]                                                                                                   | $\left\{\left(a, 4\right), \left(k, 2\right)\right\}$                    |
+| BB6    | $\left(x, 8\right)$            | $\emptyset$         | out[BB5]                                                                                                   | $\left\{\left(x, 8\right), \left(a, 4\right), \left(k, 2\right)\right\}$ |
+| BB7    | $\left(k, a = 4\right)$        | $\left(k, 2\right)$ | $\text{out}[\text{BB4}] \cap \text{out}[\text{BB6}] = \left\{\left(a, 4\right), \left(k, 2\right)\right\}$ | $\left\{\left(a, 4\right), \left(k, 4\right)\right\}$                    |
+| BB8    | $\emptyset$                    | $\emptyset$         | $\text{out}[\text{BB7}] \cap \text{out}[\text{BB12}] = \left\{\left(a, 4\right)\right\}$                   | $\left\{\left(a, 4\right)\right\}$                                       |
+| BB9    | $\left(b, 2\right)$            | $\emptyset$         | out[BB8]                                                                                                   | $\left\{\left(b, 2\right), \left(a, 4\right)\right\}$                    |
+| BB10   | $\emptyset$                    | $\emptyset$         | out[BB9]                                                                                                   | $\left\{\left(b, 2\right), \left(a, 4\right)\right\}$                    |
+| BB11   | $\left(y, a\cdot b = 8\right)$ | $\emptyset$         | out[BB10]                                                                                                  | $\left\{\left(y, 8\right), \left(b, 2\right), \left(a, 4\right)\right\}$ |
+| BB12   | $\emptyset$                    | $\emptyset$         | out[BB11]                                                                                                  | $\left\{\left(y, 8\right), \left(b, 2\right), \left(a, 4\right)\right\}$ |
+| BB13   | $\emptyset$                    | $\emptyset$         | out[BB8]                                                                                                   | $\left\{\left(a, 4\right)\right\}$                                       |
+| exit   | $\emptyset$                    | $\emptyset$         | out[BB13]                                                                                                  | $\left\{\left(a, 4\right)\right\}$                                       |
