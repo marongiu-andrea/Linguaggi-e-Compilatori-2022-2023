@@ -27,7 +27,7 @@ public:
     for (Loop::block_iterator BI = L->block_begin(); BI != L->block_end(); ++BI){
       BasicBlock *B = *BI;
       for (auto Iter = B->begin(); Iter != B->end(); ++Iter){
-        if(!strcmp(Iter->getOpcodeName(), "sub")){
+        if(Iter->getOpcode() == Instruction::Sub){
           outs() << *Iter << " ###QUESTA E UNA SUB###\n";
         }else{
           outs() << *Iter << "\n";
