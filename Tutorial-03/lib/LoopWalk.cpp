@@ -71,27 +71,18 @@ class LoopWalkPass final : public LoopPass
 
 								// Stampa il Basic Block che contiene l'istruzione 
 								outs()<<*((*secondOperandInstruction).getParent());
-
 							}
 							else
-								outs()<<"Il secondo operando è una costante di valore "<<(*secondOperand).getValue()<<"\n";
-								
+								outs()<<"Il secondo operando è una costante di valore "<<(*secondOperand).getValue()<<"\n";	
 						}
 					}
-					
 				}
-				
-					
-
 			}
 			else
 				outs()<<"Il loop NON ha un preheader\n";
 		}
 		else
 			outs()<<"Il loop NON è in forma normalizzata\n\n";
-
-
-
 
 		return false; 
 	}
