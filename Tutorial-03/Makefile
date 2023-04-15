@@ -1,9 +1,8 @@
 OPTIMIZER := libLoopWalk.so
 OBJs := $(subst .cpp,.o,$(wildcard lib/*.cpp))
 
-LLVM_VERSION ?= 16
-
-CXXFLAGS := $(shell llvm-config-$(LLVM_VERSION) --cxxflags) -fPIC
+CXX = /usr/bin/clang++
+CXXFLAGS := $(shell llvm-config --cxxflags) -fPIC -Wall -Werror -pedantic-errors
 
 all: $(OPTIMIZER) 
 
