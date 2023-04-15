@@ -27,18 +27,34 @@ public:
       preheader->print(outs());
       outs() << "\n";
     }
-    //scorro tutti i BB che compongono il loop e li stampo
+    //scorro tutti i BB che compongono il loop, scorro tutte le istruzioni di ogni BB e cerco una sub e stampo l'istruzione che contiene la definizione dei suoi operandi (solo se non sono delle costanti);
+    //inoltre, stampo anche il BB che contiene l'istruzione di SUB
     BasicBlock *actualBB;
-    outs() << "Procedo alla stampa dei BB che compongono il loop:\n\n";
+    //outs() << "Procedo alla stampa dei BB che compongono il loop:\n\n";
     for (Loop::block_iterator BI = L->block_begin(); BI != L->block_end(); ++BI) {
       actualBB = *BI;
-      if(actualBB) {
-        actualBB->print(outs());
-        outs() << "\n";
+      for (auto &instr : *actualBB) {
+        if( instr.isBinaryOp() && instr.getOpcode() == Instruction::Sub) { //allora ho appena indivudato una istruzione di sottrazione
+          //TODO: prendi i due operandi dell'operazione e verifica che non siano castabili a delle costanti
+          checkOperand(instr.getOperand(0));
+          checkOperand(instr.getOperand(1));
+        }
       }
     }
     return false;
   }
+
+  void checkOperand(Value* operand) {
+    if (!dyn_cast<ConstantInt>(operand)) { //se l'operando che ho appena ricevuto non e' una costante, allora lo provo a castare ad istruzione e stamparne il BB di appartenenza
+      Instruction *instr = dyn_cast<Instruction>(operand);
+      if (instr) { //il cast ad istruzione e' andato a buon fine
+        BasicBlock *B = instr->getParent();
+        B->printAsOperand(outs(),false);
+        outs() << "\n";
+      }
+    }
+  }
+
 };
 
 char LoopWalkPass::ID = 0;
