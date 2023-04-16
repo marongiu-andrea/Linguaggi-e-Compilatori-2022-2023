@@ -5,36 +5,76 @@
 
 using namespace llvm;
 
-extern "C" PassPluginLibraryInfo llvmGetPassPluginInfo() {
+extern "C" PassPluginLibraryInfo llvmGetPassPluginInfo()
+{
   return {
       .APIVersion = LLVM_PLUGIN_API_VERSION,
       .PluginName = "LocalOpts",
       .PluginVersion = LLVM_VERSION_STRING,
       .RegisterPassBuilderCallbacks =
-          [](PassBuilder &PB) {
-            PB.registerPipelineParsingCallback(
-		// CREO LO STUB per il mio TestPass
-		// 
-		// RICORDA: Posso usare (coi relativi Pass Managers)
-		// -------------------------------------------------
-		// ModulePass
-		// CallGraphSCCPass
-		// FunctionPass
-		// LoopPass
-		// RegionPass
-		// BasicBlockPass
-		[](StringRef Name, ModulePassManager &MPM,
-                   ArrayRef<PassBuilder::PipelineElement>) -> bool {
-                  if (Name == "transform") {
-                    MPM.addPass(TransformPass());
-                    return true;
-                  }
-                  // TODO: Implementare gli stub per
-		  // Algebraic Identity
-		  // Strength Reduction
-		  // Multi-instruction Operations
-                  return false;
-                });
-          } // RegisterPassBuilderCallbacks
-  };        // struct PassPluginLibraryInfo
+          [](PassBuilder &PB)
+      {
+        PB.registerPipelineParsingCallback(
+            // CREO LO STUB per il mio TestPass
+            //
+            // RICORDA: Posso usare (coi relativi Pass Managers)
+            // -------------------------------------------------
+            // ModulePass
+            // CallGraphSCCPass
+            // FunctionPass
+            // LoopPass
+            // RegionPass
+            // BasicBlockPass
+            [](StringRef Name, ModulePassManager &MPM,
+               ArrayRef<PassBuilder::PipelineElement>) -> bool
+            {
+              if (Name == "transform")
+              {
+                MPM.addPass(TransformPass());
+                return true;
+              }
+              // TODO: Implementare gli stub per
+              // Algebraic Identity
+              // Strength Reduction
+              // Multi-instruction Operations
+              return false;
+            });
+        PB.registerPipelineParsingCallback(
+            [](StringRef Name, ModulePassManager &MPM,
+               ArrayRef<PassBuilder::PipelineElement>)
+                -> bool
+            {
+              if (Name == "algebric")
+              {
+                MPM.addPass(AlgebraicIdentityPass());
+                return true;
+              }
+              return false;
+            });
+        PB.registerPipelineParsingCallback(
+            [](StringRef Name, ModulePassManager &MPM,
+               ArrayRef<PassBuilder::PipelineElement>)
+                -> bool
+            {
+              if (Name == "strength_reduction")
+              {
+                MPM.addPass(StrengthReductionPass());
+                return true;
+              }
+              return false;
+            });
+        PB.registerPipelineParsingCallback(
+            [](StringRef Name, ModulePassManager &MPM,
+               ArrayRef<PassBuilder::PipelineElement>)
+                -> bool
+            {
+              if (Name == "multi_instruction")
+              {
+                MPM.addPass(MultiInstructonPass());
+                return true;
+              }
+              return false;
+            });
+      } // RegisterPassBuilderCallbacks
+  };    // struct PassPluginLibraryInfo
 }
