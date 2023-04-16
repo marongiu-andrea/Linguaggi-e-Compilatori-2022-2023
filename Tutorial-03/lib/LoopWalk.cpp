@@ -26,9 +26,23 @@ public:
     }
     for (Loop::block_iterator BI = L->block_begin(); BI != L->block_end(); ++BI){
       BasicBlock *B = *BI;
+      outs() << "Indirizzo Basic Block: " << B << "\n";
       for (auto Iter = B->begin(); Iter != B->end(); ++Iter){
         if(Iter->getOpcode() == Instruction::Sub){
           outs() << *Iter << " ###QUESTA E UNA SUB###\n";
+          
+          PHINode *binOpLeft= dyn_cast<PHINode>(Iter->getOperand(0));
+          PHINode *binOpRight= dyn_cast<PHINode>(Iter->getOperand(1));
+
+          if(binOpLeft){
+            outs() <<"\tOperando sinistra "<< *binOpLeft <<"\n";
+            outs() <<"\tBasic Block "<< binOpLeft->getParent() <<"\n";
+          } 
+          if(binOpRight){
+            outs() <<"\tOperando destra "<< *binOpRight <<"\n";
+            outs() <<"\tBasic Block "<< binOpRight->getParent() <<"\n";
+          }
+
         }else{
           outs() << *Iter << "\n";
         }
