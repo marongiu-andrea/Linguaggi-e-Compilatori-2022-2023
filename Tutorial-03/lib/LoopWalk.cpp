@@ -37,6 +37,30 @@ public:
 
     }
     
+    outs() << "Scrorrendo le istruzioni del Loop: \n";
+    for (Loop::block_iterator BI = L->block_begin(); BI != L->block_end(); ++BI)
+    {
+      BasicBlock *bb = *BI;
+      for(auto Iter = bb->begin(); Iter != bb->end(); ++Iter)
+      {
+        Instruction &Inst = *Iter;
+        if(Inst.getOpcode() == Instruction::Sub)
+        {
+          outs() << "Istruzione SUB: " << Inst << "\n";
+          for(auto *opIter = Inst.op_begin(); opIter != Inst.op_end(); ++opIter)
+          {
+            Value *op = *opIter;
+            if(Instruction *arg = dyn_cast<Instruction>(op))
+            {
+              outs() << "Istruzione che definisce: " << *op <<"\n";
+              outs() << "Basic Block dell'istruzione:\n" << *arg->getParent() << "\n";
+            }
+          }
+        }
+      }
+    }
+    
+
     return false; 
   }
 };
