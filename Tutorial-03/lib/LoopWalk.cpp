@@ -17,15 +17,17 @@ class LoopWalkPass final : public LoopPass
 
 	virtual void getAnalysisUsage(AnalysisUsage &AU) const override 
 	{
+		// Imposta il Dominator Tree e le Loop Info come necessarie all'esecuzione del passo corrente
 		AU.addRequired<DominatorTreeWrapperPass>();
 		AU.addRequired<LoopInfoWrapperPass>();
-		//getAnalysis<DominatorTreeWrapperPass, LoopInfoWrapperPass>();
-		DominatorTree * DT = &getAnalysis<DominatorTreeWrapperPass>().getDomTree();
-		//CSCD70_Tutorial2_
 	}
 
 	virtual bool runOnLoop(Loop *L, LPPassManager &LPM) override 
 	{
+		// Ottiene riferimenti al Dominator Tree e alle Loop Info
+		DominatorTree * DT = &getAnalysis<DominatorTreeWrapperPass>().getDomTree();
+		LoopInfo * LI = &getAnalysis<LoopInfoWrapperPass>().getLoopInfo();
+
 		outs()<<"\nLOOPPASS INIZIATO...\n";
 
 		// ----------------- ESERCIZIO 1 ------------------
