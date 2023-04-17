@@ -1,2 +1,2 @@
 .vscode/*
-*properties.json
+!.vscode/properties.json
