@@ -14,10 +14,12 @@ public:
   LoopWalkPass() : LoopPass(ID) {}
 
   virtual void getAnalysisUsage(AnalysisUsage &AU) const override {
-    DominatorTree *DT = &getAnalysis<DominatorTreeWrapperPass>().getDomTree();
+    AU.addRequired<DominatorTreeWrapperPass>();
+    AU.addRequired<LoopInfoWrapperPass>();
   }
 
   virtual bool runOnLoop(Loop *L, LPPassManager &LPM) override {
+    DominatorTree *DT = &getAnalysis<DominatorTreeWrapperPass>().getDomTree();
     outs() << "\nLOOPPASS INIZIATO...\n"; 
     if (L->isLoopSimplifyForm())
         outs() << "true\n";
