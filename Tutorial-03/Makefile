@@ -1,13 +1,24 @@
 OPTIMIZER := libLoopWalk.so
-OBJs := $(subst .cpp,.o,$(wildcard lib/*.cpp))
+OPTIMIZER_NEW := libLoopWalkNew.so
+OBJs := LoopWalk.o
+OBJs_NEW := LoopWalkNew.o
 
 CXX = /usr/bin/clang++
-CXXFLAGS := $(shell llvm-config --cxxflags) -fPIC -Wall -Werror -pedantic-errors
+CXXFLAGS := $(shell llvm-config --cxxflags) -fPIC -std=c++20 -Wall -Werror -pedantic-errors
 
-all: $(OPTIMIZER) 
+all: $(OPTIMIZER) $(OPTIMIZER_NEW)
 
-$(OPTIMIZER): $(OBJs)
+$(OPTIMIZER): lib/LoopWalk.o
 	$(CXX) -dylib -shared $^ -o $@
+
+$(OPTIMIZER_NEW): lib/LoopWalkNew.o
+	$(CXX) -dylib -shared $^ -o $@
+
+lib/LoopWalk.o: lib/LoopWalk.cpp
+	$(CXX) $(CXXFLAGS) -c $^ -o $@
+
+lib/LoopWalkNew.o: lib/LoopWalkNew.cpp lib/LoopWalkNew.hpp
+	$(CXX) $(CXXFLAGS) -c lib/LoopWalkNew.cpp -o $@
 
 .PHONY: clean
 clean:
