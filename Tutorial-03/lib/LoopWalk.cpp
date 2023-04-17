@@ -1,5 +1,6 @@
 #include <llvm/Analysis/LoopPass.h>
 #include <llvm/Analysis/ValueTracking.h>
+#include <llvm/IR/Dominators.h>
 
 using namespace llvm;
 
@@ -12,6 +13,11 @@ public:
   LoopWalkPass() : LoopPass(ID) {}
 
   virtual void getAnalysisUsage(AnalysisUsage &AU) const override {
+    AU.setPreservesAll(); //indico di preservare i risutati di questo passo di analisi
+    AU.addRequired<DominatorTreeWrapperPass>();
+    AU.addRequired<LoopInfoWrapperPass>(); 
+    //queste due direttive mi specificano di dover eseguire prima i passi di Dominance e LoopInfo prima di procedere ad eseguire questo passo, perche' i risultati
+    //di tali passi verranno utilizzati in questo passo di analisi
   }
 
   virtual bool runOnLoop(Loop *L, LPPassManager &LPM) override {
@@ -20,6 +26,8 @@ public:
     if (L->isLoopSimplifyForm()) {
       outs() << "Il Loop e' nella forma normale!\n\n";
     }
+
+    DominatorTree *DT = &getAnalysis<DominatorTreeWrapperPass>().getDomTree();
     //prendo il blocco di preheader e lo stampo
     BasicBlock *preheader = L->getLoopPreheader();
     if (preheader){
