@@ -1,6 +1,7 @@
 #include <llvm/Analysis/LoopPass.h>
 #include <llvm/Analysis/ValueTracking.h>
 #include <llvm/Analysis/LoopInfo.h>
+#include <llvm/IR/Dominators.h>
 
 using namespace llvm;
 
@@ -13,6 +14,7 @@ public:
   LoopWalkPass() : LoopPass(ID) {}
 
   virtual void getAnalysisUsage(AnalysisUsage &AU) const override {
+    DominatorTree *DT = &getAnalysis<DominatorTreeWrapperPass>().getDomTree();
   }
 
   virtual bool runOnLoop(Loop *L, LPPassManager &LPM) override {
@@ -26,7 +28,7 @@ public:
     BasicBlock* preheder = L->getLoopPreheader();
     // LoopPass* simplify = isLoopSimplifyForm();
     if(preheder){
-      outs() << "Il loop ha un preheader:\nIstruzioni Preheader\n";
+      outs() << "Il loop ha un preheader:\n\nIstruzioni Preheader\n";
     }  
     return false; 
   }
