@@ -1,10 +1,24 @@
 #include "LocalOpts.h"
 #include "llvm/IR/InstrTypes.h"
+#include "llvm/IR/Constants.h"
+#include "llvm/IR/DerivedTypes.h"
+#include "llvm/IR/Type.h"
+#include "llvm/IR/Instructions.h"
+#include "llvm/IR/IRBuilder.h"
+#include "cmath"
+#include "vector"
 
 using namespace llvm;
 
+bool isPoweOfTwo(int n){
+  if(n>0)
+    return (n & (n-1)) == 0;
+  else
+    return false;
+}
+
 bool runOnBasicBlock(BasicBlock &B) {
-    
+    /*
     // Preleviamo le prime due istruzioni del BB
     Instruction &Inst1st = *B.begin(), &Inst2nd = *(++B.begin());
 
@@ -53,6 +67,118 @@ bool runOnBasicBlock(BasicBlock &B) {
     // Si possono aggiornare le singole references separatamente?
     // Controlla la documentazione e prova a rispondere.
     Inst1st.replaceAllUsesWith(NewInst);
+    
+    */
+    std::vector<Instruction*> daEliminare;
+    for (Instruction &iter : B){
+      //All'iterazione successiva cancello l'istruzione
+  
+      if(iter.getOpcode() == Instruction::Mul){
+        int operandPow2=-1, operandNotPow=-1;
+        int value0,value1;
+        double valueF;
+        bool trasformato = false;
+        //Estraggo gli operandi in forma numerica
+        if(ConstantInt *C = dyn_cast<ConstantInt>(iter.getOperand(0))) {
+          value0 = C->getSExtValue();
+          trasformato = true;  
+        }
+        if(ConstantInt *C = dyn_cast<ConstantInt>(iter.getOperand(1))) {
+          value1 = C->getSExtValue();
+          trasformato=true;  
+        }
+        if(!trasformato)
+          continue;
+        //controllo se uno dei due è potenza di 2
+        if(isPoweOfTwo(value0)){
+            operandPow2=0;
+            operandNotPow=1;
+            printf("Il primo operando numerico è potenza di 2: %i\n",value0);
+            valueF=value0;
+          }else if (isPoweOfTwo(value1)){
+            operandPow2=1;
+            operandNotPow=0;
+            printf("Il secondo operando numerico è potenza di 2: %i\n",value1);
+            valueF=value1;
+          }else{
+            //nessuno dei due operandi è potenza di 2
+            continue;
+          }
+        //creo l'operando per la nuova operazione di shift
+        ConstantInt *Con = dyn_cast<ConstantInt>(iter.getOperand(operandPow2));
+        Value *newOP = ConstantInt::get(Con->getType(),
+          static_cast<int>(log2(valueF)));
+        
+        //creazione nuova istruzione
+        IRBuilder<> builder(&iter);
+        Value* NewInst = builder.CreateShl(iter.getOperand(operandNotPow),
+          newOP);
+        Instruction* inst = static_cast<Instruction*>(NewInst);
+        printf("Ho creato la nuova istruzione\n");
+
+        //inserisco la nuoca mul e salvo il riferimento alla vecchia istruzione in una struttura dati
+        //per eliminarlo in seguito 
+        inst->insertAfter(&iter);     
+        iter.replaceAllUsesWith(inst);
+        printf("Ho inserito la nuova istruzione\n");
+        daEliminare.push_back(&iter);
+
+      }else if(iter.getOpcode() == Instruction::SDiv){
+        int operandPow2=-1, operandNotPow=-1;
+        int value0,value1;
+        double valueF;
+        bool trasformato = false;
+        //Estraggo gli operandi in forma numerica
+        if(ConstantInt *C = dyn_cast<ConstantInt>(iter.getOperand(0))) {
+          value0 = C->getSExtValue();
+          trasformato = true;  
+        }
+        if(ConstantInt *C = dyn_cast<ConstantInt>(iter.getOperand(1))) {
+          value1 = C->getSExtValue();
+          trasformato=true;  
+        }
+        if(!trasformato)
+          continue;
+        //controllo se uno dei due è potenza di 2
+        if(isPoweOfTwo(value0)){
+            operandPow2=0;
+            operandNotPow=1;
+            printf("Il primo operando numerico è potenza di 2: %i\n",value0);
+            valueF=value0;
+          }else if (isPoweOfTwo(value1)){
+            operandPow2=1;
+            operandNotPow=0;
+            printf("Il secondo operando numerico è potenza di 2: %i\n",value1);
+            valueF=value1;
+          }else{
+            //nessuno dei due operandi è potenza di 2
+            continue;
+          }
+        //creo l'operando per la nuova operazione di shift
+        ConstantInt *Con = dyn_cast<ConstantInt>(iter.getOperand(operandPow2));
+        Value *newOP = ConstantInt::get(Con->getType(),
+          static_cast<int>(log2(valueF)));
+        
+        //creazione nuova istruzione
+        IRBuilder<> builder(&iter);
+        Value* NewInst = builder.CreateLShr(iter.getOperand(operandNotPow),
+          newOP);
+        Instruction* inst = static_cast<Instruction*>(NewInst);
+        printf("Ho creato la nuova istruzione\n");
+
+        //inserisco la nuoca mul e salvo il riferimento alla vecchia istruzione in una struttura dati
+        //per eliminarlo in seguito 
+        inst->insertAfter(&iter);     
+        iter.replaceAllUsesWith(inst);
+        printf("Ho inserito la nuova istruzione\n");
+        daEliminare.push_back(&iter);
+
+      }
+    };
+
+    /*for(int i=0; i < daEliminare.size(); i++){
+      daEliminare[i]->eraseFromParent();
+    }*/
 
     return true;
   }

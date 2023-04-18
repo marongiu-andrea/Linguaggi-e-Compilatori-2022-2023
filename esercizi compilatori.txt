@@ -1,0 +1,62 @@
+﻿Live variable Analysis
+in[b] = fb(out[b])
+f         Use         Def
+1         {}         {b,a}
+2         {b}         {a,c}
+3         {a}         {b,d}
+
+
+
+
+i        j         a         m         n         u1         u2         u3
+
+
+0         0         0         0        0        0        0        0
+
+
+in[exit]= insieme vuoto
+out[b4]= insieme vuoto 
+in[b4]=  0         0         0         0        0        0        0        1
+out[b3]=0         0         0         0        0        0        0        1
+in[b3]  = 0         0         0         0        0        0        1        1
+out[b2]= 0         0         0         0        0        0        1        1
+in[b2]  = 1         1         0         0        0        0        1        1
+out[b1] = 1         1         0         0        0        0        1        1
+in[b1]   =  0         0         0         1        1        1        1        1
+secondo ciclo
+out[B4]=  1         1         0         0        0        0        1        1
+in questo caso out di b4 è uguale all’unione degli input dei suoi successori compreso b2
+in[B4]=    0         1         0         0        0        0        1        1
+out[B3]=  0         1         0         0        0        0        1        1
+in[b3]        =  0         1         0         0        0        0        1        1
+out [B2]=  0         1         0         0        0        0        1        1
+in B2 =     1         1         0         0        0        0        1        1
+out b1=    1         1         0         0        0        0        1        1
+in b1=       0        0         0         1        1        1        1        1
+
+
+Available Expressions
+
+
+A-B=0                A*B= 0        A-1=0
+OUT [ENTRY]= VUOTO
+IN B2 = VUOTO
+OUT B2=          1        0        0
+IN B3=         1        0        0
+OUT B3         1        1        0
+IN B4=        1        1        0
+OUT B4=        1        1        0
+IN B5                1        1        0
+OUT B5=        0        0        1
+IN B6 =        0        0        1
+OUT B6=        1        0        1
+SECONDO CICLO
+
+
+IN B4=         1        0        0
+OUT B4=         1        0        0
+IN B5=        1        0        0
+OUTB5=        0        0        1
+INB6=                0        0        1
+OUTB6=        1        0        1
+CONVERGENZA RAGGIUNTA.
