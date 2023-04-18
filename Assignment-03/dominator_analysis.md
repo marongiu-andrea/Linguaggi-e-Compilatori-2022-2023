@@ -15,13 +15,13 @@
 
 | &nbsp; | Gen<sub>b</sub> | Kill<sub>b</sub> | in[b] | out[b] |
 | ------ | --------------- | ---------------- | ----- | ------ |
-| A | $\left\{A\rigth} | $\emptyset$ | $\emptyset$ | $\left\{A\rigth} |
-| B | $\left\{B\rigth} | $\emptyset$ | $\text{out}[\text{A}]$ | $\left\{A, B\rigth} |
-| C | $\left\{C\rigth} | $\emptyset$ | $\text{out}[\text{B}]$ | $\left\{A, C\rigth} |
-| D | $\left\{D\rigth} | $\emptyset$ | $\text{out}[\text{C}]$ | $\left\{A, C, D\rigth} |
-| E | $\left\{E\rigth} | $\emptyset$ | $\text{out}[\text{E}]$ | $\left\{A, C, E\rigth} |
-| F | $\left\{F\rigth} | $\emptyset$ | $\text{out}[\text{F}]$ | $\left\{A, C, F\rigth} |
-| G | $\left\{G\rigth} | $\emptyset$ | $\text{out}[\text{G}]$ | $\left\{A, G\rigth} |
+| A | $\left\{A\rigth}$ | $\emptyset$ | $\emptyset$ | $\left\{A\rigth} |
+| B | $\left\{B\rigth}$ | $\emptyset$ | $\text{out}[\text{A}]$ | $\left\{A, B\rigth}$ |
+| C | $\left\{C\rigth}$ | $\emptyset$ | $\text{out}[\text{B}]$ | $\left\{A, C\rigth}$ |
+| D | $\left\{D\rigth}$ | $\emptyset$ | $\text{out}[\text{C}]$ | $\left\{A, C, D\rigth}$ |
+| E | $\left\{E\rigth}$ | $\emptyset$ | $\text{out}[\text{E}]$ | $\left\{A, C, E\rigth}$ |
+| F | $\left\{F\rigth}$ | $\emptyset$ | $\text{out}[\text{F}]$ | $\left\{A, C, F\rigth}$ |
+| G | $\left\{G\rigth}$ | $\emptyset$ | $\text{out}[\text{G}]$ | $\left\{A, G\rigth}$ |
 
 Gli out sono cambiati, occorre una nuova iterazione.
 
@@ -29,12 +29,12 @@ Gli out sono cambiati, occorre una nuova iterazione.
 
 | &nbsp; | Gen<sub>b</sub> | Kill<sub>b</sub> | in[b] | out[b] |
 | ------ | --------------- | ---------------- | ----- | ------ |
-| A | $\left\{A\rigth} | $\emptyset$ | $\emptyset$ | $\left\{A\rigth} |
-| B | $\left\{B\rigth} | $\emptyset$ | $\text{out}[\text{A}]$ | $\left\{A, B\rigth} |
-| C | $\left\{C\rigth} | $\emptyset$ | $\text{out}[\text{B}]$ | $\left\{A, C\rigth} |
-| D | $\left\{D\rigth} | $\emptyset$ | $\text{out}[\text{C}]$ | $\left\{A, C, D\rigth} |
-| E | $\left\{E\rigth} | $\emptyset$ | $\text{out}[\text{E}]$ | $\left\{A, C, E\rigth} |
-| F | $\left\{F\rigth} | $\emptyset$ | $\text{out}[\text{F}]$ | $\left\{A, C, F\rigth} |
-| G | $\left\{G\rigth} | $\emptyset$ | $\text{out}[\text{G}]$ | $\left\{A, G\rigth} |
+| A | $\left\{A\rigth}$ | $\emptyset$ | $\emptyset$ | $\left\{A\rigth} |
+| B | $\left\{B\rigth}$ | $\emptyset$ | $\text{out}[\text{A}]$ | $\left\{A, B\rigth}$ |
+| C | $\left\{C\rigth}$ | $\emptyset$ | $\text{out}[\text{B}]$ | $\left\{A, C\rigth}$ |
+| D | $\left\{D\rigth}$ | $\emptyset$ | $\text{out}[\text{C}]$ | $\left\{A, C, D\rigth}$ |
+| E | $\left\{E\rigth}$ | $\emptyset$ | $\text{out}[\text{E}]$ | $\left\{A, C, E\rigth}$ |
+| F | $\left\{F\rigth}$ | $\emptyset$ | $\text{out}[\text{F}]$ | $\left\{A, C, F\rigth}$ |
+| G | $\left\{G\rigth}$ | $\emptyset$ | $\text{out}[\text{G}]$ | $\left\{A, G\rigth}$ |
 
 Gli out non sono camibati: l'algoritmo termina.
