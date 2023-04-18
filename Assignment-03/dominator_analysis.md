@@ -15,13 +15,13 @@
 
 | &nbsp; | Gen<sub>b</sub> | Kill<sub>b</sub> | in[b] | out[b] |
 | ------ | --------------- | ---------------- | ----- | ------ |
-| A | $\left\lbrace A\rigth\rbrace$ | $\emptyset$ | $\emptyset$ | $\left\lbrace A\rigth\rbrace$ |
-| B | $\left\lbrace B\rigth\rbrace$ | $\emptyset$ | $\text{out}[\text{A}]$ | $\left\lbrace A, B\rigth\rbrace$ |
-| C | $\left\lbrace C\rigth\rbrace$ | $\emptyset$ | $\text{out}[\text{B}]$ | $\left\lbrace A, C\rigth\rbrace$ |
-| D | $\left\lbrace D\rigth\rbrace$ | $\emptyset$ | $\text{out}[\text{C}]$ | $\left\lbrace A, C, D\rigth\rbrace$ |
-| E | $\left\lbrace E\rigth\rbrace$ | $\emptyset$ | $\text{out}[\text{E}]$ | $\left\lbrace A, C, E\rigth\rbrace$ |
-| F | $\left\lbrace F\rigth\rbrace$ | $\emptyset$ | $\text{out}[\text{F}]$ | $\left\lbrace A, C, F\rigth\rbrace$ |
-| G | $\left\lbrace G\rigth\rbrace$ | $\emptyset$ | $\text{out}[\text{G}]$ | $\left\lbrace A, G\rigth\rbrace$ |
+| A | $\left\lbrace A\right\rbrace$ | $\emptyset$ | $\emptyset$ | $\left\lbrace A\right\rbrace$ |
+| B | $\left\lbrace B\right\rbrace$ | $\emptyset$ | $\text{out}[\text{A}]$ | $\left\lbrace A, B\right\rbrace$ |
+| C | $\left\lbrace C\right\rbrace$ | $\emptyset$ | $\text{out}[\text{B}]$ | $\left\lbrace A, C\right\rbrace$ |
+| D | $\left\lbrace D\right\rbrace$ | $\emptyset$ | $\text{out}[\text{C}]$ | $\left\lbrace A, C, D\right\rbrace$ |
+| E | $\left\lbrace E\right\rbrace$ | $\emptyset$ | $\text{out}[\text{E}]$ | $\left\lbrace A, C, E\right\rbrace$ |
+| F | $\left\lbrace F\right\rbrace$ | $\emptyset$ | $\text{out}[\text{F}]$ | $\left\lbrace A, C, F\right\rbrace$ |
+| G | $\left\lbrace G\right\rbrace$ | $\emptyset$ | $\text{out}[\text{G}]$ | $\left\lbrace A, G\right\rbrace$ |
 
 Gli out sono cambiati, occorre una nuova iterazione.
 
@@ -29,12 +29,12 @@ Gli out sono cambiati, occorre una nuova iterazione.
 
 | &nbsp; | Gen<sub>b</sub> | Kill<sub>b</sub> | in[b] | out[b] |
 | ------ | --------------- | ---------------- | ----- | ------ |
-| A | $\left\lbrace A\rigth\rbrace$ | $\emptyset$ | $\emptyset$ | $\left\lbrace A\rigth\rbrace$ |
-| B | $\left\lbrace B\rigth\rbrace$ | $\emptyset$ | $\text{out}[\text{A}]$ | $\left\lbrace A, B\rigth\rbrace$ |
-| C | $\left\lbrace C\rigth\rbrace$ | $\emptyset$ | $\text{out}[\text{B}]$ | $\left\lbrace A, C\rigth\rbrace$ |
-| D | $\left\lbrace D\rigth\rbrace$ | $\emptyset$ | $\text{out}[\text{C}]$ | $\left\lbrace A, C, D\rigth\rbrace$ |
-| E | $\left\lbrace E\rigth\rbrace$ | $\emptyset$ | $\text{out}[\text{E}]$ | $\left\lbrace A, C, E\rigth\rbrace$ |
-| F | $\left\lbrace F\rigth\rbrace$ | $\emptyset$ | $\text{out}[\text{F}]$ | $\left\lbrace A, C, F\rigth\rbrace$ |
-| G | $\left\lbrace G\rigth\rbrace$ | $\emptyset$ | $\text{out}[\text{G}]$ | $\left\lbrace A, G\rigth\rbrace$ |
+| A | $\left\lbrace A\right\rbrace$ | $\emptyset$ | $\emptyset$ | $\left\lbrace A\right\rbrace$ |
+| B | $\left\lbrace B\right\rbrace$ | $\emptyset$ | $\text{out}[\text{A}]$ | $\left\lbrace A, B\right\rbrace$ |
+| C | $\left\lbrace C\right\rbrace$ | $\emptyset$ | $\text{out}[\text{B}]$ | $\left\lbrace A, C\right\rbrace$ |
+| D | $\left\lbrace D\right\rbrace$ | $\emptyset$ | $\text{out}[\text{C}]$ | $\left\lbrace A, C, D\right\rbrace$ |
+| E | $\left\lbrace E\right\rbrace$ | $\emptyset$ | $\text{out}[\text{E}]$ | $\left\lbrace A, C, E\right\rbrace$ |
+| F | $\left\lbrace F\right\rbrace$ | $\emptyset$ | $\text{out}[\text{F}]$ | $\left\lbrace A, C, F\right\rbrace$ |
+| G | $\left\lbrace G\right\rbrace$ | $\emptyset$ | $\text{out}[\text{G}]$ | $\left\lbrace A, G\right\rbrace$ |
 
 Gli out non sono camibati: l'algoritmo termina.
