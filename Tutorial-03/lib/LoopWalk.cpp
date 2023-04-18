@@ -1,5 +1,7 @@
+#include "llvm/Analysis/LoopInfo.h"
 #include "llvm/IR/BasicBlock.h"
 #include "llvm/IR/Constants.h"
+#include "llvm/IR/Dominators.h"
 #include "llvm/IR/Instruction.h"
 #include "llvm/IR/Value.h"
 #include "llvm/Support/Casting.h"
@@ -17,7 +19,11 @@ public:
 
   LoopWalkPass() : LoopPass(ID) {}
 
-  virtual void getAnalysisUsage(AnalysisUsage &AU) const override {}
+  virtual void getAnalysisUsage(AnalysisUsage &AU) const override {
+    AU.setPreservesAll();
+    AU.addRequired<DominatorTreeWrapperPass>();
+    AU.addRequired<LoopInfoWrapperPass>();
+  }
 
   virtual bool runOnLoop(Loop *L, LPPassManager &LPM) override {
     outs() << "\nLOOPPASS INIZIATO...\n";
@@ -30,6 +36,9 @@ public:
              ++BI) {
           BasicBlock *B = *BI;
           outs() << *B << "\n";
+          outs()<<"INIZIO ANALISI\n";
+          DominatorTree *DT = &getAnalysis<DominatorTreeWrapperPass>().getDomTree();
+          DT->print(outs());
         }
         for (Loop::block_iterator BI = L->block_begin(); BI != L->block_end();
              ++BI) {
