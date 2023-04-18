@@ -4,8 +4,8 @@
 | Direction               | Forward:<br/>$\text{in}[b] = \land \text{ out}[\text{pred}(b)]$<br/>$\text{out}[b] = f_b(\text{in}[b])$ |
 | Transfer function       | $f_b(x) = \left\lbrace b\right\rbrace \cup \text{in}[b]$                                                           |
 | Meet operator           | $\cap$                                                                                                  |
-| Boundary condition      | $\text{out}[\text{entry}] = \text{entry}                                                                |
-| Initial interior points | $\text{out}[b] = $\mathcal{U}$                                                                          |
+| Boundary condition      | $\text{out}[\text{entry}] = \text{entry}$                                                              |
+| Initial interior points | $\text{out}[b] = \mathcal{U}$                                                                          |
 
 # Esercizio
 
@@ -15,7 +15,7 @@
 
 | &nbsp; | Gen<sub>b</sub> | Kill<sub>b</sub> | in[b] | out[b] |
 | ------ | --------------- | ---------------- | ----- | ------ |
-| A | $\left\lbrace A\rigth\rbrace$ | $\emptyset$ | $\emptyset$ | $\left\lbrace A\rigth\rbrace |
+| A | $\left\lbrace A\rigth\rbrace$ | $\emptyset$ | $\emptyset$ | $\left\lbrace A\rigth\rbrace$ |
 | B | $\left\lbrace B\rigth\rbrace$ | $\emptyset$ | $\text{out}[\text{A}]$ | $\left\lbrace A, B\rigth\rbrace$ |
 | C | $\left\lbrace C\rigth\rbrace$ | $\emptyset$ | $\text{out}[\text{B}]$ | $\left\lbrace A, C\rigth\rbrace$ |
 | D | $\left\lbrace D\rigth\rbrace$ | $\emptyset$ | $\text{out}[\text{C}]$ | $\left\lbrace A, C, D\rigth\rbrace$ |
@@ -29,7 +29,7 @@ Gli out sono cambiati, occorre una nuova iterazione.
 
 | &nbsp; | Gen<sub>b</sub> | Kill<sub>b</sub> | in[b] | out[b] |
 | ------ | --------------- | ---------------- | ----- | ------ |
-| A | $\left\lbrace A\rigth\rbrace$ | $\emptyset$ | $\emptyset$ | $\left\lbrace A\rigth\rbrace |
+| A | $\left\lbrace A\rigth\rbrace$ | $\emptyset$ | $\emptyset$ | $\left\lbrace A\rigth\rbrace$ |
 | B | $\left\lbrace B\rigth\rbrace$ | $\emptyset$ | $\text{out}[\text{A}]$ | $\left\lbrace A, B\rigth\rbrace$ |
 | C | $\left\lbrace C\rigth\rbrace$ | $\emptyset$ | $\text{out}[\text{B}]$ | $\left\lbrace A, C\rigth\rbrace$ |
 | D | $\left\lbrace D\rigth\rbrace$ | $\emptyset$ | $\text{out}[\text{C}]$ | $\left\lbrace A, C, D\rigth\rbrace$ |
