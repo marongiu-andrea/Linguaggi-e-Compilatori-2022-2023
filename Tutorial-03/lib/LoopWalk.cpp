@@ -1,6 +1,6 @@
 #include <llvm/Analysis/LoopPass.h>
 #include <llvm/Analysis/ValueTracking.h>
-
+#include <llvm/IR/Dominators.h>
 using namespace llvm;
 
 namespace {
@@ -12,11 +12,16 @@ public:
   LoopWalkPass() : LoopPass(ID) {}
 
   virtual void getAnalysisUsage(AnalysisUsage &AU) const override {
+    AU.addRequired<DominatorTreeWrapperPass>();
+    AU.addRequired<LoopInfoWrapperPass>();
   }
 
   virtual bool runOnLoop(Loop *L, LPPassManager &LPM) override {
     outs() << "\nLOOPPASS INIZIATO...\n";
     outs() << "ESERCIZIO 1 e 2\n";
+    DominatorTree *DT = &getAnalysis<DominatorTreeWrapperPass>().getDomTree(); // ottengo il DominatorTree
+    LoopInfo *LI = &getAnalysis<LoopInfoWrapperPass>().getLoopInfo();
+
     if((*L).isLoopSimplifyForm())
     {
       if(BasicBlock *preheader = (*L).getLoopPreheader())
