@@ -13,26 +13,41 @@ extern "C" PassPluginLibraryInfo llvmGetPassPluginInfo() {
       .RegisterPassBuilderCallbacks =
           [](PassBuilder &PB) {
             PB.registerPipelineParsingCallback(
-		// CREO LO STUB per il mio TestPass
-		// 
-		// RICORDA: Posso usare (coi relativi Pass Managers)
-		// -------------------------------------------------
-		// ModulePass
-		// CallGraphSCCPass
-		// FunctionPass
-		// LoopPass
-		// RegionPass
-		// BasicBlockPass
-		[](StringRef Name, ModulePassManager &MPM,
+                // CREO LO STUB per il mio TestPass
+                //
+                // RICORDA: Posso usare (coi relativi Pass Managers)
+                // -------------------------------------------------
+                // ModulePass
+                // CallGraphSCCPass
+                // FunctionPass
+                // LoopPass
+                // RegionPass
+                // BasicBlockPass
+                [](StringRef Name, ModulePassManager &MPM,
                    ArrayRef<PassBuilder::PipelineElement>) -> bool {
                   if (Name == "transform") {
                     MPM.addPass(TransformPass());
                     return true;
                   }
                   // TODO: Implementare gli stub per
-		  // Algebraic Identity
-		  // Strength Reduction
-		  // Multi-instruction Operations
+                  // Algebraic Identity
+                  // Strength Reduction
+                  // Multi-instruction Operations
+                  if (Name == "multi-instruction") {
+                    MPM.addPass(MultiInstructionPass());
+                    return true;
+                  }
+
+                  if (Name == "strength-reduction") {
+                    MPM.addPass(StrengthReductionPass());
+                    return true;
+                  }
+
+                  if (Name == "algebraic-identity") {
+                    MPM.addPass(AlgebraicIdentityPass());
+                    return true;
+                  }
+
                   return false;
                 });
           } // RegisterPassBuilderCallbacks
