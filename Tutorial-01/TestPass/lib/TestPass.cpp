@@ -12,15 +12,36 @@ public:
     outs() << "Passo di test per il corso di Linguaggi e Compilatori"
            << "\n";
 
-      // TODO: Completare il metodo come indicato per il LAB1.
-    
-    }
+          for(Function &F : M){
+            int bbs=0,inst=0,calls=0,params=0;
+            for(BasicBlock &B : F){
+              bbs++;
+              for(Instruction &I : B){
+                inst++;
+                if(CallInst *Instance = dyn_cast<CallInst>(&I)){
+                  calls++;
+                }
+              }
+            }
+            for(auto &arg : F.args()){
+              params++;
+            }
 
-    return PreservedAnalyses::all();
-  }
+            outs() << "Funzione: " << F.getName() << "\n";
+            outs() << "\tArgomenti: " << params << "\n";
+            outs() << "\tChiamate a Funzione: " << calls << "\n";
+            outs() << "\tBasicBlocks: " << bbs << "\n";
+            outs() << "\tIstruzioni: " << inst << "\n";
+
+          }
+
+          return PreservedAnalyses::all();
+
+    }
+  };
 }; // class TestPass
 
-} // anonymous namespace
+// anonymous namespace
 
 extern "C" PassPluginLibraryInfo llvmGetPassPluginInfo() {
   return {

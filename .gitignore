@@ -1,0 +1,4 @@
+#Ignora i file oggetto
+*.o
+*.so
+
