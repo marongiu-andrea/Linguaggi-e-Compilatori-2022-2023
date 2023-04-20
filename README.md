@@ -3,6 +3,5 @@ Questo repository contiene i materiali per i laboratori del corso "Linguaggi e C
 
 Guppo 8
 - Simone Vaiasinni
-- Algert Mucaj
 - Christian Messori
 
