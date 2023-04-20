@@ -6,7 +6,7 @@ using namespace llvm;
 
 // opt -enable-new-pm=0 -load ./libLoopInvariantCodeMotion.so -loop-invariant-code-motion test/Loop.ll -disable-output
 
-//dobbiamo scrivere la nostra funzione per capire se uno statement è loop invarian
+//dobbiamo scrivere la nostra funzione per capire se uno statement è loop invariant
 //calcolare i dominatori -> si possono usare le istruzioni che llvm mette a disposizione
 //Trovare le uscite del loop
 //Trovare le istruzione candidate alla code motion
@@ -35,6 +35,12 @@ class LoopInvariantCodeMotionPass final : public LoopPass
 
 	LoopInvariantCodeMotionPass() : LoopPass(ID) {}
 
+	virtual bool isLoopInvariant(Instruction *instr, Loop *L)
+	{
+		outs()<<"Funzione is loop invariant\n";
+		return true;
+	}
+
 	virtual void getAnalysisUsage(AnalysisUsage &AU) const override 
 	{
 		// Imposta il Dominator Tree e le Loop Info come necessarie all'esecuzione del passo corrente
@@ -48,6 +54,17 @@ class LoopInvariantCodeMotionPass final : public LoopPass
 		DominatorTree * DT = &getAnalysis<DominatorTreeWrapperPass>().getDomTree();
 		LoopInfo * LI = &getAnalysis<LoopInfoWrapperPass>().getLoopInfo();
 		outs()<<"Passo Loop Invariant Code Motion\n";
+
+		bool a = isLoopInvariant();
+
+		for (auto &BBIter : (*L).getBlocks())
+		{
+			for (auto &InstIter : *BBIter)
+			{
+				if (isLoopInvariant(InstIter))
+					outs()<<"L'istruzione "<<*InstIter<<"è loop invariant\n";
+			}
+		}
 		
 
 		return false; 
