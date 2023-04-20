@@ -1,5 +1,6 @@
 #include <llvm/Analysis/LoopPass.h>
 #include <llvm/Analysis/ValueTracking.h>
+#include "LoopInvariantInstrAnalysis.hpp"
 
 using namespace llvm;
 
@@ -12,6 +13,7 @@ public:
   LoopInvariantCodeMotion() : LoopPass(ID) {}
 
   virtual void getAnalysisUsage(AnalysisUsage &AU) const override {
+    AU.addRequired<LoopInvariantInstrAnalysisPass>();
   }
 
   virtual bool runOnLoop(Loop *L, LPPassManager &LPM) override {
@@ -21,7 +23,7 @@ public:
 };
 
 char LoopInvariantCodeMotion::ID = 0;
-RegisterPass<LoopInvariantCodeMotion> X("loop-invariant-code-motion",
+static RegisterPass<LoopInvariantCodeMotion> X("loop-invariant-code-motion",
                              "Loop Invariant Code Motion");
 
 } // anonymous namespace
