@@ -1,8 +1,8 @@
+#include </usr/include/llvm/Analysis/LoopPass.h>
 #include <llvm/Analysis/LoopInfo.h>
 #include <llvm/Analysis/LoopPass.h>
 #include <llvm/Analysis/ValueTracking.h>
-#include <llvm/IR/BasicBlock.h>
-
+#include <llvm/IR/Instruction.h>
 using namespace llvm;
 
 class LoopWalkPass final : public LoopPass
@@ -17,95 +17,55 @@ class LoopWalkPass final : public LoopPass
     {
     }
 
-    bool runOnLoop(Loop* loop, LPPassManager& LPM) override
+    bool runOnLoop(Loop* L, LPPassManager& LPM) override
     {
-        BasicBlock* preHeader = loop->getLoopPreheader();
+        outs() << "\nLOOPPASS INIZIATO...\n";
+        if (L->isLoopSimplifyForm())
+            outs() << "Il Loop e' in forma normalizzata\n";
+        else
+            outs() << "Il loop non e' in forma normalizzata\n";
 
-        outs() << "Loop in forma normalizzata? " << loop->isLoopSimplifyForm() << "\n";
+        BasicBlock* preheader = L->getLoopPreheader();
+        if (preheader)
+            outs() << "Il loop ha un preheader: " << *preheader;
+        else
+            outs() << "Il loop non ha preheader\n";
 
-        if (preHeader != nullptr)
+        outs() << "Questi sono i basic blocks che formano il loop:\n";
+        ArrayRef<BasicBlock*> loopBlocks = L->getBlocks();
+        for (auto block : loopBlocks)
+            outs() << *block;
+
+        outs() << "Queste sono le sottrazioni con istruzioni come operandi:\n";
+        for (Loop::block_iterator BI = L->block_begin(); BI != L->block_end(); ++BI)
         {
-            outs() << "Il loop ha un pre-header.\n";
-            outs() << "Istruzioni del pre-header:\n";
-
-            for (auto& instr : *preHeader)
-            {
-                instr.printAsOperand(outs(), false);
-
-                outs() << ", tipo: " << instr.getOpcode() << "\n";
-
-                outs() << "Operandi: ";
-
-                for (auto& operand : instr.operands())
+            for (auto instr = (*BI)->begin(); instr != (*BI)->end(); ++instr)
+                if (instr->getOpcode() == Instruction::Sub)
                 {
-                    operand->printAsOperand(outs(), false);
-
-                    outs() << " ";
+                    outs() << "La sottrazione" << *instr << " ha le seguenti istruzioni come operandi: \n";
+                    printInstruction(*instr);
                 }
-
-                outs() << "\n";
-            }
         }
-
-        outs() << "Basic block del loop:\n";
-
-        for (auto* bb : loop->getBlocks())
-        {
-            outs() << bb << "\n";
-
-            for (auto& instr : *bb)
-            {
-                instr.printAsOperand(outs(), false);
-
-                outs() << ", tipo: " << instr.getOpcode() << "\n";
-
-                outs() << "Operandi: ";
-
-                for (auto& operand : instr.operands())
-                {
-                    operand->printAsOperand(outs(), false);
-
-                    outs() << " ";
-                }
-
-                outs() << "\n";
-
-                if (instr.getOpcode() == Instruction::Sub)
-                {
-                    outs() << "Ho trovato l'istruzione SUB.\n";
-
-                    outs() << "Operandi:\n";
-
-                    for (auto& operand : instr.operands())
-                    {
-                        operand->printAsOperand(outs(), false);
-
-                        outs() << "\n";
-
-                        Instruction* opDefInstr = dyn_cast<Instruction>(operand);
-
-                        if (opDefInstr == nullptr)
-                        {
-                            outs() << "L'operando è una costante.\n";
-                        }
-                        else
-                        {
-                            outs() << "L'operando non è una costante.\n";
-
-                            outs() << "Questo operando è definito all'istruzione " << opDefInstr << "\n";
-
-                            outs() << "Questa istruzione sta nel basic block " << opDefInstr->getParent() << "\n";
-                        }
-                    }
-
-                    outs() << "##########\n";
-                }
-
-                outs() << "----------\n";
-            }
-        }
-
         return false;
+    }
+
+    void printInstruction(const Instruction& instr)
+    {
+        Instruction* op1 = dyn_cast<Instruction>(instr.getOperand(0));
+        Instruction* op2 = dyn_cast<Instruction>(instr.getOperand(1));
+        if (op1)
+        {
+            outs() << *op1 << " definita nel blocco: ";
+            op1->getParent()->printAsOperand(outs());
+            outs() << "\n";
+        }
+
+        if (op2)
+        {
+            outs() << *op2 << " definita nel blocco: ";
+            op2->getParent()->printAsOperand(outs());
+            outs() << "\n";
+        }
     }
 };
 
