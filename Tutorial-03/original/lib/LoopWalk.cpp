@@ -1,5 +1,7 @@
 #include <llvm/Analysis/LoopPass.h>
 #include <llvm/Analysis/ValueTracking.h>
+#include <llvm/IR/Dominators.h>
+#include "llvm/Analysis/LoopInfo.h"
 
 using namespace llvm;
 #include <iostream>
@@ -13,6 +15,8 @@ public:
   LoopWalkPass() : LoopPass(ID) {}
 
   virtual void getAnalysisUsage(AnalysisUsage &AU) const override {
+    AU.addRequired<DominatorTreeWrapperPass>();
+    AU.addRequired<LoopInfoWrapperPass>();
   }
 
   virtual bool runOnLoop(Loop *L, LPPassManager &LPM) override {
