@@ -1,8 +1,8 @@
 PASSES := -loop-invariant-code-motion
 
 TO_OPTIMIZE_SRC := test/Loop.ll
-OPTIMIZED_BYTECODE := Loop.optimized.bc
-OPTIMIZED_LL := Loop.optimized.ll
+OPTIMIZED_BYTECODE := optimized.bc
+OPTIMIZED_LL := optimized.ll
 
 OPTIMIZER := ./libLICM.so
 OBJs := $(subst .cpp,.o,$(wildcard lib/*.cpp))
