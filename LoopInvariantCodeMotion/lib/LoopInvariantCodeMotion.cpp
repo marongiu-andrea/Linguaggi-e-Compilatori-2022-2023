@@ -35,9 +35,27 @@ class LoopInvariantCodeMotionPass final : public LoopPass
 
 	LoopInvariantCodeMotionPass() : LoopPass(ID) {}
 
-	virtual bool isLoopInvariant(Instruction *instr, Loop *L)
+	virtual bool isLoopInvariant(Loop *L)
 	{
-		outs()<<"Funzione is loop invariant\n";
+		for (auto &BBIter : (*L).getBlocks())
+		{
+			for (auto &InstIter : *BBIter)
+			{
+				if (InstIter.isBinaryOp() || InstIter.getOpcode() != Instruction::Br)
+				{
+					outs()<<InstIter<<"\n";
+					outs()<<"Operando 0: "<<*(InstIter.getOperand(0))<<"\n";
+					outs()<<"Operando 1: "<<*(InstIter.getOperand(1))<<"\n";
+					outs()<<"Operando 0 è loop invariant: "<<(*L).isLoopInvariant(InstIter.getOperand(0))<<"\n";
+					outs()<<"Operando 1 è loop invariant: "<<(*L).isLoopInvariant(InstIter.getOperand(1))<<"\n";
+					outs()<<"---------------------------------------\n";
+
+
+				}
+				
+			}
+		}
+
 		return true;
 	}
 
@@ -55,16 +73,16 @@ class LoopInvariantCodeMotionPass final : public LoopPass
 		LoopInfo * LI = &getAnalysis<LoopInfoWrapperPass>().getLoopInfo();
 		outs()<<"Passo Loop Invariant Code Motion\n";
 
-		bool a = isLoopInvariant();
-
-		for (auto &BBIter : (*L).getBlocks())
+		
+		isLoopInvariant(L);
+		/*for (auto &BBIter : (*L).getBlocks())
 		{
 			for (auto &InstIter : *BBIter)
 			{
-				if (isLoopInvariant(InstIter))
-					outs()<<"L'istruzione "<<*InstIter<<"è loop invariant\n";
+				if (isLoopInvariant(InstIter, L))
+					outs()<<"L'istruzione "<<InstIter<<"è loop invariant\n";
 			}
-		}
+		}*/
 		
 
 		return false; 
