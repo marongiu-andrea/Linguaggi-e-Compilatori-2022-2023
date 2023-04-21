@@ -7,14 +7,15 @@ using namespace llvm;
 #include <iostream>
 
 #include <map>
+#include <set>
 
 namespace {
 
-class LoopWalkPass final : public LoopPass {
+class LoopInvariantCodeMotionPass final : public LoopPass {
 public:
   static char ID;
 
-  LoopWalkPass() : LoopPass(ID) {}
+  LoopInvariantCodeMotionPass() : LoopPass(ID) {}
 
   virtual void getAnalysisUsage(AnalysisUsage &AU) const override {
     AU.addRequired<DominatorTreeWrapperPass>();
@@ -26,8 +27,18 @@ public:
 
     // Dominance tree.
     DominatorTree *DT = &getAnalysis<DominatorTreeWrapperPass>().getDomTree();
+    // Enum.
+    enum state : int
+    {
+      t = 2,
+      f = 1
+    };
     // Mappa delle istruzioni.
-    std::map <Instruction&, bool> LIMap;
+    std::map <Instruction*, state> LIMap;
+    std::cout << "Map size: " << LIMap.size() << std::endl;
+
+    // Set dei basic block.
+    std::set <BasicBlock*> BBSet;
 
     // Parte 1 - trovare le istruzioni loop-invariant.
     for (Loop::block_iterator BI = L->block_begin(); BI != L->block_end(); ++BI) {
@@ -37,24 +48,65 @@ public:
         Instruction& I = *iter_inst;
 				bool invariant = true;
 
-        if (I.isBinaryOp()) {
-					for (auto operand = I.operands().begin(); operand != I.operands().end(); ++operand) {
-						ConstantInt *C = dyn_cast<ConstantInt>(operand);
-						Instruction *Inst = dyn_cast<Instruction>(operand);
+        outs() << I;
+        std::cout << std::endl;
 
-						if (C)
-							continue;
-						else if (LIMap[*Inst] || L->contains(Inst->getParent()))
-							continue;
-						else
-							invariant = false;
+        if (I.isBinaryOp() && !(I.getOpcode() == 55)) {
+					for (auto operand = I.op_begin(); operand != I.op_end(); ++operand) {
+            Value *Operand = *operand;
+						
+						if (ConstantInt *C = dyn_cast<ConstantInt>(Operand)){
+              std::cout << "Constant!" << std::endl;
+              continue;
+            }
+            else {
+              Instruction *Inst = dyn_cast<Instruction>(Operand);
+              std::cout << LIMap.size() << " " << LIMap[&I] << std::endl;
+              if (LIMap[Inst] == f) {
+                invariant = false;
+                std::cout << "False!" << std::endl;
+              }
+              else {
+                std::cout << "True or NULL!" << std::endl;
+                continue;
+              }
+            }
+							
 					}
+
+          outs() << I;
+
+          if (invariant) {
+            LIMap[&I] = t;
+            std::cout << " Loop-invariant!" << std::endl;
+          }
+          else{
+            LIMap[&I] = f;
+            std::cout << " NON loop-invariant!" << std::endl;
+          }
+            
+        }
+        else {
+          LIMap[&I] = f;
+          outs() << I;
+          std::cout << " NON loop-invariant!" << std::endl;
         }
 
-				if (invariant)
-					LIMap[I] = true;
+        std::cout << LIMap.size() << " " << LIMap[&I] << std::endl;
       }
     }
+
+    std::cout << "Map size: " << LIMap.size() << std::endl;
+
+
+    // Debug.
+    for (auto iter_map = ++LIMap.begin(); iter_map != LIMap.end(); ++iter_map) {
+      std::cout << iter_map->first << " " << iter_map->second << std::endl;
+      //outs() << *(iter_map->first);
+      std::cout << std::endl;
+    }
+
+    
 
 		
 
@@ -62,9 +114,8 @@ public:
   }
 };
 
-char LoopWalkPass::ID = 0;
-RegisterPass<LoopWalkPass> X("loop-walk",
-                             "Loop Walk");
+char LoopInvariantCodeMotionPass::ID = 0;
+RegisterPass<LoopInvariantCodeMotionPass> X("loop-walk", "Loop Walk");
 
 } // anonymous namespace
 
