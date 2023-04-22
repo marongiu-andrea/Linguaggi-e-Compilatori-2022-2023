@@ -1,9 +1,11 @@
 #include <llvm/Analysis/LoopPass.h>
 #include <llvm/Analysis/ValueTracking.h>
 #include <llvm/IR/Dominators.h>
-#include <map>
 
 using namespace llvm;
+
+#include <iostream>
+#include <map>
 
 // opt -enable-new-pm=0 -load ./libLoopInvariantCodeMotion.so -loop-invariant-code-motion test/Loop.ll -disable-output
 
@@ -33,8 +35,19 @@ class LoopInvariantCodeMotionPass final : public LoopPass
 {
 	public:
 	static char ID;
+	std::map<Instruction*, bool> loopInvariantMap;
 
 	LoopInvariantCodeMotionPass() : LoopPass(ID) {}
+
+	virtual void printLoopInvariantInstructions()
+	{
+		outs()<<"Istruzioni loop-invariant:\n";
+		for (auto &itr: loopInvariantMap)
+		{
+			if (itr.second)
+				outs()<<*(itr.first)<<"\n";
+		}
+	}
 
 	virtual bool findLoopInvariantInstructions(Loop *L)
 	{
@@ -42,38 +55,65 @@ class LoopInvariantCodeMotionPass final : public LoopPass
 		{
 			for (auto &InstIter : *BBIter)
 			{
+				loopInvariantMap[&InstIter] = false;
+
 				if (InstIter.isBinaryOp())
 				{
 					ConstantInt * firstOperand = dyn_cast<ConstantInt>(InstIter.getOperand(0));
 					ConstantInt * secondOperand = dyn_cast<ConstantInt>(InstIter.getOperand(1));
-
+					//outs()<<InstIter<<"\n";
+					//outs()<<InstIter.getOperand(0)<<"\n";
+					//outs()<<InstIter.getOperand(1)<<"\n";
 					// Se entrambi gli operandi sono delle costanti
 					if (firstOperand && secondOperand)
 					{
-						outs()<<"L'istruzione "<<InstIter<<" è loop invariant -> entrambi gli operandi sono costanti\n";
+						outs()<<"L'istruzione "<<InstIter<<" è loop invariant perché entrambi gli operandi sono costanti\n";
+						loopInvariantMap[&InstIter] = true;
 					}
 
 					// Se solo il secondo operando è una costante
 					if (!firstOperand && secondOperand)
 					{
+
+						// Se il cast a Instruction dell'operando 0 ha successo -> c'è una definizione dell'istruzione corrsipondente all'operando 0
 						if(Instruction * firstOperandInstruction = dyn_cast<Instruction>(InstIter.getOperand(0)))
 						{
-							outs()<<"Il primo operando è un'istruzione "<<*firstOperandInstruction<<"\n";
-							if ((*L).contains(firstOperandInstruction) == true);
-								outs()<<"L'istruzione "<<InstIter<<" è loop invariant\n";
+							if (((*L).contains(firstOperandInstruction)) == false)
+							{
+								outs()<<(*L).contains(firstOperandInstruction)<<"\n";
+								outs()<<"L'istruzione "<<InstIter<<" è loop invariant perché la definizione del primo operando non è contenuta nel loop\n";
+								loopInvariantMap[&InstIter] = true;
+							}
 
+						}
+						else // Il primo operando non ha un'istruzione ad esso associato, pertanto viene definito fuori dal Loop
+						{
+							outs()<<"L'istruzione "<<InstIter<<" è loop invariant perché il primo operando è stato definito fuori dal loop\n";
+							loopInvariantMap[&InstIter] = true;
 						}
 					}
 
 					// Se solo il primo operando è una costante
 					if (firstOperand && !secondOperand)
 					{
-						outs()<<"///\n";
+						// Se il cast a Instruction dell'operando 1 ha successo -> c'è una definizione dell'istruzione corrsipondente all'operando 1
+						if(Instruction * secondOperandInstruction = dyn_cast<Instruction>(InstIter.getOperand(1)))
+						{
+							if (((*L).contains(secondOperandInstruction)) == false)
+							{
+								outs()<<(*L).contains(secondOperandInstruction)<<"\n";
+								outs()<<"L'istruzione "<<InstIter<<" è loop invariant perché la definizione del secondo operando non è contenuta nel loop\n";
+								loopInvariantMap[&InstIter] = true;
+							}
+
+						}
+						else // Il secondo operando non ha un'istruzione ad esso associato, pertanto viene definito fuori dal Loop
+						{
+							outs()<<"L'istruzione "<<InstIter<<" è loop invariant perché il secondo operando è stato definito fuori dal loop\n";
+							loopInvariantMap[&InstIter] = true;
+						}
 					}
-					//outs()<<"Operando 0: "<<*(InstIter.getOperand(0))<<"\n";
-					//outs()<<"Operando 1: "<<*(InstIter.getOperand(1))<<"\n";
-					//outs()<<"Operando 0 è loop invariant: "<<(*L).isLoopInvariant(InstIter.getOperand(0))<<"\n";
-					//outs()<<"Operando 1 è loop invariant: "<<(*L).isLoopInvariant(InstIter.getOperand(1))<<"\n";
+
 					outs()<<"---------------------------------------\n";
 
 
@@ -101,6 +141,8 @@ class LoopInvariantCodeMotionPass final : public LoopPass
 
 		
 		findLoopInvariantInstructions(L);
+		printLoopInvariantInstructions();
+
 
 		
 
