@@ -1,6 +1,5 @@
 #include <llvm/Analysis/LoopPass.h>
 #include <llvm/Analysis/ValueTracking.h>
-#include <llvm/IR/Dominators.h>
 
 using namespace llvm;
 
@@ -54,11 +53,11 @@ public:
   virtual bool runOnLoop(Loop *L, LPPassManager &LPM) override {
     outs() << "\n BEGINNING LOOP INVARIANT INSTRUCTION ANALYSIS...\n";
     
-    if (!L->isLoopSimplifyForm())
-      return false;
-
     invariants_loop = L;
     invariants.clear();
+
+    if (!L->isLoopSimplifyForm())
+      return false;
 
     // Repeat until convergence
     decltype(invariants)::size_type old_size;
@@ -77,7 +76,7 @@ public:
    * @returns Whether the instruction has been marked as loop invariant during the last pass,
    *        or whether the instruction is not contained in the loop on which the pass was last executed.
   */
-  bool isLoopInvariant(const Instruction* instr) {
+  bool isLoopInvariant(const Instruction* instr) const {
     // Both methods boil down to SmallPtrSet.contains
     return
       invariants.contains(instr) // if we marked it as loop invariant
