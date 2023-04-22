@@ -205,6 +205,7 @@ class LoopInvariantCodeMotionPass final : public LoopPass
 
 	virtual void findMovableInstructions(Loop *L, DominatorTree * DT)
 	{
+		bool dominatesAllExits;
 		SmallVector<BasicBlock *> exitBlocks; // Vettore contenente i basic block che sono uscite del loop
 		(*L).getExitBlocks(exitBlocks);
 
@@ -212,24 +213,36 @@ class LoopInvariantCodeMotionPass final : public LoopPass
 		//{
 			//outs()<<"Exit block: "<< *exitBB << "\n";
 		//}
+
+		// Itera su tutte le istruzioni loop-invariant
 		for(auto iter = loopInvariantMap.begin(); iter != loopInvariantMap.end(); ++iter)
 		{
 			if (iter->second == true)
 			{
+				dominatesAllExits = true;
 				for (auto *exitBB : exitBlocks) 
 				{
-					//TODO : VERFICARE CHE LE ISTRUZIONI iter->first DOMININO TUTTE LE USCITE E NON SOLO UNA ALLA VOLTA
-					if ((*DT).dominates((*DT).getNode(iter->first->getParent()), (*DT).getNode(exitBB)))
+					if (!(*DT).dominates((*DT).getNode(iter->first->getParent()), (*DT).getNode(exitBB)))
 					{
-						outs()<<*(iter->first)<<" DOMINA l'usicta "<<*exitBB<<"\n";
+						outs()<<*(iter->first)<<" NON domina il blocco di uscita "<<(*exitBB)<<"\n";
+						dominatesAllExits = false;
 					}
 				}
-				
-				
+
+				if (dominatesAllExits)
+					movableInstructions.push_back(iter->first);
 			}
 				
 		}
 		
+	}
+
+	virtual void printMovableInstructions()
+	{
+		outs()<<"Istruzioni Movable:\n";
+		for (auto &itr: movableInstructions)
+			outs()<<*(itr)<<"\n";
+
 	}
 
 	virtual void getAnalysisUsage(AnalysisUsage &AU) const override 
@@ -251,6 +264,8 @@ class LoopInvariantCodeMotionPass final : public LoopPass
 		printLoopInvariantInstructions();
 
 		findMovableInstructions(L, DT);
+		printMovableInstructions();
+
 
 
 
