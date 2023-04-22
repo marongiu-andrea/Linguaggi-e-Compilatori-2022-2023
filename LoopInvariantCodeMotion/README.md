@@ -1,8 +1,7 @@
-# Terzo Laboratorio: LoopWalk Pass
+# Assignment: implementazione della Loop-Invariant Code Motion
 
-In questo laboratorio sviluppiamo il passo LoopWalkPass, che analizza un loop.
-In particolare:
-1) Analizza la struttura del loop e ne verifica la forma normale
-2) scorre e stampa i basic blocks che lo compongono
-3) scorre le istruzioni del loop e determina le UD/DU chains per determinate istruzioni
-
+La LICM verrà svolta secondo questo procedimento:
+1)Recupero delle informazioni necessarie per il passo
+2)Analisi del codice finalizzata all'identificazione delle istruzioni loop-invariant
+3)Analisi del codice finalizzata all'identificazione delle istruzioni Movable
+4)Applicazione della Code Motion per le istruzioni adatte
