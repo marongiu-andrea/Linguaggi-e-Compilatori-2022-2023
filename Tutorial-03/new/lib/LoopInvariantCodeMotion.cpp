@@ -34,82 +34,70 @@ public:
       f = 1
     };
     // Mappa delle istruzioni.
-    std::map <Instruction*, state> LIMap;
-    std::cout << "Map size: " << LIMap.size() << std::endl;
-
-    // Set dei basic block.
-    std::set <BasicBlock*> BBSet;
-
+    std::map <Value*, state> LIMap;    
+    // Set dei basic block.    
     // Parte 1 - trovare le istruzioni loop-invariant.
     for (Loop::block_iterator BI = L->block_begin(); BI != L->block_end(); ++BI) {
       llvm::BasicBlock *BB = *BI;
-
       for (auto iter_inst = BB->begin(); iter_inst != BB->end(); ++iter_inst) {
         Instruction& I = *iter_inst;
 				bool invariant = true;
-
-        outs() << I;
-        std::cout << std::endl;
-
         if (I.isBinaryOp() && !(I.getOpcode() == 55)) {
 					for (auto operand = I.op_begin(); operand != I.op_end(); ++operand) {
             Value *Operand = *operand;
 						
-						if (ConstantInt *C = dyn_cast<ConstantInt>(Operand)){
-              std::cout << "Constant!" << std::endl;
+						if (ConstantInt *C = dyn_cast<ConstantInt>(Operand)){              
               continue;
             }
-            else {
-              Instruction *Inst = dyn_cast<Instruction>(Operand);
-              std::cout << LIMap.size() << " " << LIMap[&I] << std::endl;
-              if (LIMap[Inst] == f) {
-                invariant = false;
-                std::cout << "False!" << std::endl;
+            else {              
+              outs() << "------------------------\n";
+              outs() <<"Analyzing: ";
+              outs()<<I;
+              std::cout<<std::endl;
+              Instruction *Inst = dyn_cast<Instruction>(Operand);                                   
+              outs() <<"Converting: ";
+              outs()<<Operand<<*Operand<<" ---> "<<Inst<<"\n";
+              if(!Inst){ // in this case, we assume that the reac.def. is the function argument              
+                Argument *arg = dyn_cast<Argument>(Operand);
+                if(arg){
+                  outs()<<"Found function argument: ";
+                  outs()<<*arg<<"\n"; 
+                }
+                else{
+                  outs()<<"Error, unexpected type of operand\n";
+                }
+                continue; // avoid lookup on null value;
               }
-              else {
-                std::cout << "True or NULL!" << std::endl;
+              // when converting %0, the cast does not work well, and gives
+              // in output 0x0. Then when we lookup the map it obv. returns 1,
+              // because 0x0 is not memorized. So the algo works anyway, but 
+              // it might be dangerous.              
+              if (LIMap[Inst] == f) {
+                invariant = false;                
+              }
+              else {                
                 continue;
               }
-            }
-							
-					}
-
-          outs() << I;
-
+            }							
+					}          
           if (invariant) {
-            LIMap[&I] = t;
-            std::cout << " Loop-invariant!" << std::endl;
+            LIMap[&I] = t;            
           }
           else{
-            LIMap[&I] = f;
-            std::cout << " NON loop-invariant!" << std::endl;
-          }
-            
+            LIMap[&I] = f;            
+          }            
         }
         else {
-          LIMap[&I] = f;
-          outs() << I;
-          std::cout << " NON loop-invariant!" << std::endl;
-        }
-
-        std::cout << LIMap.size() << " " << LIMap[&I] << std::endl;
+          LIMap[&I] = f;          
+        }        
       }
     }
-
     std::cout << "Map size: " << LIMap.size() << std::endl;
-
-
     // Debug.
     for (auto iter_map = ++LIMap.begin(); iter_map != LIMap.end(); ++iter_map) {
-      std::cout << iter_map->first << " " << iter_map->second << std::endl;
-      //outs() << *(iter_map->first);
+      outs() << iter_map->first << " " << *iter_map->first<<" --> "<<iter_map->second;
       std::cout << std::endl;
-    }
-
-    
-
-		
-
+    }  
     return false; 
   }
 };
