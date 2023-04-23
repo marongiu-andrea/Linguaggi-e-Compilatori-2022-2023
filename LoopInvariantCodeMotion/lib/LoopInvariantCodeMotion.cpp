@@ -1,6 +1,8 @@
 #include <llvm/Analysis/LoopPass.h>
 #include <llvm/Analysis/ValueTracking.h>
 #include <llvm/IR/Dominators.h>
+#include "llvm/IR/Instructions.h"
+#include "llvm/Transforms/Utils/Local.h"
 
 using namespace llvm;
 
@@ -206,6 +208,7 @@ class LoopInvariantCodeMotionPass final : public LoopPass
 	virtual void findMovableInstructions(Loop *L, DominatorTree * DT)
 	{
 		bool dominatesAllExits;
+		bool deadAfterExit;
 		SmallVector<BasicBlock *> exitBlocks; // Vettore contenente i basic block che sono uscite del loop
 		(*L).getExitBlocks(exitBlocks);
 
@@ -220,16 +223,31 @@ class LoopInvariantCodeMotionPass final : public LoopPass
 			if (iter->second == true)
 			{
 				dominatesAllExits = true;
+				deadAfterExit = true;
 				for (auto *exitBB : exitBlocks) 
 				{
+					// Se il blocco contentente un'istruzione loop-invariant NON domina un'uscita -> l'istruzione non è movable
 					if (!(*DT).dominates((*DT).getNode(iter->first->getParent()), (*DT).getNode(exitBB)))
 					{
-						outs()<<*(iter->first)<<" NON domina il blocco di uscita "<<(*exitBB)<<"\n";
+						//outs()<<*(iter->first)<<" NON domina il blocco di uscita "<<(*exitBB)<<"\n";
 						dominatesAllExits = false;
 					}
 				}
+					
+				// Scorre la lista degli usi delle variabili loop-invariant
+				for (auto Iter = (iter->first)->user_begin(); Iter != (iter->first)->user_end(); ++Iter)
+				{
+					// Se la variabile è usata in blocchi che non fanno parte del loop -> la variabile non è dead all'uscita del loop
+					Instruction * inst = dyn_cast<Instruction>(*Iter);	
 
-				if (dominatesAllExits)
+					if (!(*L).contains(inst))
+					{
+						outs()<<*(iter->first)<<" NON é usata nel loop\n";
+						deadAfterExit = false;
+					}
+				}
+
+				if (dominatesAllExits || deadAfterExit)
 					movableInstructions.push_back(iter->first);
 			}
 				
