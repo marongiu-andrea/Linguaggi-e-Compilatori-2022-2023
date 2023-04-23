@@ -42,8 +42,8 @@ class LoopInvariantCodeMotionPass final : public LoopPass
 	public:
 	static char ID;
 	std::map<Instruction*, bool> loopInvariantMap; // Definisce quali istruzioni sono loop-invariant
-	std::vector<Instruction*> movableInstructions; // Contiene le istruzioni movable
-
+	std::vector<Instruction*> candidateMovableInstructions; // Contiene le istruzioni candidate alla code motion
+	std::vector<Instruction*> movableInstructions; // Contiene le istruzioni sulle quali si può eseguire la code motion
 	LoopInvariantCodeMotionPass() : LoopPass(ID) {}
 
 	virtual bool isLoopSuitableToLICM(Loop *L)
@@ -213,7 +213,7 @@ class LoopInvariantCodeMotionPass final : public LoopPass
 		return true;
 	}
 
-	virtual void findMovableInstructions(Loop *L, DominatorTree * DT)
+	virtual void findCandidateMovableInstructions(Loop *L, DominatorTree * DT)
 	{
 		bool dominatesAllExits;
 		bool deadAfterExit;
@@ -269,15 +269,15 @@ class LoopInvariantCodeMotionPass final : public LoopPass
 					a cui si sta assegnando un valore
 				*/
 				if ((dominatesAllExits || deadAfterExit) && dominatesAllUses)
-					movableInstructions.push_back(iter->first);
+					candidateMovableInstructions.push_back(iter->first);
 			}
 		}
 	}
 
-	virtual void printMovableInstructions()
+	virtual void printCandidateMovableInstructions()
 	{
-		outs()<<"Istruzioni Movable:\n";
-		for (auto &itr: movableInstructions)
+		outs()<<"Istruzioni candidate alla Code Motion:\n";
+		for (auto &itr: candidateMovableInstructions)
 			outs()<<*(itr)<<"\n";
 	}
 
@@ -291,6 +291,15 @@ class LoopInvariantCodeMotionPass final : public LoopPass
 			outs()<<"Sposto l'istruzione "<<*inst<<" nel preheader del loop\n";
 			inst->moveBefore(preHeaderTerminator);
 		}
+	}
+
+	virtual void findMovableInstructions(L, DT)
+	{
+		/*
+		Eseguire una ricerca depth-first dei blocchi:
+		• Spostare l’istruzione candidata nel preheader se tutte le istruzioni
+			invarianti da cui questa dipende sono state spostate
+		*/
 	}
 
 	virtual void getAnalysisUsage(AnalysisUsage &AU) const override 
@@ -313,8 +322,8 @@ class LoopInvariantCodeMotionPass final : public LoopPass
 			findLoopInvariantInstructions(L);	
 			printLoopInvariantInstructions();
 
-			findMovableInstructions(L, DT);
-			printMovableInstructions();
+			findCandidateMovableInstructions(L, DT);
+			printCandidateMovableInstructions();
 
 			codeMotion(L);
 		}
