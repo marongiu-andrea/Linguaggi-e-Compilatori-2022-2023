@@ -11,6 +11,9 @@ using namespace llvm;
 #include <vector>
 
 // opt -enable-new-pm=0 -load ./libLoopInvariantCodeMotion.so -loop-invariant-code-motion test/Loop.ll -disable-output
+// opt -enable-new-pm=0 -load ./libLoopInvariantCodeMotion.so -loop-invariant-code-motion test/Loop.ll -o test/LoopInvariantCodeMotion.optimized.bc
+// llvm-dis test/LoopInvariantCodeMotion.optimized.bc -o test/LoopInvariantCodeMotion.optimized.ll
+
 
 //dobbiamo scrivere la nostra funzione per capire se uno statement è loop invariant
 //calcolare i dominatori -> si possono usare le istruzioni che llvm mette a disposizione
@@ -43,6 +46,14 @@ class LoopInvariantCodeMotionPass final : public LoopPass
 
 	LoopInvariantCodeMotionPass() : LoopPass(ID) {}
 
+	virtual bool isLoopSuitableToLICM(Loop *L)
+	{
+		// Controlla che il loop sia in forma normalizzata e che abbia un preheader e che abbia exit blocks
+		if ((*L).isLoopSimplifyForm() && (*L).getLoopPreheader() && (!(*L).hasNoExitBlocks()))
+			return true;
+		else 
+			return false;
+	}
 
 	virtual void printLoopInvariantInstructions()
 	{
@@ -195,13 +206,10 @@ class LoopInvariantCodeMotionPass final : public LoopPass
 							loopInvariantMap[&InstIter] = true;
 						}
 					}
-
 					outs()<<"---------------------------------------\n";
-				}
-				
+				}			
 			}
 		}
-
 		return true;
 	}
 
@@ -209,13 +217,9 @@ class LoopInvariantCodeMotionPass final : public LoopPass
 	{
 		bool dominatesAllExits;
 		bool deadAfterExit;
+		bool dominatesAllUses;
 		SmallVector<BasicBlock *> exitBlocks; // Vettore contenente i basic block che sono uscite del loop
 		(*L).getExitBlocks(exitBlocks);
-
-		//for (auto *exitBB : exitBlocks) 
-		//{
-			//outs()<<"Exit block: "<< *exitBB << "\n";
-		//}
 
 		// Itera su tutte le istruzioni loop-invariant
 		for(auto iter = loopInvariantMap.begin(); iter != loopInvariantMap.end(); ++iter)
@@ -224,6 +228,7 @@ class LoopInvariantCodeMotionPass final : public LoopPass
 			{
 				dominatesAllExits = true;
 				deadAfterExit = true;
+				dominatesAllUses = true;
 				for (auto *exitBB : exitBlocks) 
 				{
 					// Se il blocco contentente un'istruzione loop-invariant NON domina un'uscita -> l'istruzione non è movable
@@ -237,22 +242,36 @@ class LoopInvariantCodeMotionPass final : public LoopPass
 				// Scorre la lista degli usi delle variabili loop-invariant
 				for (auto Iter = (iter->first)->user_begin(); Iter != (iter->first)->user_end(); ++Iter)
 				{
-					// Se la variabile è usata in blocchi che non fanno parte del loop -> la variabile non è dead all'uscita del loop
 					Instruction * inst = dyn_cast<Instruction>(*Iter);	
 
+					// Se la variabile è usata in blocchi che non fanno parte del loop -> la variabile non è dead all'uscita del loop
 					if (!(*L).contains(inst))
 					{
 						outs()<<*(iter->first)<<" NON é usata nel loop\n";
 						deadAfterExit = false;
 					}
+
+					// Se il blocco dove viene definita un'istruzione loop-invariant non domina un suo uso
+					if (!(*DT).dominates((*DT).getNode(iter->first->getParent()), (*DT).getNode(inst->getParent())))
+					{
+						outs()<<*(iter->first)<<" NON domina un suo uso\n";
+						dominatesAllUses = false;
+					}
 				}
 
-				if (dominatesAllExits || deadAfterExit)
+				/*
+				Un'istruzione movable è:
+				- Loop-invariant
+				- Si trovano in blocchi che dominano tutte le uscite del loop oppure la variabile definita 
+					dall'istruzione è dead fuori dal loop
+				- Assegnano un valore a variabili non assegnate altrove nel loop ("Gratis" con SSA)
+				- Si trovano in blocchi che dominano tutti i blocchi nel loop che usano la variabile
+					a cui si sta assegnando un valore
+				*/
+				if ((dominatesAllExits || deadAfterExit) && dominatesAllUses)
 					movableInstructions.push_back(iter->first);
 			}
-				
 		}
-		
 	}
 
 	virtual void printMovableInstructions()
@@ -260,7 +279,18 @@ class LoopInvariantCodeMotionPass final : public LoopPass
 		outs()<<"Istruzioni Movable:\n";
 		for (auto &itr: movableInstructions)
 			outs()<<*(itr)<<"\n";
+	}
 
+	virtual void codeMotion(Loop *L)
+	{
+		BasicBlock * preHeader = (*L).getLoopPreheader();
+				
+		Instruction * preHeaderTerminator = preHeader->getTerminator();
+		for (auto inst : movableInstructions)
+		{
+			outs()<<"Sposto l'istruzione "<<*inst<<" nel preheader del loop\n";
+			inst->moveBefore(preHeaderTerminator);
+		}
 	}
 
 	virtual void getAnalysisUsage(AnalysisUsage &AU) const override 
@@ -278,17 +308,16 @@ class LoopInvariantCodeMotionPass final : public LoopPass
 
 		outs()<<"Passo Loop Invariant Code Motion\n";
 
-		findLoopInvariantInstructions(L);	
-		printLoopInvariantInstructions();
+		if (isLoopSuitableToLICM(L))
+		{
+			findLoopInvariantInstructions(L);	
+			printLoopInvariantInstructions();
 
-		findMovableInstructions(L, DT);
-		printMovableInstructions();
+			findMovableInstructions(L, DT);
+			printMovableInstructions();
 
-
-
-
-
-		
+			codeMotion(L);
+		}
 
 		return false; 
 	}
