@@ -21,6 +21,7 @@ bool eLoopInvariante(Loop* L, Instruction* I, std::vector<Instruction*> invarian
   //gli operandi sono costanti?
   //sono delle istruzioni?
   //sono nella lista degli invarianti?
+  //controllo per evitare che una branch o simili vengano considerate 
   for(User::op_iterator OP = I->op_begin(); OP != I->op_end(); ++OP){
     Value *oper = *OP;
 
@@ -37,7 +38,12 @@ bool eLoopInvariante(Loop* L, Instruction* I, std::vector<Instruction*> invarian
 
   //se sono qui, allora vuol dire che o sono costanti
   //oppure sono tutti loop invariant
-  return true;
+  //binOP, shift, cast, select, cast, gateelemtptr
+  if(I->isBinaryOp() || I->isShift() || I->isCast()){
+    return true;
+  }else{
+    return false;
+  }
 }
 
 
