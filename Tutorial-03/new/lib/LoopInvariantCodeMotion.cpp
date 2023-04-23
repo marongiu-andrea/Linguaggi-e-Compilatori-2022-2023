@@ -8,6 +8,7 @@ using namespace llvm;
 
 #include <map>
 #include <set>
+#include <vector>
 
 namespace {
 
@@ -27,15 +28,24 @@ public:
 
     // Dominance tree.
     DominatorTree *DT = &getAnalysis<DominatorTreeWrapperPass>().getDomTree();
-    // Enum.
+    // Enum per la mappa delle istruzioni loop-invariant.
     enum state : int
     {
       t = 2,
       f = 1
     };
-    // Mappa delle istruzioni.
-    std::map <Value*, state> LIMap;    
-    // Set dei basic block.    
+    // Mappa delle istruzioni loop-invariant.
+    std::map <Value*, state> LIMap;
+
+    // Loop preheader.
+    BasicBlock* PH = L->getLoopPreheader();
+    // Debug preheader.
+    if (PH) {
+      std::cout << "C'è un preheader!" << std::endl;
+      outs() << *PH << "\n";
+    }
+    outs() << *PH->getTerminator() << "\n";
+
     // Parte 1 - trovare le istruzioni loop-invariant.
     for (Loop::block_iterator BI = L->block_begin(); BI != L->block_end(); ++BI) {
       llvm::BasicBlock *BB = *BI;
@@ -89,16 +99,114 @@ public:
         }
         else {
           LIMap[&I] = f;          
-        }        
+        }    
       }
     }
-    std::cout << "Map size: " << LIMap.size() << std::endl;
+
     // Debug.
-    for (auto iter_map = ++LIMap.begin(); iter_map != LIMap.end(); ++iter_map) {
+    std::cout << "Map size: " << LIMap.size() << std::endl;
+    
+    for (auto iter_map = LIMap.begin(); iter_map != LIMap.end(); ++iter_map) {
       outs() << iter_map->first << " " << *iter_map->first<<" --> "<<iter_map->second;
       std::cout << std::endl;
-    }  
-    return false; 
+    }
+
+    // Parte 2 - definire le istruzioni candidate alla code motion.
+    std::set<BasicBlock*> ExitBlocks;
+    std::set<Value*> CMCandidates;
+
+    std::cout << "Uscite del loop" << std::endl;
+    for (Loop::block_iterator BI = L->block_begin(); BI != L->block_end(); ++BI) {
+      llvm::BasicBlock *BB = *BI;
+
+      if (L->isLoopExiting(BB)) {
+        ExitBlocks.insert(BB);
+        // Debug.
+        outs() << *BB << "\n";
+      }
+    }
+
+    std::cout << "Istruzioni in blocchi che dominano le uscite del loop:" << std::endl;
+    for (Loop::block_iterator BI = L->block_begin(); BI != L->block_end(); ++BI) {
+      llvm::BasicBlock *BB = *BI;
+
+      for (auto iter_inst = BB->begin(); iter_inst != BB->end(); ++iter_inst) {
+        Instruction& I = *iter_inst;
+
+        if (LIMap[&I] == 2) {
+
+          for (auto iter_set = ExitBlocks.begin(); iter_set != ExitBlocks.end(); ++iter_set) {
+            BasicBlock *EB = *iter_set;
+            
+            if (!DT->dominates(I.getParent(), EB)) {
+              break;
+            }
+
+            if (iter_set == --ExitBlocks.end()) {
+              bool movable = true;
+              outs() << I << "\n";
+
+              std::cout << "Usi dell'istruzione:" << std::endl;
+              for (auto iter_use = I.user_begin(); iter_use != I.user_end(); ++iter_use) {
+                Instruction *U = dyn_cast<Instruction>(*iter_use);
+
+                if (L->contains(U)) {
+                  if (DT->dominates(I.getParent(), U->getParent())) {
+                    continue;
+                  }
+                  else {
+                    movable = false;
+                  }
+                }
+              }
+
+              if (movable) {
+                outs() << I << "\n";
+                CMCandidates.insert(&I);
+              }
+
+              outs() << "------------------------\n";
+            }
+          }
+        }
+      }
+    }
+
+    std::vector<Instruction*> toAdd;
+
+    for (
+      auto node = GraphTraits<DominatorTree *>::nodes_begin(DT);
+      node != GraphTraits<DominatorTree *>::nodes_end(DT);
+      ++node
+      ) {
+        BasicBlock *BB = node->getBlock();
+        outs() << *BB << "\n";
+
+        for (auto iter_inst = BB->begin(); iter_inst != BB->end(); ++iter_inst) {
+          Instruction& I = *iter_inst;
+
+          if (CMCandidates.find(&I) != CMCandidates.end()) {
+            toAdd.push_back(&I);
+          }
+        }
+    }
+
+    for (auto iter_vector = toAdd.begin(); iter_vector != toAdd.end(); ++iter_vector) {
+      Instruction *I = *iter_vector;
+      I->removeFromParent();
+      I->insertBefore(PH->getTerminator());
+    }
+
+    for (
+      auto node = GraphTraits<DominatorTree *>::nodes_begin(DT);
+      node != GraphTraits<DominatorTree *>::nodes_end(DT);
+      ++node
+      ) {
+        BasicBlock *BB = node->getBlock();
+        outs() << *BB << "\n";
+    }
+    
+    return false;
   }
 };
 
