@@ -5,6 +5,7 @@
 #include <llvm/IR/Instruction.h>
 #include <llvm/IR/Dominators.h>
 #include <llvm/IR/Value.h>
+#include <llvm/Analysis/ValueTracking.h>
 #include <vector>
 #include <map>
 
@@ -46,6 +47,15 @@ bool eLoopInvariante(Loop* L, Instruction* I, std::vector<Instruction*> invarian
   }
 }
 
+/*
+Funzione che controlla se l'istruzione non ha sideEffects (usata una sola volta)
+O se domina tutti i blocchi del loop
+il nome astruso è per evitare conflitti
+E' da fare
+*/
+bool esSicuraToHost(Instruction* I){
+  return false
+}
 
 class LoopWalkPass final : public LoopPass {
 public:
@@ -66,12 +76,17 @@ public:
 
     std::vector<Instruction*> istrInvarianti;
 
-    //troviamo le istruzioni invarianti
+    //devo ciclare sul preheadre, in preorder sul dominator tre
+    //devo controllare che il blocco non sia in un inner loop o fuori L
+    //per ogni istruzione devo controllare che sia LoopInvariant e safeto Hoist
+    //se si, sposto l'istruzione nel preheader
+
     
     for(Loop::block_iterator BI = L->block_begin(); BI != L->block_end(); ++BI){
       BasicBlock *LoopBlock=*BI;
       for(BasicBlock::iterator I = LoopBlock->begin(); I != LoopBlock->end(); ++I){
         Instruction *inst = dyn_cast<Instruction>(I);
+        
 
         if(eLoopInvariante(L,inst,istrInvarianti)){
           istrInvarianti.push_back(inst);
