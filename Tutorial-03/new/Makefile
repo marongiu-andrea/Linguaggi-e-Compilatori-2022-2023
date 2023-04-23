@@ -15,4 +15,5 @@ clean:
 	$(RM) $(OPTIMIZER) $(OBJs)
 
 run:
-	opt -enable-new-pm=0 -load ./libLoopInvariantCodeMotion.so -loop-walk test/Loop.ll -disable-output
+	opt -enable-new-pm=0 -load ./libLoopInvariantCodeMotion.so -loop-walk test/Loop.ll -o test/Loop.bc
+	llvm-dis test/Loop.bc -o test/OptLoop.ll
