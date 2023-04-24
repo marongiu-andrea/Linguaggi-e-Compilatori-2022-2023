@@ -3,6 +3,7 @@
 #include <llvm/IR/Dominators.h>
 #include "llvm/IR/Instructions.h"
 #include "llvm/Transforms/Utils/Local.h"
+#include "llvm/Analysis/LoopIterator.h"
 
 using namespace llvm;
 
@@ -57,7 +58,7 @@ class LoopInvariantCodeMotionPass final : public LoopPass
 
 	virtual void printLoopInvariantInstructions()
 	{
-		outs()<<"Istruzioni loop-invariant:\n";
+		outs()<<"--------------------------------\n"<<"Istruzioni loop-invariant:\n";
 		for (auto &itr: loopInvariantMap)
 		{
 			if (itr.second)
@@ -67,6 +68,7 @@ class LoopInvariantCodeMotionPass final : public LoopPass
 
 	virtual bool findLoopInvariantInstructions(Loop *L)
 	{
+		outs()<<"--------------------------------\n"<<"Ricerca delle istruzioni Loop-invariant:\n";
 		for (auto &BBIter : (*L).getBlocks())
 		{
 			for (auto &InstIter : *BBIter)
@@ -206,7 +208,6 @@ class LoopInvariantCodeMotionPass final : public LoopPass
 							loopInvariantMap[&InstIter] = true;
 						}
 					}
-					outs()<<"---------------------------------------\n";
 				}			
 			}
 		}
@@ -215,11 +216,14 @@ class LoopInvariantCodeMotionPass final : public LoopPass
 
 	virtual void findCandidateMovableInstructions(Loop *L, DominatorTree * DT)
 	{
+		
 		bool dominatesAllExits;
 		bool deadAfterExit;
 		bool dominatesAllUses;
 		SmallVector<BasicBlock *> exitBlocks; // Vettore contenente i basic block che sono uscite del loop
 		(*L).getExitBlocks(exitBlocks);
+
+		outs()<<"--------------------------------\n"<<"Ricerca delle istruzioni candidate alla Code Motion:\n";
 
 		// Itera su tutte le istruzioni loop-invariant
 		for(auto iter = loopInvariantMap.begin(); iter != loopInvariantMap.end(); ++iter)
@@ -244,10 +248,12 @@ class LoopInvariantCodeMotionPass final : public LoopPass
 				{
 					Instruction * inst = dyn_cast<Instruction>(*Iter);	
 
-					// Se la variabile è usata in blocchi che non fanno parte del loop -> la variabile non è dead all'uscita del loop
+					// Se la variabile è usata in blocchi che NON fanno parte del loop -> la variabile non è dead all'uscita del loop
+					// 	-> Dato che si stanno scorrendo gli usi dell'istruzione iter->first, se un uso non è all'interno del
+					//		Loop, significa necessariamente che sono esterni
 					if (!(*L).contains(inst))
 					{
-						outs()<<*(iter->first)<<" NON é usata nel loop\n";
+						outs()<<*(iter->first)<<" NON è dead all'uscita del loop\n";
 						deadAfterExit = false;
 					}
 
@@ -260,7 +266,7 @@ class LoopInvariantCodeMotionPass final : public LoopPass
 				}
 
 				/*
-				Un'istruzione movable è:
+				Un'istruzione candidata movable è:
 				- Loop-invariant
 				- Si trovano in blocchi che dominano tutte le uscite del loop oppure la variabile definita 
 					dall'istruzione è dead fuori dal loop
@@ -274,15 +280,17 @@ class LoopInvariantCodeMotionPass final : public LoopPass
 		}
 	}
 
-	virtual void printCandidateMovableInstructions()
+	virtual void printInstructions(std::vector<Instruction*> instVector, std::string str)
 	{
-		outs()<<"Istruzioni candidate alla Code Motion:\n";
-		for (auto &itr: candidateMovableInstructions)
-			outs()<<*(itr)<<"\n";
+		outs()<<"--------------------------------\n"<<"Istruzioni "<<str<<":\n";
+		for (auto &inst: instVector)
+			outs()<<*(inst)<<"\n";
 	}
 
 	virtual void codeMotion(Loop *L)
 	{
+		outs()<<"--------------------------------\n"<<"Code Motion:\n";
+
 		BasicBlock * preHeader = (*L).getLoopPreheader();
 				
 		Instruction * preHeaderTerminator = preHeader->getTerminator();
@@ -293,13 +301,68 @@ class LoopInvariantCodeMotionPass final : public LoopPass
 		}
 	}
 
-	virtual void findMovableInstructions(L, DT)
+	virtual void findMovableInstructions(Loop *L, LoopInfo * LI)
 	{
 		/*
 		Eseguire una ricerca depth-first dei blocchi:
 		• Spostare l’istruzione candidata nel preheader se tutte le istruzioni
 			invarianti da cui questa dipende sono state spostate
 		*/
+		LoopBlocksDFS DFS(L);
+		DFS.perform(LI);
+
+		bool * operandAllowsToCodeMotion;
+		
+		// Itera sulle istruzioni candidate alla code motion
+		for (auto candidateInst : candidateMovableInstructions)
+		{
+			operandAllowsToCodeMotion = new bool((*candidateInst).getNumOperands()); // False quando un operando non permette la Code Motion
+
+			for (int i = 0; i < (*candidateInst).getNumOperands(); ++i)
+				operandAllowsToCodeMotion[i] = false;
+
+			// Itera sulle istruzioni di ogni Basic Block del Loop in ordine Depth-first
+			for (auto BB = DFS.beginRPO(); BB != DFS.endRPO(); ++BB) 
+			{
+				BasicBlock *B = *BB;
+				
+				for (auto &instBB : *B)
+				{
+					// Se nel Basic Block trova un'istruzione candidata alla code motion
+					if (candidateInst == &instBB)
+					{
+						// Itera sugli operandi dell'istruzione candidata
+						for (int numOperand = 0; numOperand < instBB.getNumOperands(); ++numOperand)
+						{
+							ConstantInt * constantOperand = dyn_cast<ConstantInt>(instBB.getOperand(numOperand));
+							// Se l'operando di posizione numOperand non è una costante
+							if (!constantOperand)	
+							{	
+								Instruction * operandInstruction;
+								// Se l'operando di posizione numOperand non ha un'istruzione associata 
+								//	-> l'operando numOperand permette la Code Motion perché viene dall'esterno
+								if(!(operandInstruction = dyn_cast<Instruction>(instBB.getOperand(numOperand))))
+									operandAllowsToCodeMotion[numOperand] = true;
+								else
+								{
+									for (auto movableInst : movableInstructions)
+									{
+										operandInstruction = dyn_cast<Instruction>(instBB.getOperand(numOperand));
+										if (operandInstruction == movableInst)
+											operandAllowsToCodeMotion[numOperand] = true;
+									}
+								}
+							}
+							else // Se è una costante -> l'operando numOperand permette la Code Motion
+								operandAllowsToCodeMotion[numOperand] = true;
+						}
+					}
+				}
+			}
+
+			if (operandAllowsToCodeMotion[0]  && operandAllowsToCodeMotion[1])
+				movableInstructions.push_back(candidateInst);
+		}
 	}
 
 	virtual void getAnalysisUsage(AnalysisUsage &AU) const override 
@@ -323,11 +386,13 @@ class LoopInvariantCodeMotionPass final : public LoopPass
 			printLoopInvariantInstructions();
 
 			findCandidateMovableInstructions(L, DT);
-			printCandidateMovableInstructions();
+			printInstructions(candidateMovableInstructions, "candidate alla Code Motion");
+
+			findMovableInstructions(L, LI);
+			printInstructions(movableInstructions, "movable");
 
 			codeMotion(L);
 		}
-
 		return false; 
 	}
 };
@@ -337,4 +402,3 @@ RegisterPass<LoopInvariantCodeMotionPass> X("loop-invariant-code-motion",
 											"loop invariant code motion");
 
 } // anonymous namespace
-
