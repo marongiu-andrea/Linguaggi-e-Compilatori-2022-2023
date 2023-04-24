@@ -15,27 +15,6 @@ using namespace llvm;
 // opt -enable-new-pm=0 -load ./libLoopInvariantCodeMotion.so -loop-invariant-code-motion test/Loop.ll -o test/LoopInvariantCodeMotion.optimized.bc
 // llvm-dis test/LoopInvariantCodeMotion.optimized.bc -o test/LoopInvariantCodeMotion.optimized.ll
 
-
-//dobbiamo scrivere la nostra funzione per capire se uno statement è loop invariant
-//calcolare i dominatori -> si possono usare le istruzioni che llvm mette a disposizione
-//Trovare le uscite del loop
-//Trovare le istruzione candidate alla code motion
-
-//SI trovano in blocchi che dominano tutte le uscite del loop -> rilassabile se la 
-//		variabile definita dall'istruzione è dead all'uscita del loop
-
-/*
-1)Recuperare info
-
-Primo sweep del loop: -> se 
-2)Scrivere un pezzo di codice che ci dice se l'istruzione è loop invariant (NO API LLVM)
-3)Scrivere una funzione isSafeToMove()
-
-Secondo sweep in cui si spostano effettivamente le istruzioni:
--> adesso tutte le istruzioni adatte sono marchiate per code motion
-4)Eseguite la code motion
-*/
-
 namespace {
 
 class LoopInvariantCodeMotionPass final : public LoopPass 
