@@ -11,31 +11,59 @@ namespace {
 
 class LoopInvariantCodeMotion final : public LoopPass {
 private:
-  bool runOnInstruction(
+  bool shouldInstructionBeMoved(
     Loop* L,
     ArrayRef<BasicBlock*> loopExits,
     Instruction* inst,
     const DominatorTree* DT,
     const LoopInvariantInstrAnalysisPass* LII)
   {
-    /* 
-    An instruction can be moved IF:
-    !- It is loop invariant
-    !- It dominates all loop exits
+    /* An instruction can be moved IF:
+      - It is loop invariant
+      - All the values it depends on are defined outside the loop (e.g. they already have been moved)
+      - It dominates all loop exits OR the value it defines is dead outside the loop
 
-    - There is no other instruction which assigns to the same LHS (Already guaranteed by SSA)
-    - It dominates all its uses (Already guaranteed by SSA)
+      - There is no other instruction which assigns to the same LHS (Already guaranteed by SSA)
+      - It dominates all its uses (Already guaranteed by SSA)
     */
 
-
-    if (!(
-        all_of(loopExits, [DT, inst] (BasicBlock* exit) { return DT->dominates(inst, exit); }) 
-        && LII->isLoopInvariant(inst)
-       ))
+    if (!LII->isLoopInvariant(inst))
       return false;
 
-    inst->print(outs());
-    outs() << "\n";
+    BasicBlock* preheader = L->getLoopPreheader();
+
+    bool allOperandsOutsideLoop = all_of(inst->operands(), [L, preheader] (Value* val) {
+
+      /* The data used by llvm::Loop.contains is not updated when moving instructions.
+
+        Because we only move instructions to the preheader, an instruction is outside the loop if:
+        - It is in the preheader, which is outside the loop
+        - OR Loop.contains returns false (it was never located in the loop to begin with)
+      */
+   
+      Instruction* instr = dyn_cast<Instruction>(val);
+      return instr == nullptr || instr->getParent() == preheader || !L->contains(instr);
+    });
+
+    if (!allOperandsOutsideLoop)
+      return false;
+
+
+    bool dominatesAllExits = all_of(loopExits, [DT, inst] (BasicBlock* exit) { return DT->dominates(inst, exit); });
+    
+    /* We're in SSA, so liveness analysis just consists of checking that the users list is not empty.
+        
+        If all the users are instructions contained in the loop,
+        the value is dead outside the loop.
+    */
+    bool valueIsDeadOutsideLoop = all_of(inst->users(), [L] (User* user) {
+      Instruction* instr = dyn_cast<Instruction>(user);
+      return instr != nullptr && L->contains(instr);
+    });
+
+    if (!(dominatesAllExits || valueIsDeadOutsideLoop))
+      return false;
+
     return true;
   }
 
@@ -72,16 +100,29 @@ public:
     SmallPtrSet<BasicBlock*, 16> visited = { header };
     SmallVector<BasicBlock*> stack = { header };
 
+    BasicBlock* preheader = L->getLoopPreheader();
+
     bool changed = false;
     while (stack.size() > 0) {
       BasicBlock* bb = stack.pop_back_val();
 
-      for (auto ii = bb->begin(); ii != bb->end(); ++ii) {
-        changed = runOnInstruction(L, exitBlocks, &*ii, DT, LII) || changed;
-      }
+      auto ii = bb->begin();
+      auto end = bb->end();
+      while (ii != end) {
+        Instruction* instr = &*ii;
+        ++ii;
 
+        if (shouldInstructionBeMoved(L, exitBlocks, instr, DT, LII)) {
+          changed = true;
+          
+          instr->print(outs());
+          outs() << "\n";
+        }
+      }
+      
+      // Add all successors which are in the loop and that we haven't already visited
       for (BasicBlock* bb : successors(bb)) {
-        if (!visited.contains(bb)) {
+        if (!visited.contains(bb) && L->contains(bb)) {
           stack.push_back(bb);
           visited.insert(bb);
         }
