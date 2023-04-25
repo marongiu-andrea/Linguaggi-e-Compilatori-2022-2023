@@ -13,8 +13,9 @@ class LoopInvariantCodeMotion final : public LoopPass {
 private:
   bool shouldInstructionBeMoved(
     Loop* L,
-    ArrayRef<BasicBlock*> loopExits,
     Instruction* inst,
+    BasicBlock* preheader,
+    const ArrayRef<BasicBlock*> loopExits,
     const DominatorTree* DT,
     const LoopInvariantInstrAnalysisPass* LII)
   {
@@ -30,17 +31,18 @@ private:
     if (!LII->isLoopInvariant(inst))
       return false;
 
-    BasicBlock* preheader = L->getLoopPreheader();
 
     bool allOperandsOutsideLoop = all_of(inst->operands(), [L, preheader] (Value* val) {
+      /*
+        Because we only move instructions to the preheader,
+        an instruction is outside the loop if:
 
-      /* The data used by llvm::Loop.contains is not updated when moving instructions.
+        - It was never located in the loop to begin with,
+           so llvm::Loop.contains returns false
 
-        Because we only move instructions to the preheader, an instruction is outside the loop if:
-        - It is in the preheader, which is outside the loop
-        - OR Loop.contains returns false (it was never located in the loop to begin with)
+        - OR if it is in the preheader, where we could've moved it
+           without updating the data used by llvm::Loop.contains.
       */
-   
       Instruction* instr = dyn_cast<Instruction>(val);
       return instr == nullptr || instr->getParent() == preheader || !L->contains(instr);
     });
@@ -49,8 +51,6 @@ private:
       return false;
 
 
-    bool dominatesAllExits = all_of(loopExits, [DT, inst] (BasicBlock* exit) { return DT->dominates(inst, exit); });
-    
     /* We're in SSA (all definitions dominate their uses), 
         so liveness analysis consists of just
         checking that the users list is not empty.
@@ -63,10 +63,61 @@ private:
       return instr != nullptr && L->contains(instr);
     });
 
+    bool dominatesAllExits = all_of(loopExits, [DT, inst] (BasicBlock* exit) { return DT->dominates(inst, exit); });
+
     if (!(dominatesAllExits || valueIsDeadOutsideLoop))
       return false;
 
+
     return true;
+  }
+
+  bool runOnLoopBasicBlock(
+    Loop* L,
+    BasicBlock* bb,
+    BasicBlock* preheader,
+    const ArrayRef<BasicBlock*> loopExits,
+    const DominatorTree* DT,
+    const LoopInvariantInstrAnalysisPass* LII)
+  {
+    bool changed = false;
+    LoopInfo a;
+
+    auto ii = bb->begin();
+    auto end = bb->end();
+    while (ii != end) {
+      /* Store the current instruction, then
+          advance the iterator before we do any modification
+      */
+      Instruction* instr = &*(ii++);
+
+      if (shouldInstructionBeMoved(L, instr, preheader, loopExits, DT, LII)) {
+        changed = true;
+
+        outs() << "Moving ";
+        instr->print(outs());
+        outs() << "\n";
+
+        /* For both of the following lines,
+            note that the last instruction of a basic block
+            is always a branching instruction.
+        */
+
+        // Move the instruction before the last basic block instruction
+        instr->moveBefore(&preheader->back());
+
+        /* Replace the old (invalid) iterator with
+            a new one pointing to the next instruction.
+            
+           ii != end is guaranteed: if it was false, then the current instruction
+            would be a branching instruction, which is not loop invariant
+            so we shouldn't be attempting to move it in the first place
+        */
+        ii = BasicBlock::iterator(&*ii);
+      }
+    }
+
+    return changed;
   }
 
 public:
@@ -96,42 +147,26 @@ public:
     SmallVector<BasicBlock*> exitBlocks;
     L->getExitBlocks(exitBlocks);
 
-    // Traverse in depth-first pre-order.
-    // Repeating the same block twice is not useful because we're in SSA, so we can use a naive algorithm.
-    BasicBlock* header = L->getHeader();
-    SmallPtrSet<BasicBlock*, 16> visited = { header };
-    SmallVector<BasicBlock*> stack = { header };
-
     // Guaranteed to be there because the loop is in normal/natural/simplify form
     BasicBlock* preheader = L->getLoopPreheader();
 
     bool changed = false;
+
+    /* Traverse the loop in depth-first pre-order.
+       
+       Repeating the same block twice is not useful because
+        we're in SSA, where all definitions must dominate their uses,
+        so we can use a simple algorithm.
+    */
+    BasicBlock* header = L->getHeader();
+    SmallPtrSet<BasicBlock*, 16> visited = { header };
+    SmallVector<BasicBlock*> stack = { header };
     while (stack.size() > 0) {
       BasicBlock* bb = stack.pop_back_val();
 
-      auto ii = bb->begin();
-      auto end = bb->end();
-      while (ii != end) {
-        Instruction* instr = &*ii;
-        
-        ++ii; // Increment it before we modify the instruction
-
-        if (shouldInstructionBeMoved(L, exitBlocks, instr, DT, LII)) {
-          changed = true;
-
-          outs() << "Moving ";
-          instr->print(outs());
-          outs() << "\n";
-
-          // The last instruction of a basic block is a branch instruction, so we move before that
-          instr->moveBefore(&preheader->back());
-
-          if (ii != end) {
-            Instruction* next = &*ii;
-            ii = BasicBlock::iterator(next);
-          }
-        }
-      }
+      changed =
+        runOnLoopBasicBlock(L, bb, preheader, exitBlocks, DT, LII)
+        || changed;
       
       // Add all successors which are in the loop and that we haven't already visited
       for (BasicBlock* bb : successors(bb)) {
