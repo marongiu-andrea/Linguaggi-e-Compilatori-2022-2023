@@ -83,8 +83,12 @@ bool LoopInvariantInstrAnalysisPass::isLoopInstructionLoopInvariant(const Instru
 void LoopInvariantInstrAnalysisPass::runOnBasicBlock(const BasicBlock* bb) {
   for (const Instruction& instr : *bb) {
     // If the instruction should be considered loop invariant, then put it in the cache
-    if (isLoopInstructionLoopInvariant(&instr))
+    if (isLoopInstructionLoopInvariant(&instr)) {
+      outs() << "Marking ";
+      instr.print(outs());
+      outs() << "\n";
       invariants.insert(&instr);
+    }
   }
 }
 

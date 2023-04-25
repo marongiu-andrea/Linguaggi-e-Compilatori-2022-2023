@@ -51,10 +51,12 @@ private:
 
     bool dominatesAllExits = all_of(loopExits, [DT, inst] (BasicBlock* exit) { return DT->dominates(inst, exit); });
     
-    /* We're in SSA, so liveness analysis just consists of checking that the users list is not empty.
+    /* We're in SSA (all definitions dominate their uses), 
+        so liveness analysis consists of just
+        checking that the users list is not empty.
         
-        If all the users are instructions contained in the loop,
-        the value is dead outside the loop.
+      If all the users are instructions contained in the loop,
+      the value is dead outside the loop.
     */
     bool valueIsDeadOutsideLoop = all_of(inst->users(), [L] (User* user) {
       Instruction* instr = dyn_cast<Instruction>(user);
@@ -100,6 +102,7 @@ public:
     SmallPtrSet<BasicBlock*, 16> visited = { header };
     SmallVector<BasicBlock*> stack = { header };
 
+    // Guaranteed to be there because the loop is in normal/natural/simplify form
     BasicBlock* preheader = L->getLoopPreheader();
 
     bool changed = false;
@@ -110,13 +113,23 @@ public:
       auto end = bb->end();
       while (ii != end) {
         Instruction* instr = &*ii;
-        ++ii;
+        
+        ++ii; // Increment it before we modify the instruction
 
         if (shouldInstructionBeMoved(L, exitBlocks, instr, DT, LII)) {
           changed = true;
-          
+
+          outs() << "Moving ";
           instr->print(outs());
           outs() << "\n";
+
+          // The last instruction of a basic block is a branch instruction, so we move before that
+          instr->moveBefore(&preheader->back());
+
+          if (ii != end) {
+            Instruction* next = &*ii;
+            ii = BasicBlock::iterator(next);
+          }
         }
       }
       
