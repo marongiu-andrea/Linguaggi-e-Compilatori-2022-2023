@@ -7,12 +7,12 @@ using namespace llvm;
 namespace
 {
 
-  class LoopWalkPass final : public LoopPass
+  class LoopInvariantCodeMotion final : public LoopPass
   {
   public:
     static char ID;
 
-    LoopWalkPass() : LoopPass(ID) {}
+    LoopInvariantCodeMotion() : LoopPass(ID) {}
 
     virtual void getAnalysisUsage(AnalysisUsage &AU) const override
     {
@@ -40,27 +40,19 @@ namespace
 
         for (auto Iter = B->begin(); Iter != B->end(); ++Iter)
         {
-          if (Iter->getOpcode() == Instruction::Sub)
-          {
-            outs() << *Iter << " ###QUESTA E UNA SUB###\n";
+          outs() << *Iter;
 
-            PHINode *binOpLeft = dyn_cast<PHINode>(Iter->getOperand(0));
-            PHINode *binOpRight = dyn_cast<PHINode>(Iter->getOperand(1));
-
-            if (binOpLeft)
-            {
-              printBasicBlock(Iter->getOperand(0));
-            }
-            if (binOpRight)
-            {
-              printBasicBlock(Iter->getOperand(1));
-            }
-          }
-          else
+          BinaryOperator *binOpInstruction = dyn_cast<BinaryOperator>(Iter);
+          if (binOpInstruction)
           {
-            outs() << *Iter << "\n";
+            outs() << "\t###Vediamo dentro###\n";
+            // TODO: capire se una istruzione è loop invariant
+            printBasicBlock(Iter->getOperand(0));
+            printBasicBlock(Iter->getOperand(1));
           }
+          outs() << "\n";
         }
+
         outs() << "\n\n";
       }
       return false;
@@ -69,16 +61,24 @@ namespace
     void printBasicBlock(Value *op)
     {
       outs() << "\tOperando " << *op << "\n";
-      Instruction *inst = dyn_cast<Instruction>(op);
-      BasicBlock *parentBlock = inst->getParent();
-      outs() << "\tBasic Block della definizione: ";
-      parentBlock->printAsOperand(outs(), false);
-      outs() << "\n";
+      if (dyn_cast<ConstantInt>(op))
+      {
+        outs() << "\t\tE' una costante\n";
+      }
+      else
+      {
+        Instruction *inst = dyn_cast<Instruction>(op);
+        BasicBlock *parentBlock = inst->getParent();
+
+        outs() << "\tBasic Block della definizione: ";
+        parentBlock->printAsOperand(outs(), false);
+        outs() << "\n";
+      }
     }
   };
 
-  char LoopWalkPass::ID = 0;
-  RegisterPass<LoopWalkPass> X("loop-walk",
-                               "Loop Walk");
+  char LoopInvariantCodeMotion::ID = 0;
+  RegisterPass<LoopInvariantCodeMotion> X("loop-invariant-code-motion",
+                                          "Loop Invariant Code Motion");
 
 } // anonymous namespace
