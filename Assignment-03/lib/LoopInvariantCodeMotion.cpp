@@ -2,6 +2,7 @@
 #include <llvm/Analysis/ValueTracking.h>
 #include <llvm/IR/Dominators.h>
 #include <map>
+#include <vector>
 
 using namespace llvm;
 
@@ -29,12 +30,14 @@ public:
     }
 
     DominatorTree *DT = &getAnalysis<DominatorTreeWrapperPass>().getDomTree(); //contiene il dominance tree che ottengo dal passo di analisi precedente
-    llvm::SmallVector<BasicBlock*, L->getNUmBlocks()> BBvector; //vettore di BB che contengono istruzioni di salto fuori dal loop
+    std::vector<BasicBlock*> BBvector; //vettore di BB che contengono istruzioni di salto fuori dal loop
+    std::vector<Instruction*> Movablevector; //vettore di Instruction* che contiene le istruzioni che devo andare a spostare nel preheader
 
     //prendo il blocco di preheader
     BasicBlock *preheader = L->getLoopPreheader();
     std::map<Instruction*, bool> LoopInvariants; //mappa che contiene istruzione e mi indica, per ogni istruzione, se e' o no loop invariant
     BasicBlock *actualBB;
+
 
     //MARK: trovo i basic block che hanno una uscita del loop
     for(Loop::block_iterator BI = L->block_begin(); BI != L->block_end(); ++BI) {
@@ -58,13 +61,32 @@ public:
           outs() << "La seguente istruzione domina tutti i suoi usi: ";
           instr.print(outs());
           outs() << "\n";
+          if(!dominateExits(&instr,L,DT,&BBvector)){
+            continue;
+          }
+          outs() << "La seguente istruzione domina tutte le uscite del loop: ";
+          instr.print(outs());
+          outs() << "\n";
 
-          
+          outs() << "\nSono pronto a portare fuori dal loop l'istruzione!\n";
+          LLVMContext& C = instr.getContext();
+          MDNode* N = MDNode::get(C, MDString::get(C, "hoistable")); //creo il metadata node da attaccare all'istruzione attuale per marcarla come movable
+          instr.setMetadata("HOIST", N);
+          Movablevector.push_back(&instr);
         }
         
         //TODO: implementa il controllo come funzione e non usare la mappa per marcare le istr LI, e usa setAnnotation per marcare le istruzioni che sono Movable
         //TODO: di fatto, la funzione di controllo del LI, se restituisce true, va a verificare se tale istruzione e' movable e, nel caso lo sia, imposti l'annotazione su tale istruzione
       }
+    }
+
+    //scorro il loop per spostare le istruzioni taggate come movable
+
+    Instruction *last_preheader = preheader->getTerminator();
+    Instruction *instr;
+    for(auto iter = Movablevector.begin(); iter != Movablevector.end(); ++iter){
+        instr = *iter;
+        instr->moveBefore(last_preheader);
     }
     return false;
   }
@@ -91,6 +113,7 @@ public:
     BasicBlock *parentBB; //BB al quale appartiene l'istruzione considerata
     ConstantInt *const_pointer; //operando castato a costante
     Instruction* instr_pointer; //operando castato ad istruzione
+    Argument* arg; //operando castatato ad argomento di una funzione
     Value* operand;
     bool flag = true; //all'inizio il mio flag e' settato a true
     for(int i=0;flag && i<instr->getNumOperands();i++){
@@ -113,13 +136,19 @@ public:
           flag=false; //se e' un BinaryOperato che non ha soddisfatto nessuna delle due condizioni precedenti, allora e' di sicuro NON LOOP-INVARIANT
         }
         else {
-          continue; //se non e' ne' una costante ne' un BinaryOperator, allora e' un function parameter, che quindi e' LOOP-INVARIANT
+          arg = dyn_cast<Argument>(instr->getOperand(i));
+          if(arg){
+            continue; //se non e' ne' una costante ne' un BinaryOperator, allora e' un function parameter, che quindi e' LOOP-INVARIANT
+          }
+          else{ //MARK: caso in cui non sia nulla di tutto quello che ho controllato fino a questo momento (istruzione, costante, argomento di una funzione)
+            outs() << "Operando della attuale istruzione non riconosciuto, per sicurezza ritorno false\n";
+            return false;
+          }
         }
       }
       else{
         continue; //se e' una costante ragiono sul prossimo operando
       }
-      
     }
     return flag;
   }
@@ -132,19 +161,26 @@ public:
       return false;
     }
     */
-    for (auto iter = instr->use_begin(); iter != instr->use_end(); ++iter){ //scorro tutti gli usi della variabile LHS dell'istruzione
-      if(!DT->dominates(instr,*iter)){//se il cast e' andato a buon fine, allora estraggo il BB di appartenenza dell'uso
-        return false;
-      }
-      else {
-        continue; // visto che il cast non e' andato a buon fine di uno degli usi, allora c'e' qualche problema e per sicurezza ritorno false
+   bool flag=true;
+    for (auto iter = instr->user_begin(); flag && iter != instr->user_end(); ++iter){ //scorro tutti gli usi della variabile LHS dell'istruzione
+      Instruction *uso = dyn_cast<Instruction>(*iter);
+      if(!DT->dominates(instr,uso)){//se il cast e' andato a buon fine, allora estraggo il BB di appartenenza dell'uso
+        flag=false;
       }
     }
-    return true; //se gli usi sono dominati tutti dalla definizione, allora ritorno true
+    return flag; //se gli usi sono dominati tutti dalla definizione, allora ritorno true
   }
 
-  bool dominateExits(Instruction *instr, Loop *L, DominatorTree *DT) {
+  bool dominateExits(Instruction *instr, Loop *L, DominatorTree *DT, std::vector<BasicBlock*> *vect) {
+    BasicBlock *parentBB = instr->getParent();
+    bool flag=true;
 
+    for(auto iter = vect->begin(); flag && iter != vect->end(); ++iter) {
+      if(!DT->dominates(parentBB,*iter)){
+        flag=false;
+      }
+    }
+    return flag;
   }
 
 };
