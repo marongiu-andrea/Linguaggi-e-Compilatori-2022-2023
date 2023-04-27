@@ -26,13 +26,26 @@ public:
       else
         outs() << "false\n";
     
-    
     BasicBlock* preheder = L->getLoopPreheader();
     // LoopPass* simplify = isLoopSimplifyForm();
     if(preheder){
       outs() << "Il loop ha un preheader:\n\nIstruzioni Preheader\n";
-    }  
-    return false; 
+    }
+    else
+      return false; 
+
+    for(auto &bb: L->getBlocks()){
+      for (BasicBlock::iterator i = bb->begin(), e = bb->end(); i != e; ++i) {
+          Instruction* ii = &*i;
+          // errs() << *ii << "\n";
+            if(ii->getOpcode() == Instruction::Sub){
+              outs() << *ii << "\n\n";
+              outs() << "Basic Block della suddetta istruzione:";
+              outs() << *ii->getParent() << "\n";
+            }
+      }
+    }
+
   }
 };
 
