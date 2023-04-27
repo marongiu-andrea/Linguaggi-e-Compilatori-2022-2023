@@ -54,9 +54,22 @@ il nome astruso è per evitare conflitti
 E' da fare
 */
 bool esSicuraToHost(Instruction* I){
-  return false
+  return false;
 }
+/*
+std::vector<BasicBlock*> uscite(Loop* L){
+  std::vector<BasickBlock*> uscite;
+  if(L->isLoopSimplifyForm()){
+    return L->getUniqueExitBlock();
+  }else{
+    for(Loop::block_iterator BI = L->block_begin(); BI != L->block_end(); ++BI){
+      BasicBlock *LoopBlock=*BI;
 
+    }
+    return NULL;
+  }
+}
+*/
 class LoopWalkPass final : public LoopPass {
 public:
   static char ID;
@@ -71,10 +84,17 @@ public:
 
   virtual bool runOnLoop(Loop *L, LPPassManager &LPM) override {
     //Fase recupero iformazioni
+    bool dominaUscite=false;
+    bool dominaUtilizzi=false;
+
     DominatorTree *DT = & getAnalysis<DominatorTreeWrapperPass>().getDomTree();
     BasicBlock *preheader = L->getLoopPreheader();
-
+    BasicBlock *ExitB;
+    if(L->isLoopSimplifyForm()){
+      ExitB = L->getUniqueExitBlock();
+    }
     std::vector<Instruction*> istrInvarianti;
+    std::vector<Instruction*> toMoove;
 
     //devo ciclare sul preheadre, in preorder sul dominator tre
     //devo controllare che il blocco non sia in un inner loop o fuori L
@@ -84,21 +104,39 @@ public:
     
     for(Loop::block_iterator BI = L->block_begin(); BI != L->block_end(); ++BI){
       BasicBlock *LoopBlock=*BI;
+      if(DT->dominates(LoopBlock,ExitB)){
+        dominaUscite=true;
+      }else{
+        dominaUscite=false;
+      }
       for(BasicBlock::iterator I = LoopBlock->begin(); I != LoopBlock->end(); ++I){
         Instruction *inst = dyn_cast<Instruction>(I);
-        
-
         if(eLoopInvariante(L,inst,istrInvarianti)){
           istrInvarianti.push_back(inst);
           //quali sono gli altri controlli necessari
-
+          if(dominaUscite){
+            toMoove.push_back(inst);
+            //cerchiamo gli usi e vediamo se dominiamo quei bloccho
+            dominaUtilizzi=true;
+            for(Value::use_iterator USO = inst->use_begin(); USO != inst->use_end(); ++USO){
+              if(Instruction *UserI = dyn_cast<Instruction>(*USO)){
+                if(DT->dominates(LoopBlock,UserI->getParent())){
+                }else{
+                  dominaUtilizzi = false;
+                }
+              }
+            }
+            if(dominaUtilizzi){
+              printf("Domino anche gli utilizzi\n");
+            }
+          }
         }
 
       }
     }
     //vediamo che ho trovato
-    for(int i=0; i<istrInvarianti.size(); i++){
-      outs() << "Instruzione invariante: "<< *istrInvarianti[i] << " \n";
+    for(int i=0; i<toMoove.size(); i++){
+      outs() << "Instruzione invariante: "<< *toMoove[i] << " \n";
     }
 
     return false; 
