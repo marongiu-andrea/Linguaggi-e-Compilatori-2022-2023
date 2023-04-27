@@ -2,6 +2,8 @@
 #include <llvm/Analysis/ValueTracking.h>
 #include <llvm/IR/Dominators.h>
 #include "llvm/Analysis/LoopInfo.h"
+#include "llvm/ADT/SmallVector.h"
+#include "llvm/ADT/SmallSet.h"
 
 using namespace llvm;
 #include <iostream>
@@ -40,10 +42,10 @@ public:
     // Loop preheader.
     BasicBlock* PH = L->getLoopPreheader();
     // Debug preheader.
-    if (PH) {
-      std::cout << "C'è un preheader!" << std::endl;
-      outs() << *PH << "\n";
-    }
+    if (!PH) {
+      std::cout << "Il loop non è in forma canonica!" << std::endl;
+      return false;
+    }    
     outs() << *PH->getTerminator() << "\n";
 
     // Parte 1 - trovare le istruzioni loop-invariant.
@@ -71,10 +73,11 @@ public:
                 Argument *arg = dyn_cast<Argument>(Operand);
                 if(arg){
                   outs()<<"Found function argument: ";
-                  outs()<<*arg<<"\n"; 
+                  outs()<<*arg<<"\n";                  
                 }
                 else{
                   outs()<<"Error, unexpected type of operand\n";
+                  invariant = false;
                 }
                 continue; // avoid lookup on null value;
               }
@@ -114,6 +117,7 @@ public:
     // Parte 2 - definire le istruzioni candidate alla code motion.
     std::set<BasicBlock*> ExitBlocks;
     std::set<Value*> CMCandidates;
+    // llvm::SmallSet<Value*> CMCandidates;
 
     std::cout << "Uscite del loop" << std::endl;
     for (Loop::block_iterator BI = L->block_begin(); BI != L->block_end(); ++BI) {
@@ -171,9 +175,8 @@ public:
         }
       }
     }
-
-    std::vector<Instruction*> toAdd;
-
+    // std::vector<Instruction*> toAdd;
+    llvm::SmallVector<Instruction*> toAdd;
     for (
       auto node = GraphTraits<DominatorTree *>::nodes_begin(DT);
       node != GraphTraits<DominatorTree *>::nodes_end(DT);
