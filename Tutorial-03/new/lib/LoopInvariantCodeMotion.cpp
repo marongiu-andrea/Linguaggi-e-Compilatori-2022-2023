@@ -10,6 +10,7 @@ using namespace llvm;
 #include <set>
 #include <vector>
 
+
 namespace {
 
 class LoopInvariantCodeMotionPass final : public LoopPass {
@@ -49,41 +50,57 @@ public:
     // Parte 1 - trovare le istruzioni loop-invariant.
     for (Loop::block_iterator BI = L->block_begin(); BI != L->block_end(); ++BI) {
       llvm::BasicBlock *BB = *BI;
+
       for (auto iter_inst = BB->begin(); iter_inst != BB->end(); ++iter_inst) {
         Instruction& I = *iter_inst;
+        // Valore booleano per deteminare istruzione loop-invariant.
 				bool invariant = true;
+
         if (I.isBinaryOp() && !(I.getOpcode() == 55)) {
+          // L'algoritmo valuta operazioni binarie, anche se lo si potrebbe
+          // applicare in un contesto più ampio. Si evitano i PHI-nodes perché
+          // non loop-invariant per definizione.
 					for (auto operand = I.op_begin(); operand != I.op_end(); ++operand) {
             Value *Operand = *operand;
 						
-						if (ConstantInt *C = dyn_cast<ConstantInt>(Operand)){              
+						if (ConstantInt *C = dyn_cast<ConstantInt>(Operand)){
+              // Caso operando costante.
               continue;
             }
-            else {              
+            else {
+              // Debug operandi non costanti.
               outs() << "------------------------\n";
-              outs() <<"Analyzing: ";
-              outs()<<I;
-              std::cout<<std::endl;
-              Instruction *Inst = dyn_cast<Instruction>(Operand);                                   
+              outs() << "Analyzing: " << I << "\n";
+
+              Instruction *Inst = dyn_cast<Instruction>(Operand);
+
               outs() <<"Converting: ";
-              outs()<<Operand<<*Operand<<" ---> "<<Inst<<"\n";
-              if(!Inst){ // in this case, we assume that the reac.def. is the function argument              
+              outs() << Operand << *Operand << " ---> " << Inst << "\n";
+              
+              // Debug operandi function argument e non.
+              if(!Inst){
+                // In this case, we assume that the reaching definition is
+                // the function argument.
                 Argument *arg = dyn_cast<Argument>(Operand);
+
                 if(arg){
-                  outs()<<"Found function argument: ";
-                  outs()<<*arg<<"\n"; 
+                  // Caso operando function argument.
+                  outs() << "Found function argument: ";
+                  outs() << *arg << "\n"; 
                 }
                 else{
-                  outs()<<"Error, unexpected type of operand\n";
+                  outs() << "Error, unexpected type of operand\n";
                 }
-                continue; // avoid lookup on null value;
+                continue; // Avoid lookup on null value;
               }
-              // when converting %0, the cast does not work well, and gives
+              // When converting %0, the cast does not work well, and gives
               // in output 0x0. Then when we lookup the map it obv. returns 1,
               // because 0x0 is not memorized. So the algo works anyway, but 
-              // it might be dangerous.              
+              // it might be dangerous.  
+
               if (LIMap[Inst] == f) {
-                invariant = false;                
+                // Se il lookup dell'istruzione dà risultato non loop-invariant.
+                invariant = false;
               }
               else {                
                 continue;
@@ -103,16 +120,18 @@ public:
       }
     }
 
-    // Debug.
+    // Debug della mappa.
     std::cout << "Map size: " << LIMap.size() << std::endl;
     
     for (auto iter_map = LIMap.begin(); iter_map != LIMap.end(); ++iter_map) {
-      outs() << iter_map->first << " " << *iter_map->first<<" --> "<<iter_map->second;
+      outs() << iter_map->first << " " << *iter_map->first << " --> " << iter_map->second;
       std::cout << std::endl;
     }
 
     // Parte 2 - definire le istruzioni candidate alla code motion.
+    // Set dei basic block in uscita dal loop.
     std::set<BasicBlock*> ExitBlocks;
+    // Set delle istruzioni candidate a code motion.
     std::set<Value*> CMCandidates;
 
     std::cout << "Uscite del loop" << std::endl;
@@ -121,7 +140,7 @@ public:
 
       if (L->isLoopExiting(BB)) {
         ExitBlocks.insert(BB);
-        // Debug.
+        // Debug basic block in uscita dal loop.
         outs() << *BB << "\n";
       }
     }
