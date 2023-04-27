@@ -146,7 +146,7 @@ public:
     std::set<Value*> CMCandidates;
     // llvm::SmallSet<Value*> CMCandidates;
 
-    std::cout << "Uscite del loop" << std::endl;
+    std::cout << "Uscite del loop" << std::endl; // CAN BE CLEANER
     for (Loop::block_iterator BI = L->block_begin(); BI != L->block_end(); ++BI) {
       llvm::BasicBlock *BB = *BI;
 
