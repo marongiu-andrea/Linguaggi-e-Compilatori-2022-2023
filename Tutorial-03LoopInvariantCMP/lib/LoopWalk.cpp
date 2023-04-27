@@ -1,6 +1,7 @@
 #include <llvm/Analysis/LoopPass.h>
 #include <llvm/IR/Dominators.h>
 #include <llvm/Analysis/ValueTracking.h>
+//#include <llvm/ADT/SmallVector.h>
 
 using namespace llvm;
 
@@ -27,8 +28,12 @@ public:
   // LoopInfo *LI = &getAnalysis<LoopInfoWrapperPass>().g;
 
   }
-  Vector<Instruction> invariant;
-  Boolean isLoopInvariant(Instruction *i) {
+  //SmallVector<Instruction> invariant;
+  //Calcoliamo la lista dei bb del loop. La passiamo a isLoopInvariant, trovi il bb genitore dell'istruzione,
+  //if genitore is in lista allora false e quindi non è loop invariant.
+
+  //primitiva contains
+  bool isLoopInvariant(Instruction &Inst) {
     
     for(auto *opIter = Inst.op_begin(); opIter != Inst.op_end(); ++opIter){
       Value *op = *opIter;
@@ -36,10 +41,16 @@ public:
       //Se non e' una const
       if(Instruction *arg = dyn_cast<Instruction>(op))
       {
+        if()//dichiarato dentro loop
+        {
+          return false;
+        }
         outs() << "Istruzione che definisce: " << *op <<"\n";
         outs() << "Basic Block dell'istruzione:\n" << *arg->getParent() << "\n";
       }
+
     }
+    return true;
   } 
 
   virtual bool runOnLoop(Loop *L, LPPassManager &LPM) override {
@@ -66,18 +77,20 @@ public:
         outs() << "Scrorrendo le istruzioni del BB: \n";
         for(auto InstIter = BB->begin(); InstIter != BB->end(); ++InstIter){
           Instruction &Inst = *InstIter;
+          outs() << "Loop Invariant? " << isLoopInvariant(Inst) << "\n";
+          /*
+          //Itero sugli operatori
+          for(auto *opIter = Inst.op_begin(); opIter != Inst.op_end(); ++opIter){
+            Value *op = *opIter;
 
-            //Itero sugli operatori
-            for(auto *opIter = Inst.op_begin(); opIter != Inst.op_end(); ++opIter){
-              Value *op = *opIter;
-
-              //Se non e' una const
-              if(Instruction *arg = dyn_cast<Instruction>(op))
-              {
-                outs() << "Istruzione che definisce: " << *op <<"\n";
-                outs() << "Basic Block dell'istruzione:\n" << *arg->getParent() << "\n";
-              }
+            //Se non e' una const
+            if(Instruction *arg = dyn_cast<Instruction>(op))
+            {
+              outs() << "Istruzione che definisce: " << *op <<"\n";
+              outs() << "Basic Block dell'istruzione:\n" << *arg->getParent() << "\n";
             }
+          }
+          */
         }
       }
       return true;
@@ -87,8 +100,7 @@ public:
 };
 
 char LoopWalkPass::ID = 0;
-RegisterPass<LoopWalkPass> X("loop-walk",
-                             "Loop Walk");
+RegisterPass<LoopWalkPass> X("loop-walk", "Loop Walk");
 
 } // anonymous namespace
 
