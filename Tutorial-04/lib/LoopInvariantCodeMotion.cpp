@@ -4,12 +4,6 @@
 
 using namespace llvm;
 
-enum class LoopInvariantCodeMotionType
-{
-  LICM,
-  PRE
-};
-
 namespace
 {
   bool isLoopInvariant(BinaryOperator *I, Loop *L);
@@ -61,9 +55,9 @@ namespace
           }
         }
       }
-      outs() << " BOH \n";
-      return true;
     }
+    outs() << " BOH \n";
+    return true;
   }
 
   bool isLoopInvariant(BinaryOperator *I, Loop *L)
