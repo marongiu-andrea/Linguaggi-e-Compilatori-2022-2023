@@ -4,53 +4,71 @@
 
 using namespace llvm;
 
+enum class LoopInvariantCodeMotionType
+{
+  LICM,
+  PRE
+};
+
 namespace
 {
-  void checkOperand(Value *op, Loop *L)
-  {
+  bool isLoopInvariant(BinaryOperator *I, Loop *L);
+  bool isLoopInvariantOperand(Value *op, Loop *L);
 
-    outs() << "\tOperando " << *op << "\n";
-    // outs() << "\tContesto " << *(*op->getContext() << "\n";
-    // transform this into a switch  statement
-    if (dyn_cast<ConstantInt>(op))
+  bool isLoopInvariantOperand(Value *op, Loop *L)
+  {
+    outs() << "\tReaching definitions: " << *op << "\n";
+    if (dyn_cast<ConstantInt>(op) || dyn_cast<Argument>(op))
     {
-      // Non ha reaching definitions
-      outs() << "\t\tE' una costante\n";
-    }
-    else if (dyn_cast<Argument>(op))
-    {
-      // Non ha reaching definitions
-      outs() << "\t\tE' un argomento\n";
+      outs() << "\t\tE' loop invariant, perchè è un'argomento o costante\n";
+      return true;
     }
     else if (dyn_cast<PHINode>(op))
     {
-      // Non ha reaching definitions
-      outs() << "\t\tE' un PHINode\n";
-      PHINode *phiNode = dyn_cast<PHINode>(op);
-      outs() << "\t\t\tNumero di incoming values: " << phiNode->getNumIncomingValues() << "\n";
-      for (unsigned i = 0, e = phiNode->getNumIncomingValues(); i != e; ++i)
-      {
-        outs() << "\t\t\t\t" << i << " " << *(phiNode->getIncomingValue(i)) << "\n";
-        // outs() << "\t\t\t\t" << i << " " << *(phiNode->getIncomingBlock(i)->) << "\n";
-        outs() << "\t\t\t\t" << i << " get blokken: ";
-        phiNode->getIncomingBlock(i)->printAsOperand(outs(), false);
-        outs() << "\n";
-        outs() << "\t\t\t\t il blocco è in loop: " << L->contains(phiNode->getIncomingBlock(i)) << "\n";
-      }
+      outs() << "\t\tNon è loop invariant, perchè è una phi node\n";
+      return false;
     }
     else if (dyn_cast<Instruction>(op))
     {
-      Instruction *inst = dyn_cast<Instruction>(op);
-      BasicBlock *parentBlock = inst->getParent();
+      Instruction *instParent = dyn_cast<Instruction>(op);
+      BasicBlock *parentBlock = instParent->getParent();
 
-      outs() << "\tBasic Block della definizione: ";
+      outs() << "\t\tL'operando è un'istruzione, blocco: ";
       parentBlock->printAsOperand(outs(), false);
       outs() << "\n";
+      bool isInLoop = L->contains(parentBlock);
+      if (!isInLoop)
+      {
+        outs() << "\t\tL'istruzione non è dentro al loop : " << isInLoop << ",  è loop-invariant \n";
+        return true;
+      }
+      else
+      {
+        outs() << "\t\tL'istruzione è dentro al loop : " << isInLoop << ", forse loop-invariant \n";
+        BinaryOperator *binOpInstParent = dyn_cast<BinaryOperator>(instParent);
+        if (binOpInstParent)
+        {
+          bool parentIsLoopInvariant = isLoopInvariant(binOpInstParent, L);
+          if (parentIsLoopInvariant)
+          {
+            outs() << "\t\tL'istruzione padre è loop-invariant \n";
+            return true;
+          }
+          else
+          {
+            outs() << "\t\tL'istruzione padre non è loop-invariant \n";
+            return false;
+          }
+        }
+      }
+      outs() << " BOH \n";
+      return true;
     }
-    else
-    {
-      outs() << "\t\tE' un altro tipo di operando\n";
-    }
+  }
+
+  bool isLoopInvariant(BinaryOperator *I, Loop *L)
+  {
+    return (isLoopInvariantOperand(I->getOperand(0), L) && isLoopInvariantOperand(I->getOperand(1), L));
   }
 
   class LoopInvariantCodeMotion final : public LoopPass
@@ -93,8 +111,10 @@ namespace
           {
             outs() << "\t###Vediamo dentro###\n";
             // TODO: capire se una istruzione è loop invariant
-            checkOperand(Iter->getOperand(0), L);
-            checkOperand(Iter->getOperand(1), L);
+            if (isLoopInvariant(binOpInstruction, L))
+              outs() << "\tISTRUZIONE LOOP INVARIANT\n";
+            else
+              outs() << "\tISTRUZIONE LOOP VARIANT\n";
           }
           outs() << "\n";
         }
