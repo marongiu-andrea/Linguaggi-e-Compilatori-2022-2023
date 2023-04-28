@@ -47,15 +47,22 @@ bool eLoopInvariante(Loop* L, Instruction* I, std::vector<Instruction*> invarian
   }
 }
 
-/*
-Funzione che controlla se l'istruzione non ha sideEffects (usata una sola volta)
-O se domina tutti i blocchi del loop
-il nome astruso è per evitare conflitti
-E' da fare
+/*funzione per un blocco se domina tutte le uscite
+o almeno dovrebbe
+idea: trova le uscite, e sfrutta il c++, quindi fare qualcos'altro nel passo principale.
 */
-bool esSicuraToHost(Instruction* I){
-  return false;
+bool dominaUscite(BasicBlock *BB,
+                  DominatorTree &DT, 
+                  SmallVectorImpl<BasicBlock*> &ExitBlocks){
+  DomTreeNode *domNode = DT->getNode();
+  return all_of(ExitBlocks, [&]BasicBlock *EB) {
+    return DT->dominates(DomNodes, DT->getNode(EB);)
+  }
+
 }
+
+
+
 /*
 std::vector<BasicBlock*> uscite(Loop* L){
   std::vector<BasickBlock*> uscite;
@@ -100,7 +107,7 @@ public:
     //devo controllare che il blocco non sia in un inner loop o fuori L
     //per ogni istruzione devo controllare che sia LoopInvariant e safeto Hoist
     //se si, sposto l'istruzione nel preheader
-
+    for(auto *nodo = DT::iterator.begin(); nodo !=DT::iterator.end(); ++nodo)
     
     for(Loop::block_iterator BI = L->block_begin(); BI != L->block_end(); ++BI){
       BasicBlock *LoopBlock=*BI;
@@ -115,7 +122,6 @@ public:
           istrInvarianti.push_back(inst);
           //quali sono gli altri controlli necessari
           if(dominaUscite){
-            toMoove.push_back(inst);
             //cerchiamo gli usi e vediamo se dominiamo quei bloccho
             dominaUtilizzi=true;
             for(Value::use_iterator USO = inst->use_begin(); USO != inst->use_end(); ++USO){
@@ -127,7 +133,7 @@ public:
               }
             }
             if(dominaUtilizzi){
-              printf("Domino anche gli utilizzi\n");
+              toMoove.push_back(inst);
             }
           }
         }
@@ -136,7 +142,9 @@ public:
     }
     //vediamo che ho trovato
     for(int i=0; i<toMoove.size(); i++){
+
       outs() << "Instruzione invariante: "<< *toMoove[i] << " \n";
+      //*toMoove[i]->insertInto
     }
 
     return false; 
