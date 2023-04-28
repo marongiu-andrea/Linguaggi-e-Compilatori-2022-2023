@@ -145,7 +145,7 @@ public:
               break;			
             }
             if (i == ExitingBlocks.size()-1) { // if it dominates all exiting blocks,
-			  // then we can go 
+			  // then we can check the last condition
               bool movable = true;
               outs() << I << "\n";
 
