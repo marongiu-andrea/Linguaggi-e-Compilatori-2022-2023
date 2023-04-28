@@ -36,13 +36,27 @@ public:
 
     os << "#----------------------#\n";
     
-    for(auto bi : L->blocks())
+    for(BasicBlock* basicBlock : L->blocks())
     {
-      os << "BasicBlock:\n";
-      bi->print(os);
-      os << "\n";
+      for(auto& instruction : *basicBlock)
+      {        
+        if(!instruction.isBinaryOp()) continue;
+        if(instruction.getOpcode() != Instruction::Sub) continue;
+
+        os << "Instruction:\t" << instruction << "\n";
+        
+        for(auto it = instruction.op_begin(); it != instruction.op_end(); ++it)
+          os << *(*it).get() << "\n";
+        
+        os << "\nBasicBlock:";
+        basicBlock->print(os);
+      }
+
+      // os << "BasicBlock:\n";
+      // bi->print(os);
+      // os << "\n";
     }
- 
+
     return false; 
   }
 };
