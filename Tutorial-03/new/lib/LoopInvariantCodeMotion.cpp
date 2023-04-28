@@ -32,23 +32,18 @@ public:
     AU.addRequired<LoopInfoWrapperPass>();
   }
 
-  state isLoopInvariant(Instruction &I, std::map <Value*, state> LIMap) {
-    // Valore booleano per deteminare istruzione loop-invariant.
+  state isLoopInvariant(Instruction &I, std::map <Value*, state> &LIMap) {
     bool invariant = true;
-
     if (I.isBinaryOp() && !(I.getOpcode() == 55)) {
-      // L'algoritmo valuta operazioni binarie, anche se lo si potrebbe
-      // applicare in un contesto più ampio. Si evitano i PHI-nodes perché
-      // non loop-invariant per definizione.
+	  // we focus on binary operations, and skip PHI nodes, that
+	  // are for sure loop invariant.
       for (auto operand = I.op_begin(); operand != I.op_end(); ++operand) {
         Value *Operand = *operand;
         
         if (ConstantInt *C = dyn_cast<ConstantInt>(Operand)){
-          // Caso operando costante.
           continue;
         }
         else {
-          // Debug operandi non costanti.
           outs() << "------------------------\n";
           outs() << "Analyzing: " << I << "\n";
 
@@ -57,66 +52,45 @@ public:
           outs() <<"Converting: ";
           outs() << Operand << *Operand << " ---> " << Inst << "\n";
           
-          // Debug operandi function argument e non.
+          // Debug operands
           if(!Inst){
             // In this case, we assume that the reaching definition is
             // the function argument.
             Argument *arg = dyn_cast<Argument>(Operand);
-
             if(arg){
-              // Caso operando function argument.
               outs() << "Found function argument: ";
               outs() << *arg << "\n"; 
             }
             else{
               outs() << "Error, unexpected type of operand\n";
+			  invariant = false;			  
             }
             continue; // Avoid lookup on null value;
           }
-          // When converting %0, the cast does not work well, and gives
-          // in output 0x0. Then when we lookup the map it obv. returns 1,
-          // because 0x0 is not memorized. So the algo works anyway, but 
-          // it might be dangerous.  
-
-          if (LIMap[Inst] == f) {
-            // Se il lookup dell'istruzione dà risultato non loop-invariant.
-            invariant = false;
-          }
-          else {
-            continue;
-          }
+          if (LIMap[Inst] == f) invariant = false;
+          else continue;
         }
-      }
-      
-      if (invariant) {
-        return t;
-      }
-      else {
-        return f;
-      }
+      }      
+      if (invariant) return t;
+      else return f;
     }
-    else {
-      return f;
-    }
+    else return f;
   }
 
   virtual bool runOnLoop(Loop *L, LPPassManager &LPM) override {
     outs() << "\nLOOP-INVARIANT CODE MOTION INIZIATO...\n";
-
-    // Dominance tree.
     DominatorTree *DT = &getAnalysis<DominatorTreeWrapperPass>().getDomTree();
-    // Mappa delle istruzioni loop-invariant.
+	// Map to store loop-invariant Instructions, to avoid long chains of function calls.
     std::map <Value*, state> LIMap;
     // Loop preheader.
     BasicBlock* PH = L->getLoopPreheader();
-    // Debug + controllo preheader.
+	// if PreHeader does not exist, then loop is not in canonical form.
     if (!PH) {
-      std::cout << "Il loop non è in forma canonica!" << std::endl;
+      std::cout << "Loop is not in canonical form!" << std::endl;
       return false;
     }
 
-
-    // Parte 1 - trovare le istruzioni loop-invariant.
+    // Part 1 - find loop invariant instructions
 
     std::cout << "########## Loop-Invariant check debug ##########" << std::endl;
     for (Loop::block_iterator BI = L->block_begin(); BI != L->block_end(); ++BI) {
@@ -128,9 +102,6 @@ public:
       }
     }
 
-
-    // Debug della mappa.
-
     std::cout << "########## Map debug ##########" << std::endl;
     std::cout << "Map size: " << LIMap.size() << std::endl;
     for (auto iter_map = LIMap.begin(); iter_map != LIMap.end(); ++iter_map) {
@@ -138,26 +109,28 @@ public:
     }
 
 
-    // Parte 2 - definire le istruzioni candidate alla code motion.
+    // Part 2 - find code motion candidates.
     
-    // Set dei basic block in uscita dal loop.
-    std::set<BasicBlock*> ExitBlocks;
-    // Set delle istruzioni candidate a code motion.
+    // set of BB's that exit from loop.
+    // std::set<BasicBlock*> ExitBlocks;
+    // Set of code motion candidates.
     std::set<Value*> CMCandidates;
     // llvm::SmallSet<Value*> CMCandidates;
 
-    std::cout << "Uscite del loop" << std::endl; // CAN BE CLEANER
-    for (Loop::block_iterator BI = L->block_begin(); BI != L->block_end(); ++BI) {
-      llvm::BasicBlock *BB = *BI;
+    std::cout << "Loop exiting blocks:" << std::endl;
+	llvm::SmallVector<llvm::BasicBlock*> ExitingBlocks;
+	L->getExitingBlocks(ExitingBlocks);
+	// for (Loop::block_iterator BI = L->block_begin(); BI != L->block_end(); ++BI) {
+    //   llvm::BasicBlock *BB = *BI;
 
-      if (L->isLoopExiting(BB)) {
-        ExitBlocks.insert(BB);
-        // Debug basic block in uscita dal loop.
-        outs() << *BB << "\n";
-      }
-    }
+    //   if (L->isLoopExiting(BB)) {
+    //     ExitBlocks.insert(BB);
+    //     // Debug basic block in uscita dal loop.
+    //     outs() << *BB << "\n";
+    //   }
+    // }
 
-    std::cout << "Istruzioni in blocchi che dominano le uscite del loop:" << std::endl;
+    std::cout << "Instructions in blocks that dominate loop exits:" << std::endl;
     for (Loop::block_iterator BI = L->block_begin(); BI != L->block_end(); ++BI) {
       llvm::BasicBlock *BB = *BI;
 
@@ -166,18 +139,17 @@ public:
 
         if (LIMap[&I] == 2) {
 
-          for (auto iter_set = ExitBlocks.begin(); iter_set != ExitBlocks.end(); ++iter_set) {
-            BasicBlock *EB = *iter_set;
-            
+          for (int i = 0; i < ExitingBlocks.size(); i++) {
+            BasicBlock *EB = ExitingBlocks[i];
             if (!DT->dominates(I.getParent(), EB)) {
-              break;
+              break;			
             }
-
-            if (iter_set == --ExitBlocks.end()) {
+            if (i == ExitingBlocks.size()-1) { // if it dominates all exiting blocks,
+			  // then we can go 
               bool movable = true;
               outs() << I << "\n";
 
-              std::cout << "Usi dell'istruzione:" << std::endl;
+              std::cout << "Instruction's uses:" << std::endl;
               for (auto iter_use = I.user_begin(); iter_use != I.user_end(); ++iter_use) {
                 Instruction *U = dyn_cast<Instruction>(*iter_use);
 
@@ -190,7 +162,6 @@ public:
                   }
                 }
               }
-
               if (movable) {
                 outs() << I << "\n";
                 CMCandidates.insert(&I);
@@ -202,8 +173,7 @@ public:
         }
       }
     }
-    // std::vector<Instruction*> toAdd;
-    llvm::SmallVector<Instruction*> toAdd;
+    llvm::SmallVector<Instruction*> toAdd; // using small vector to improve performance
     for (
       auto node = GraphTraits<DominatorTree *>::nodes_begin(DT);
       node != GraphTraits<DominatorTree *>::nodes_end(DT);
@@ -219,8 +189,7 @@ public:
             toAdd.push_back(&I);
           }
         }
-    }
-
+    }	
     for (auto iter_vector = toAdd.begin(); iter_vector != toAdd.end(); ++iter_vector) {
       Instruction *I = *iter_vector;
       I->removeFromParent();
