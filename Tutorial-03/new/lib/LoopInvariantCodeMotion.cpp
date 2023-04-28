@@ -83,15 +83,13 @@ public:
 	// Map to store loop-invariant Instructions, to avoid long chains of function calls.
     std::map <Value*, state> LIMap;
     // Loop preheader.
-    BasicBlock* PH = L->getLoopPreheader();
-	// if PreHeader does not exist, then loop is not in canonical form.
-    if (!PH) {
+	if(!L->isLoopSimplifyForm()){
       std::cout << "Loop is not in canonical form!" << std::endl;
-      return false;
-    }
-
+      return false;	  
+	}	
+    BasicBlock* PH = L->getLoopPreheader();
+	
     // Part 1 - find loop invariant instructions
-
     std::cout << "########## Loop-Invariant check debug ##########" << std::endl;
     for (Loop::block_iterator BI = L->block_begin(); BI != L->block_end(); ++BI) {
       llvm::BasicBlock *BB = *BI;
