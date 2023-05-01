@@ -6,6 +6,9 @@
 #include <llvm/IR/Dominators.h>
 #include <llvm/IR/Value.h>
 #include <llvm/Analysis/ValueTracking.h>
+
+
+
 #include <vector>
 #include <map>
 
@@ -49,34 +52,23 @@ bool eLoopInvariante(Loop* L, Instruction* I, std::vector<Instruction*> invarian
 
 /*funzione per un blocco se domina tutte le uscite
 o almeno dovrebbe
-idea: trova le uscite, e sfrutta il c++, quindi fare qualcos'altro nel passo principale.
+idea: trova le uscite, e sfrutta il c++, quindi fare qualcos'altro nel passo principale.(non ottimizziamo
+prima del tempo)
 */
-bool dominaUscite(BasicBlock *BB,
-                  DominatorTree &DT, 
-                  SmallVectorImpl<BasicBlock*> &ExitBlocks){
-  DomTreeNode *domNode = DT->getNode();
-  return all_of(ExitBlocks, [&]BasicBlock *EB) {
-    return DT->dominates(DomNodes, DT->getNode(EB);)
+bool dominaUsciteF(BasicBlock *BB,
+                  DominatorTree *DT, 
+                  std::vector<BasicBlock*> blocchiExit){
+  //non è per nulla ottimizzato ma va be
+  for(int i = 0; i< blocchiExit.size(); ++i){
+    if(!DT->dominates(BB,blocchiExit[i]))
+      return false;
   }
+  return true;
 
 }
 
 
 
-/*
-std::vector<BasicBlock*> uscite(Loop* L){
-  std::vector<BasickBlock*> uscite;
-  if(L->isLoopSimplifyForm()){
-    return L->getUniqueExitBlock();
-  }else{
-    for(Loop::block_iterator BI = L->block_begin(); BI != L->block_end(); ++BI){
-      BasicBlock *LoopBlock=*BI;
-
-    }
-    return NULL;
-  }
-}
-*/
 class LoopWalkPass final : public LoopPass {
 public:
   static char ID;
@@ -91,15 +83,13 @@ public:
 
   virtual bool runOnLoop(Loop *L, LPPassManager &LPM) override {
     //Fase recupero iformazioni
-    bool dominaUscite=false;
+    //bool dominaUscite=false;
     bool dominaUtilizzi=false;
 
     DominatorTree *DT = & getAnalysis<DominatorTreeWrapperPass>().getDomTree();
     BasicBlock *preheader = L->getLoopPreheader();
-    BasicBlock *ExitB;
-    if(L->isLoopSimplifyForm()){
-      ExitB = L->getUniqueExitBlock();
-    }
+
+    std::vector<BasicBlock*> blocchiExit;
     std::vector<Instruction*> istrInvarianti;
     std::vector<Instruction*> toMoove;
 
@@ -107,23 +97,29 @@ public:
     //devo controllare che il blocco non sia in un inner loop o fuori L
     //per ogni istruzione devo controllare che sia LoopInvariant e safeto Hoist
     //se si, sposto l'istruzione nel preheader
-    for(auto *nodo = DT::iterator.begin(); nodo !=DT::iterator.end(); ++nodo)
-    
+
+    //controllo se il successore di un blocco sia dentro il loop
     for(Loop::block_iterator BI = L->block_begin(); BI != L->block_end(); ++BI){
       BasicBlock *LoopBlock=*BI;
-      if(DT->dominates(LoopBlock,ExitB)){
-        dominaUscite=true;
-      }else{
-        dominaUscite=false;
+      if(L->isLoopExiting(LoopBlock)){
+        blocchiExit.push_back(LoopBlock);
       }
-      for(BasicBlock::iterator I = LoopBlock->begin(); I != LoopBlock->end(); ++I){
-        Instruction *inst = dyn_cast<Instruction>(I);
-        if(eLoopInvariante(L,inst,istrInvarianti)){
-          istrInvarianti.push_back(inst);
-          //quali sono gli altri controlli necessari
-          if(dominaUscite){
-            //cerchiamo gli usi e vediamo se dominiamo quei bloccho
-            dominaUtilizzi=true;
+    }
+
+    //per gentile concessione di ChantGPT esploro l'albero in depth firts
+    for(auto I = df_begin(DT->getRootNode()); I != df_end(DT->getRootNode()); ++I){
+      BasicBlock *LoopBlock = I->getBlock();
+      //domina tutte le uscite?
+      if(dominaUsciteF(LoopBlock,DT,blocchiExit)){
+        //outs() << "Sono il basicblock che domina le uscite"<< *BB <<" \n";
+        //controlliamo le istruzioni
+        for(BasicBlock::iterator Iter = LoopBlock->begin(); Iter != LoopBlock->end(); ++Iter){
+          Instruction *inst = dyn_cast<Instruction>(Iter);
+          dominaUtilizzi = true;
+          //è loop invariant?
+          if(eLoopInvariante(L,inst,istrInvarianti)){
+            istrInvarianti.push_back(inst);
+            //Domina tutti i blocchi che la usano ?
             for(Value::use_iterator USO = inst->use_begin(); USO != inst->use_end(); ++USO){
               if(Instruction *UserI = dyn_cast<Instruction>(*USO)){
                 if(DT->dominates(LoopBlock,UserI->getParent())){
@@ -132,22 +128,29 @@ public:
                 }
               }
             }
+            //se e solo se domino tutti gli utilizzi
             if(dominaUtilizzi){
+              //si puoi essere spostata
               toMoove.push_back(inst);
             }
+
+
           }
         }
-
       }
+
     }
+    
     //vediamo che ho trovato
     for(int i=0; i<toMoove.size(); i++){
 
       outs() << "Instruzione invariante: "<< *toMoove[i] << " \n";
-      //*toMoove[i]->insertInto
+
+      toMoove[i]->moveBefore(preheader->getTerminator());
     }
 
-    return false; 
+    return false;
+    //E infine mi siedo osservando l'orizzonte di un loop grato per le mie azioni  
   }
 };
 
