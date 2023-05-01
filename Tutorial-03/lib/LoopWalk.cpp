@@ -106,7 +106,12 @@ public:
       }
     }
 
-    //per gentile concessione di ChantGPT esploro l'albero in depth firts
+    //per gentile concessione di ChatGPT esploro l'albero in depth firts
+    /*df_begin è un iteratore che esiste proprio per esplorare un Dominetor tree depth first
+      funziona perche il Dominator Tree implementa il template DominatorTreeBase che restituisce
+      vari oggetti/info in base alle richieste... due settimane a cercare un modo per farlo...
+      3 minuti a ChadGPT per spiegarmelo 
+    */
     for(auto I = df_begin(DT->getRootNode()); I != df_end(DT->getRootNode()); ++I){
       BasicBlock *LoopBlock = I->getBlock();
       //domina tutte le uscite?
