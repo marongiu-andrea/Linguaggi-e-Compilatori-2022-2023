@@ -170,7 +170,8 @@ opt -enable-new-pm=0 -load ./assignment.so -loop-walk test/Loop.ll -disable-outp
 ```
 Il comando precedente non genera alcun file. Alla fine di questo documento è comunque presente il comando usato per andare a creare il nuovo file newLoop.ll col codice ottimizzato. Ecco quindi l'output del comando precedente:<br><br>
 
-![risultato.png](Laboratorio3/risultato.png)
+![risultato1.png](Laboratorio3/risultato1.png)
+![risultato2.png](Laboratorio3/risultato2.png)
 
 Comando per generare il codice ottimizzato nel file newLoop.ll:
 ```bash
