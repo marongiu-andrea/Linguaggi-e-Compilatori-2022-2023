@@ -1,8 +1,11 @@
-#include </usr/include/llvm/Analysis/LoopPass.h>
 #include <llvm/Analysis/LoopInfo.h>
 #include <llvm/Analysis/LoopPass.h>
 #include <llvm/Analysis/ValueTracking.h>
 #include <llvm/IR/Instruction.h>
+#include <llvm/IR/Use.h>
+#include <llvm/IR/Value.h>
+#include <llvm/IR/Dominators.h>
+#include <llvm/IR/IRBuilder.h>
 using namespace llvm;
 
 class LoopWalkPass final : public LoopPass
@@ -15,59 +18,115 @@ class LoopWalkPass final : public LoopPass
 
     void getAnalysisUsage(AnalysisUsage& AU) const override
     {
+        AU.addRequired<DominatorTreeWrapperPass>();
+        AU.addRequired<LoopInfoWrapperPass>();
     }
 
     bool runOnLoop(Loop* L, LPPassManager& LPM) override
     {
-        outs() << "\nLOOPPASS INIZIATO...\n";
-        if (L->isLoopSimplifyForm())
-            outs() << "Il Loop e' in forma normalizzata\n";
-        else
-            outs() << "Il loop non e' in forma normalizzata\n";
-
+        std::set<Instruction*> liiSet;
+        std::set<BasicBlock*> exitingBB;
+        std::set<Instruction*> hoistingSet;
+        DominatorTree& dt = getAnalysis<DominatorTreeWrapperPass>().getDomTree();
+        getLoopInvariantInstructionsAndExitingBlocks(L, liiSet, exitingBB);
+        getHoistableInstructions(L, dt, liiSet, exitingBB, hoistingSet);
         BasicBlock* preheader = L->getLoopPreheader();
-        if (preheader)
-            outs() << "Il loop ha un preheader: " << *preheader;
+        outs() << "Loop invariant:\n";
+        for(Instruction* i: liiSet)
+        {
+            outs() << *i << '\n';
+        }
+        outs() << "hoistable:\n";
+        for(Instruction* i: hoistingSet)
+        {
+            outs() << *i << '\n';
+        }
+        if(preheader)
+        {
+            IRBuilder<> builder(preheader, preheader->begin());
+            for (Instruction *i: hoistingSet)
+            {
+                i->removeFromParent();
+                builder.Insert(i);
+            }
+        }
         else
-            outs() << "Il loop non ha preheader\n";
-
-        outs() << "Questi sono i basic blocks che formano il loop:\n";
-        ArrayRef<BasicBlock*> loopBlocks = L->getBlocks();
-        for (auto block : loopBlocks)
-            outs() << *block;
-
-        outs() << "Queste sono le sottrazioni con istruzioni come operandi:\n";
-        for (Loop::block_iterator BI = L->block_begin(); BI != L->block_end(); ++BI)
         {
-            for (auto instr = (*BI)->begin(); instr != (*BI)->end(); ++instr)
-                if (instr->getOpcode() == Instruction::Sub)
-                {
-                    outs() << "La sottrazione" << *instr << " ha le seguenti istruzioni come operandi: \n";
-                    printInstruction(*instr);
-                }
+            outs() << "Loop senza preheader";
+            return false;
         }
-        return false;
+        return true;
     }
-
-    void printInstruction(const Instruction& instr)
+private:
+    void getLoopInvariantInstructionsAndExitingBlocks(Loop* L, std::set<Instruction*>& liInstrs, std::set<BasicBlock*>& exitingBlocks)
     {
-        Instruction* op1 = dyn_cast<Instruction>(instr.getOperand(0));
-        Instruction* op2 = dyn_cast<Instruction>(instr.getOperand(1));
-        if (op1)
+        for(BasicBlock* bb: L->getBlocksVector())
         {
-            outs() << *op1 << " definita nel blocco: ";
-            op1->getParent()->printAsOperand(outs());
-            outs() << "\n";
+            for(auto& i: *bb)
+            {
+                if(i.isBinaryOp() && isInstructionLoopInvariant(L, liInstrs, i))
+                {
+                    liInstrs.insert(&i);
+                }
+            }
+            if(L->isLoopExiting(bb))
+                exitingBlocks.insert(bb);
         }
-
-        if (op2)
+    }
+    
+    bool isInstructionLoopInvariant(Loop* L, std::set<Instruction*> const& liInstrs, Instruction const& i)
+    {
+        bool loop_inv = true;
+        for(const Use& u: i.operands())
         {
-            outs() << *op2 << " definita nel blocco: ";
-            op2->getParent()->printAsOperand(outs());
-            outs() << "\n";
+            Value *v = u.get();
+            if(Constant *C = dyn_cast<Constant>(v))
+                continue;
+            else if (Argument *A = dyn_cast<Argument>(v))
+                continue;
+            else if(Instruction *I = dyn_cast<Instruction>(v))
+            {
+                if(L->contains(I) && !liInstrs.contains(I))
+                {
+                    loop_inv = false;
+                    break;
+                }
+            }
+        }
+        return loop_inv;
+    }
+    
+    void getHoistableInstructions(Loop* L, DominatorTree const& DT, std::set<Instruction*> const& liInstrs, std::set<BasicBlock*> const& exitingBlocks, std::set<Instruction*>& hoistableInstrs)
+    {
+        for(auto* inst: liInstrs)
+        {
+            bool dominates = true;
+            for(auto it = exitingBlocks.begin(); dominates && it != exitingBlocks.end(); it++)
+            {
+                dominates = DT.dominates(inst, *it);
+            }
+            if(dominates)
+                hoistableInstrs.insert(inst);
+            else
+            {
+                bool hoistable = true;
+                for(Use& use: inst->uses())
+                {
+                    Instruction* i = dyn_cast<Instruction>(use.getUser());
+                    if(!i)
+                        outs() << "Attenzione: questo user non è un'istruzione:" << use.getUser() << '\n';
+                    if(i && !L->contains(i))
+                    {
+                        hoistable = false;
+                        break;
+                    }
+                }
+                if(hoistable)
+                    hoistableInstrs.insert(inst);
+            }
         }
     }
 };
 
 char LoopWalkPass::ID = 0;
-RegisterPass<LoopWalkPass> X("loop-walk", "Loop Walk");
+RegisterPass<LoopWalkPass> X("custom-licm", "Custom LICM Pass");
