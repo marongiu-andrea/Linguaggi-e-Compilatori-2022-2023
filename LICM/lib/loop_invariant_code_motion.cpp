@@ -4,17 +4,19 @@
 #include <llvm/Analysis/ValueTracking.h>
 #include <llvm/IR/Dominators.h>
 
-#include <stack>
-
 using namespace llvm;
+
+// Deve esserci un "static int count = 0;" all'inizio della funzione
+#define Debug_Print do { outs() << __FUNCTION__ << " " << count << "\n"; ++count; } while(0)
+#define Debug_Print_Message(message) do { outs() << __FUNCTION__ << " " << count << " " << (message) << "\n"; ++count; } while(0)
 
 namespace {
     
-    class LoopWalkPass final : public LoopPass {
+    class LoopInvariantCodeMotion final : public LoopPass {
         public:
         static char ID;
         
-        LoopWalkPass() : LoopPass(ID) {}
+        LoopInvariantCodeMotion() : LoopPass(ID) {}
         
         virtual void getAnalysisUsage(AnalysisUsage &AU) const override {
             AU.addRequired<DominatorTreeWrapperPass>();
@@ -22,26 +24,56 @@ namespace {
         }
         
 #if 1
+        struct DFSIterator {
+            std::set<BasicBlock*> visited;
+            std::vector<BasicBlock*> blockStack;
+            
+            DFSIterator(BasicBlock *block) { blockStack.push_back(block); };
+            
+            void reset(BasicBlock *block) {
+                visited.clear();
+                blockStack.clear();
+                blockStack.push_back(block);
+            };
+            
+            BasicBlock *next() {
+                if(blockStack.empty())
+                    return nullptr;
+                
+                auto res = blockStack[blockStack.size() - 1];
+                blockStack.pop_back();
+                visited.insert(res);
+                
+                for(auto succ : successors(res)) {
+                    if(!visited.count(succ))
+                        blockStack.push_back(succ);
+                }
+                
+                return res;
+            };
+        };
+        
         // Suppone che i nodi vengano visitati in DFS
         bool isLoopInvariant(Instruction *instr, Loop *loop) {
             for(auto it = instr->op_begin(); it != instr->op_end(); ++it) {
-                auto def = dyn_cast<Instruction>(*it);
-                auto constOp = dyn_cast<Constant>(*it);
+                auto def      = dyn_cast<Instruction>(*it);
+                auto constOp  = dyn_cast<Constant>(*it);
+                auto argument = dyn_cast<Argument>(*it);
                 
-                // La definizione deve essere già stata visitata
-                bool isLoopInv = def->hasMetadata("LoopInvariant");
+                if(!def && !constOp && !argument)
+                    return false;
                 
                 // 1. Tutte le definizioni che raggiungono l'istruzione
                 // si trovano fuori dal loop (o sono costanti)
                 // 2. C'è esattamente una reaching definition, e si tratta
                 // di un'istruzione loop-invariant
-                if(!constOp && loop->contains(def) && !isLoopInv)
+                if(!argument && !constOp && loop->contains(def) && !def->hasMetadata("LoopInvariant"))
                     return false;
             }
             
             // Aggiungi nodo all'istruzione
             LLVMContext& ctx = instr->getContext();
-            MDNode* node = MDNode::get(ctx, MDString::get(ctx, "loopinvariant"));
+            MDNode *node = MDNode::get(ctx, MDString::get(ctx, "loopinvariant"));
             instr->setMetadata("LoopInvariant", node);
             
             return true;
@@ -63,73 +95,44 @@ namespace {
             return true;
         }
         
-        struct DFSIterator {
-            std::set<BasicBlock*> visited;
-            std::vector<BasicBlock*> blockStack;
-            Loop* loop;
-            DFSIterator(Loop* l)
-            {
-                blockStack.push_back(l->getHeader());
-                loop = l;
-            };
-            void reset()
-            {
-                visited.clear();
-                blockStack.clear();
-                blockStack.push_back(loop->getHeader());
-            };
-            BasicBlock* next()
-            {
-                if(blockStack.empty())
-                    return nullptr;
-                
-                auto res = blockStack[blockStack.size() - 1];
-                blockStack.pop_back();
-                visited.insert(res);
-                
-                for(auto succ : successors(res)) {
-                    if(!visited.count(succ))
-                        blockStack.push_back(succ);
-                }
-                
-                return res;
-            };
-        };
-        
         virtual bool runOnLoop(Loop* l, LPPassManager& lpm) override {
             if(!l)
                 return false;
             
-            DFSIterator it(l);
+            bool modified = false;
+            
+            DFSIterator it(l->getHeader());
             while(auto block = it.next()) {
                 for(auto instr = block->begin(); instr != block->end(); ++instr) {
                     if(isLoopInvariant(&*instr, l) && isSafeToMove(&*instr, l)) {
-                        // Aggiungi nodo all'istruzione
-                        LLVMContext& ctx = instr->getContext();
-                        MDNode* node = MDNode::get(ctx, MDString::get(ctx, "hoistable"));
+                        LLVMContext &ctx = instr->getContext();
+                        MDNode *node = MDNode::get(ctx, MDString::get(ctx, "hoistable"));
                         instr->setMetadata("HOIST", node);
                     }
                 }
             }
             
-            it.reset();
+            it.reset(l->getHeader());
             while(auto block = it.next()) {
-                for(auto instr = block->begin(); instr != block->end(); ++instr) {
+                Instruction *instr = &block->front();
+                Instruction *next = 0;
+                while(instr) {
+                    next = instr->getNextNode();
+                    
                     if(instr->hasMetadata("HOIST")) {
+                        assert(l->isLoopSimplifyForm());
                         
-                        // Inserire il preheader se non c'è già
-                        if(!l->getLoopPreheader())
-                        {
-                            // Come aggiungere il preheader qua?
+                        if(l->isLoopSimplifyForm()) {
+                            modified = true;
+                            instr->moveBefore(&l->getLoopPreheader()->back());
                         }
-                        
-                        // è giusto questo?
-                        instr->moveAfter(l->getLoopPreheader()->getTerminator());
                     }
+                    
+                    instr = next;
                 }
             }
             
-            return true;
+            return modified;
         }
 #else
         virtual bool runOnLoop(Loop *L, LPPassManager &LPM) override {
@@ -171,9 +174,9 @@ namespace {
 #endif
     };
     
-    char LoopWalkPass::ID = 0;
-    RegisterPass<LoopWalkPass> X("loop-walk",
-                                 "Loop Walk");
+    char LoopInvariantCodeMotion::ID = 0;
+    RegisterPass<LoopInvariantCodeMotion> X("loop-invariant-code-motion",
+                                            "Loop Invariant Code Motion");
     
 } // anonymous namespace
 
