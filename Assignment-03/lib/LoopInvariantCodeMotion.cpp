@@ -35,7 +35,6 @@ public:
 
     //prendo il blocco di preheader
     BasicBlock *preheader = L->getLoopPreheader();
-    std::map<Instruction*, bool> LoopInvariants; //mappa che contiene istruzione e mi indica, per ogni istruzione, se e' o no loop invariant
     BasicBlock *actualBB;
 
 
@@ -74,9 +73,6 @@ public:
           instr.setMetadata("HOIST", N);
           Movablevector.push_back(&instr);
         }
-        
-        //TODO: implementa il controllo come funzione e non usare la mappa per marcare le istr LI, e usa setAnnotation per marcare le istruzioni che sono Movable
-        //TODO: di fatto, la funzione di controllo del LI, se restituisce true, va a verificare se tale istruzione e' movable e, nel caso lo sia, imposti l'annotazione su tale istruzione
       }
     }
 
