@@ -1,4 +1,4 @@
-OPTIMIZER := LoopPass.so
+OPTIMIZER := LICMy.so
 OBJs := $(subst .cpp,.o,$(wildcard lib/*.cpp))
 
 LLVM_VERSION ?= 14
@@ -11,7 +11,7 @@ $(OPTIMIZER): $(OBJs)
 	$(CXX) -dylib -shared $^ -o $@
 
 opty: 
-	opt -enable-new-pm=0 -load ./$(OPTIMIZER)  --loop-walk test/Loop.ll -disable-output
+	opt -enable-new-pm=0 -load ./$(OPTIMIZER)  --Loop-inv test/Loop.ll -disable-output
 
 .PHONY: clean
 clean:
