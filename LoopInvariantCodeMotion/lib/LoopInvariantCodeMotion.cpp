@@ -28,7 +28,7 @@ class LoopInvariantCodeMotionPass final : public LoopPass
 
 	virtual bool isLoopSuitableToLICM(Loop *L)
 	{
-		// Controlla che il loop sia in forma normalizzata e che abbia un preheader e che abbia exit blocks
+		// Controlla che il loop sia in forma normalizzata, che abbia un preheader e uno o più exit blocks
 		if ((*L).isLoopSimplifyForm() && (*L).getLoopPreheader() && (!(*L).hasNoExitBlocks()))
 			return true;
 		else 
@@ -217,7 +217,7 @@ class LoopInvariantCodeMotionPass final : public LoopPass
 					// Se il blocco contentente un'istruzione loop-invariant NON domina un'uscita -> l'istruzione non è movable
 					if (!(*DT).dominates((*DT).getNode(iter->first->getParent()), (*DT).getNode(exitBB)))
 					{
-						//outs()<<*(iter->first)<<" NON domina il blocco di uscita "<<(*exitBB)<<"\n";
+						outs()<<*(iter->first)<<" NON domina un'uscita\n";
 						dominatesAllExits = false;
 					}
 				}
@@ -353,11 +353,11 @@ class LoopInvariantCodeMotionPass final : public LoopPass
 
 	virtual bool runOnLoop(Loop *L, LPPassManager &LPM) override 
 	{
+		outs()<<"Passo Loop Invariant Code Motion\n";
+
 		// Ottiene riferimenti al Dominator Tree e alle Loop Info
 		DominatorTree * DT = &getAnalysis<DominatorTreeWrapperPass>().getDomTree();
 		LoopInfo * LI = &getAnalysis<LoopInfoWrapperPass>().getLoopInfo();
-
-		outs()<<"Passo Loop Invariant Code Motion\n";
 
 		if (isLoopSuitableToLICM(L))
 		{
