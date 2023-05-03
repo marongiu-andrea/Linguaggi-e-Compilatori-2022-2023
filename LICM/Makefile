@@ -1,24 +1,25 @@
-OPTIMIZER := libLoopWalk.so
-OPTIMIZER_NEW := libLoopWalkNew.so
-OBJs := LoopWalk.o
-OBJs_NEW := LoopWalkNew.o
+OPTIMIZER := libLICM.so
+
+LIB_DIR := lib
+OBJ_DIR := obj
+
+SRCs := $(wildcard $(LIB_DIR)/*.cpp)
+INCLUDEs := $(SRCs:%.cpp=%.hpp)
+OBJs := $(SRCs:$(LIB_DIR)/%.cpp=$(OBJ_DIR)/%.o)
 
 CXX = /usr/bin/clang++
 CXXFLAGS := $(shell llvm-config --cxxflags) -fPIC -std=c++20 -Wall -Werror -pedantic-errors
 
-all: $(OPTIMIZER) $(OPTIMIZER_NEW)
+all: $(OPTIMIZER)
 
-$(OPTIMIZER): lib/LoopWalk.o
+$(OPTIMIZER): $(OBJs)
 	$(CXX) -dylib -shared $^ -o $@
 
-$(OPTIMIZER_NEW): lib/LoopWalkNew.o
-	$(CXX) -dylib -shared $^ -o $@
+$(OBJ_DIR)/%.o: $(LIB_DIR)/%.cpp $(LIB_DIR)/%.hpp | $(OBJ_DIR)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-lib/LoopWalk.o: lib/LoopWalk.cpp
-	$(CXX) $(CXXFLAGS) -c $^ -o $@
-
-lib/LoopWalkNew.o: lib/LoopWalkNew.cpp lib/LoopWalkNew.hpp
-	$(CXX) $(CXXFLAGS) -c lib/LoopWalkNew.cpp -o $@
+$(OBJ_DIR):
+	mkdir -p $@
 
 .PHONY: clean
 clean:
