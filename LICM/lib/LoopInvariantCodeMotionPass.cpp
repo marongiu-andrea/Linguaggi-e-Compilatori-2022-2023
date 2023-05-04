@@ -1,7 +1,9 @@
 #include "LoopInvariantCodeMotionPass.hpp"
+#include <llvm/ADT/STLExtras.h>
 #include <llvm/Analysis/LoopInfo.h>
 #include <llvm/Analysis/LoopPass.h>
 #include <llvm/Analysis/ValueTracking.h>
+#include <llvm/IR/BasicBlock.h>
 #include <llvm/IR/Dominators.h>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Instruction.h>
@@ -12,73 +14,138 @@ using namespace llvm;
 
 char LoopInvariantCodeMotionPass::ID = 0;
 
-void LoopInvariantCodeMotionPass::getLoopInvariantInstructionsAndExitingBlocks(Loop* L, std::set<Instruction*>& liInstrs, std::set<BasicBlock*>& exitingBlocks)
+void LoopInvariantCodeMotionPass::analyze(Loop* loop)
 {
-    for (BasicBlock* bb : L->getBlocksVector())
+    this->currentLoop = loop;
+    this->dominatorTree = &getAnalysis<DominatorTreeWrapperPass>().getDomTree();
+
+    searchForLoopInvariantInstructionsAndLoopExitingBlocks();
+    searchForHoistableInstructions();
+
+    printAnalysisResult();
+}
+
+void LoopInvariantCodeMotionPass::searchForLoopInvariantInstructionsAndLoopExitingBlocks()
+{
+    for (auto* bb : this->currentLoop->getBlocks())
     {
-        for (auto& i : *bb)
+        std::set<Instruction*> bbLoopInvariantInstructions = getLoopInvariantInstructions(bb);
+
+        this->loopInvariantInstructions.insert(bbLoopInvariantInstructions.begin(), bbLoopInvariantInstructions.end());
+
+        if (isLoopExiting(bb))
         {
-            if (i.isBinaryOp() && isInstructionLoopInvariant(L, liInstrs, i))
-            {
-                liInstrs.insert(&i);
-            }
+            this->loopExitingBlocks.insert(bb);
         }
-        if (L->isLoopExiting(bb))
-            exitingBlocks.insert(bb);
     }
 }
 
-bool LoopInvariantCodeMotionPass::isInstructionLoopInvariant(Loop* L, std::set<Instruction*> const& liInstrs, Instruction const& i)
+std::set<Instruction*> LoopInvariantCodeMotionPass::getLoopInvariantInstructions(BasicBlock* bb)
 {
-    bool loop_inv = true;
-    for (const Use& u : i.operands())
-    {
-        Value* v = u.get();
-        if (Constant* C = dyn_cast<Constant>(v))
-            continue;
-        else if (Argument* A = dyn_cast<Argument>(v))
-            continue;
-        else if (Instruction* I = dyn_cast<Instruction>(v))
-        {
-            if (L->contains(I) && !liInstrs.contains(I))
-            {
-                loop_inv = false;
-                break;
-            }
-        }
-    }
-    return loop_inv;
+    auto loopInvariantInstructionsRange = make_filter_range(*bb, [this](Instruction& instr) {
+        return instr.isBinaryOp() && isLoopInvariant(instr);
+    });
+
+    // converto il range di Instruction& in un range di Instruction* per poterle aggiungere al set loopInvariantInstructions
+    auto instructionPointersRange = map_range(loopInvariantInstructionsRange, [](Instruction& loopInvariantInstruction) {
+        return &loopInvariantInstruction;
+    });
+
+    return {instructionPointersRange.begin(), instructionPointersRange.end()};
 }
 
-void LoopInvariantCodeMotionPass::getHoistableInstructions(Loop* L, DominatorTree const& DT, std::set<Instruction*> const& liInstrs, std::set<BasicBlock*> const& exitingBlocks, std::set<Instruction*>& hoistableInstrs)
+void LoopInvariantCodeMotionPass::searchForHoistableInstructions()
 {
-    for (auto* inst : liInstrs)
+    auto hoistableInstructionsRange = make_filter_range(this->loopInvariantInstructions, [this](Instruction* instr) {
+        return dominatesAllExits(instr) || isDeadAfterLoop(instr);
+    });
+
+    this->hoistableInstructions.insert(hoistableInstructionsRange.begin(), hoistableInstructionsRange.end());
+}
+
+bool LoopInvariantCodeMotionPass::isLoopInvariant(const Instruction& instr)
+{
+    // un'istruzione è loop invariant solo se tutti i suoi operandi sono loop invariant
+    return all_of(instr.operands(), [this](auto& operand) {
+        return isLoopInvariant(operand);
+    });
+}
+
+bool LoopInvariantCodeMotionPass::isLoopInvariant(const Use& operand)
+{
+    Value* reachingDefinition = operand.get();
+
+    if (dyn_cast<Constant>(reachingDefinition) || dyn_cast<Argument>(reachingDefinition))
     {
-        bool dominates = true;
-        for (auto it = exitingBlocks.begin(); dominates && it != exitingBlocks.end(); it++)
+        // costanti e argomenti di funzione sono sempre loop invariant
+        return true;
+    }
+    else if (Instruction* operandDefinitionInstr = dyn_cast<Instruction>(reachingDefinition))
+    {
+        /*
+         * se l'operando è una variabile, è loop invariant se una delle seguenti condizioni è verificata:
+          - la definizione dell'operando è fuori dal loop;
+          - la definizione dell'operando è interna al loop ed è stata marcata come loop invariant
+         */
+        return !this->currentLoop->contains(operandDefinitionInstr) || this->loopInvariantInstructions.contains(operandDefinitionInstr);
+    }
+
+    errs() << "ATTENZIONE! Tipo di reaching definition non gestito. Reaching definition: " << *reachingDefinition << "\n";
+
+    return false;
+}
+
+bool LoopInvariantCodeMotionPass::isLoopExiting(const BasicBlock* bb)
+{
+    // un basic block è un punto d'uscita del loop se il suo next è fuori dal loop
+    return !this->currentLoop->contains(bb->getNextNode());
+}
+
+bool LoopInvariantCodeMotionPass::dominatesAllExits(const Instruction* instr)
+{
+    return all_of(this->loopExitingBlocks, [this, &instr](BasicBlock* exitingBlock) {
+        return this->dominatorTree->dominates(instr, exitingBlock);
+    });
+}
+
+bool LoopInvariantCodeMotionPass::isDeadAfterLoop(const Instruction* instr)
+{
+    // l'istruzione è dead fuori dal loop se e solo se tutti i suoi usi sono interni al loop
+    return all_of(instr->uses(), [this](const Use& use) {
+        Instruction* user = dyn_cast<Instruction>(use.getUser());
+
+        if (user == nullptr)
         {
-            dominates = DT.dominates(inst, *it);
+            // tutti gli usi di un'istruzione dovrebbero essere a loro volta delle istruzioni, ma per sicurezza faccio un check
+
+            errs() << "ATTENZIONE! Ho trovato un uso che non è un'istruzione: " << *use << "\n";
+
+            return false;
         }
-        if (dominates)
-            hoistableInstrs.insert(inst);
         else
         {
-            bool hoistable = true;
-            for (Use& use : inst->uses())
-            {
-                Instruction* i = dyn_cast<Instruction>(use.getUser());
-                if (!i)
-                    outs() << "Attenzione: questo user non è un'istruzione:" << use.getUser() << '\n';
-                if (i && !L->contains(i))
-                {
-                    hoistable = false;
-                    break;
-                }
-            }
-            if (hoistable)
-                hoistableInstrs.insert(inst);
+            return this->currentLoop->contains(user);
         }
+    });
+}
+
+void LoopInvariantCodeMotionPass::printAnalysisResult()
+{
+    outs() << "--- ANALYSIS RESULT: ---\n";
+
+    outs() << "Loop invariant instructions:\n";
+    for (auto* instr : loopInvariantInstructions)
+    {
+        outs() << *instr << '\n';
     }
+
+    outs() << "Hoistable instructions:\n";
+    for (auto* instr : hoistableInstructions)
+    {
+        outs() << *instr << '\n';
+    }
+
+    outs() << "-------------------------\n";
 }
 
 LoopInvariantCodeMotionPass::LoopInvariantCodeMotionPass() :
@@ -92,40 +159,31 @@ void LoopInvariantCodeMotionPass::getAnalysisUsage(AnalysisUsage& AU) const
     AU.addRequired<LoopInfoWrapperPass>();
 }
 
-bool LoopInvariantCodeMotionPass::runOnLoop(Loop* L, LPPassManager& LPM)
+bool LoopInvariantCodeMotionPass::runOnLoop(Loop* loop, LPPassManager& LPM)
 {
-    std::set<Instruction*> liiSet;
-    std::set<BasicBlock*> exitingBB;
-    std::set<Instruction*> hoistingSet;
-    DominatorTree& dt = getAnalysis<DominatorTreeWrapperPass>().getDomTree();
-    getLoopInvariantInstructionsAndExitingBlocks(L, liiSet, exitingBB);
-    getHoistableInstructions(L, dt, liiSet, exitingBB, hoistingSet);
-    BasicBlock* preheader = L->getLoopPreheader();
-    outs() << "Loop invariant:\n";
-    for (Instruction* i : liiSet)
+    BasicBlock* preheader = loop->getLoopPreheader();
+    bool changed = false;
+
+    if (preheader == nullptr)
     {
-        outs() << *i << '\n';
+        errs() << "Il loop non è in forma normalizzata. Non eseguo nessuna operazione.\n";
+
+        return changed;
     }
-    outs() << "hoistable:\n";
-    for (Instruction* i : hoistingSet)
+
+    this->analyze(loop);
+
+    IRBuilder<> builder(preheader, preheader->begin());
+
+    for (auto* instr : hoistableInstructions)
     {
-        outs() << *i << '\n';
+        instr->removeFromParent();
+        builder.Insert(instr);
+
+        changed = true;
     }
-    if (preheader)
-    {
-        IRBuilder<> builder(preheader, preheader->begin());
-        for (Instruction* i : hoistingSet)
-        {
-            i->removeFromParent();
-            builder.Insert(i);
-        }
-    }
-    else
-    {
-        outs() << "Loop senza preheader";
-        return false;
-    }
-    return true;
+
+    return changed;
 }
 
 RegisterPass<LoopInvariantCodeMotionPass> X("custom-licm", "Custom LICM Pass");
