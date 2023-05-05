@@ -17,7 +17,7 @@ PreservedAnalyses LoopFusionPass::run([[maybe_unused]] Function &F, FunctionAnal
 
 	//1) The loops must be adjacent (there cannot be any statements between the two loops).
 
-	SmallVector<LoopT *, 4> loops = LI.getLoopsInPreorder();
+	//SmallVector<LoopT *, 4> loops = LI.getLoopsInPreorder();
 
 
 	//2) The loops must be conforming (they must execute the same number of iterations).
