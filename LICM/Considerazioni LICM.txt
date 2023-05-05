@@ -18,7 +18,7 @@ define void @foo(i32 %0, i32 %1) {
 
 8:                                                ; preds = %3
   %9 = add nsw i32 %.01, 2
-  %10 = add nsw i32 %0, 3                         ; LI
+  %10 = add nsw i32 %0, 3                         ; LI ; hoist
   br label %15
 
 11:                                               ; preds = %3
@@ -32,7 +32,7 @@ define void @foo(i32 %0, i32 %1) {
   %.1 = phi i32 [ %9, %8 ], [ %12, %11 ]
   %16 = add nsw i32 %5, 7                         ; LI
   %17 = add nsw i32 %.02, 2
-  %18 = add nsw i32 %0, 7                         ; LI
+  %18 = add nsw i32 %0, 7                         ; LI ; hoist
   %19 = add nsw i32 %6, 5                         ; LI
   br label %3
 
@@ -43,7 +43,7 @@ define void @foo(i32 %0, i32 %1) {
 
 
 Si può notare, innanzitutto, che i blocchi che dominano tutte le uscite del loop sono: %3 e %11; dunque
-le istruzioni contenute all'interno di tutti gli altri blocchi non possono essere spostate.
+le istruzioni contenute all'interno di tutti gli altri blocchi non possono essere spostate (a meno che non usino variabili dead, ovvero che non vengono usate al di fuori dal loop).
 Di fianco a ciascuna istruzione loop-invariant è presente un commento "LI".
 Per definizione, un'istruzione loop-invariant è considerata tale se:
 1. Tutte le definizioni che raggiungono l'istruzione
@@ -56,6 +56,8 @@ Quindi effettivamente le condizioni sono due:
 Per ciascun operando,
 1. La sua reaching definition si trova fuori dal loop, oppure tale operando è costante
 2. La sua reaching definition è un'istruzione che è altrettanto loop-invariant
+
+Considerando che %0 non è utilizzato al di fuori del loop, le istruzioni che fanno uso di %0 possono essere spostate.
 
 Tentendo a mente la considerazione precedente relativa alla dominanza, solamente le istruzioni
 marcate con il commento "; hoist" sono spostabili.
