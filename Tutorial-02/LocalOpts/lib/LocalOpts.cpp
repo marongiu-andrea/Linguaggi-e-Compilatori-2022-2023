@@ -23,6 +23,7 @@ extern "C" PassPluginLibraryInfo llvmGetPassPluginInfo() {
 		// LoopPass
 		// RegionPass
 		// BasicBlockPass
+    /*
 		[](StringRef Name, ModulePassManager &MPM,
                    ArrayRef<PassBuilder::PipelineElement>) -> bool {
                   if (Name == "transform") {
@@ -37,12 +38,26 @@ extern "C" PassPluginLibraryInfo llvmGetPassPluginInfo() {
                     MPM.addPass(MultiInstrPass());
                     return true;
                   }
-                  // TODO: Implementare gli stub per
-		  // Algebraic Identity
-		  // Strength Reduction
-		  // Multi-instruction Operations
+                  if (Name == "unione-loop") {
+                    MPM.addPass(UnioneLoopPass());
+                    return true;
+                  }
                   return false;
                 });
-          } // RegisterPassBuilderCallbacks
-  };        // struct PassPluginLibraryInfo
+          } // RegisterPassBuilderCallbacks*/
+    [](StringRef Name, FunctionPassManager &MPM,
+        ArrayRef<PassBuilder::PipelineElement>) -> bool {
+          if (Name == "unione-loop") {
+            MPM.addPass(UnioneLoopPass());
+            return true;
+          }
+          return false;
+        });
+      }
+  
+  
+  
+  
+  };      // struct PassPluginLibraryInfo
+
 }

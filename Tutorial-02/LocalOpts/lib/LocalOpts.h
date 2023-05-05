@@ -21,3 +21,12 @@ public:
   llvm::PreservedAnalyses run(llvm::Module &,
                               llvm::ModuleAnalysisManager &);
 };
+
+//passo unione loop
+class UnioneLoopPass final
+    : public llvm::PassInfoMixin<UnioneLoopPass> {
+public:
+  llvm::PreservedAnalyses run(llvm::Function &,
+                              llvm::FunctionAnalysisManager &);
+};
+
