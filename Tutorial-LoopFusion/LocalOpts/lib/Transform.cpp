@@ -73,14 +73,31 @@ bool runOnBasicBlock(BasicBlock &B) {
 
 
 
-PreservedAnalyses TransformPass::run([[maybe_unused]] Module &M,
-                                             ModuleAnalysisManager &) {
+PreservedAnalyses TransformPass::run([[maybe_unused]] Function &F, FunctionAnalysisManager &AM) {
 
-  // Un semplice passo di esempio di manipolazione della IR
-  for (auto Iter = M.begin(); Iter != M.end(); ++Iter) {
-    if (runOnFunction(*Iter)) {
-      return PreservedAnalyses::none();
+  auto &LI = AM.getResult<LoopAnalysis>(F);
+  int l = 0;
+  int BID = 0;
+
+  SmallVector<Loop *, 4> PreOrderLoops = LI.getLoopsInPreOrder();
+  Loop *LP = nullptr;
+  for(Loop *L: PreOrderLoops){
+    outs() << "\n********* PROCESSING LOOP " << l++ << "\n";
+    if(LP == nullptr)
+    {
+      LP = L;
+      continue;
     }
+    if (LP.back() != L.front()) continue;
+    else {
+      outs() << LP << " è un loop adiacente a " << L << "\n";
+      /*const SCEV *TripCountSCEV = SE.getBackedgeTakenCount(L);
+      const APInt TripCount = dyn_cast<SCEVConstant>(TripCountSCEV)->getAPInt();
+      errs() << "Loop has " << TripCount.toString(10) << " iterations.\n";*/
+    }
+  }
+  for (auto Iter = F.begin(); Iter != F.end(); ++Iter) {
+
   }
 
   return PreservedAnalyses::none();
