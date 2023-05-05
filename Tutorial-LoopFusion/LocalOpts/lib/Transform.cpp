@@ -73,8 +73,7 @@ bool runOnBasicBlock(BasicBlock &B) {
 
 
 
-PreservedAnalyses TransformPass::run([[maybe_unused]] Module &M,
-                                             ModuleAnalysisManager &) {
+PreservedAnalyses TransformPass::run([[maybe_unused]] Module &M, ModuleAnalysisManager &) {
 
   // Un semplice passo di esempio di manipolazione della IR
   for (auto Iter = M.begin(); Iter != M.end(); ++Iter) {
