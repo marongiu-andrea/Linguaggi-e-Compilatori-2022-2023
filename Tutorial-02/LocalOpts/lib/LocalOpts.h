@@ -2,7 +2,7 @@
 
 #include <llvm/IR/PassManager.h>
 #include <llvm/IR/Constants.h>
-
+/*
 class TransformPass final
     : public llvm::PassInfoMixin<TransformPass> {
 public:
@@ -21,7 +21,7 @@ public:
   llvm::PreservedAnalyses run(llvm::Module &,
                               llvm::ModuleAnalysisManager &);
 };
-
+*/
 //passo unione loop
 class UnioneLoopPass final
     : public llvm::PassInfoMixin<UnioneLoopPass> {
