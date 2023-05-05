@@ -33,24 +33,24 @@ namespace
       bool isInLoop = L->contains(parentBlock);
       if (!isInLoop)
       {
-        outs() << "\t\tL'istruzione non è dentro al loop : " << isInLoop << ",  è loop-invariant \n";
+        outs() << "\t\tL'istruzione non è dentro al loop,  è loop-invariant \n";
         return true;
       }
       else
       {
-        outs() << "\t\tL'istruzione è dentro al loop : " << isInLoop << ", forse loop-invariant \n";
+        outs() << "\t\tL'istruzione è dentro al loop,\n";
         BinaryOperator *binOpInstParent = dyn_cast<BinaryOperator>(instParent);
         if (binOpInstParent)
         {
           bool parentIsLoopInvariant = isLoopInvariant(binOpInstParent, L);
           if (parentIsLoopInvariant)
           {
-            outs() << "\t\tL'istruzione padre è loop-invariant \n";
+            outs() << "\t\tL'istruzione padre è loop-invariant, quindi anche l'operando non dipende dal loop \n";
             return true;
           }
           else
           {
-            outs() << "\t\tL'istruzione padre non è loop-invariant \n";
+            outs() << "\t\tL'istruzione padre non è loop-invariant, quindi anche l'operando dipende dal loop \n";
             return false;
           }
         }
@@ -106,9 +106,9 @@ namespace
             outs() << "\t###Vediamo dentro###\n";
             // TODO: capire se una istruzione è loop invariant
             if (isLoopInvariant(binOpInstruction, L))
-              outs() << "\tISTRUZIONE LOOP INVARIANT\n";
+              outs() << "\t**ISTRUZIONE LOOP INVARIANT**\n";
             else
-              outs() << "\tISTRUZIONE LOOP VARIANT\n";
+              outs() << "\t**ISTRUZIONE LOOP VARIANT**\n";
           }
           outs() << "\n";
         }
