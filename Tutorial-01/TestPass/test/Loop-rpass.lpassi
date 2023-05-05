@@ -1,0 +1,12 @@
+Loop.c:34:5: remark: 'g_incr' inlined into 'loop' with (cost=-20, threshold=337) at callsite loop:4:5; [-Rpass=inline]
+    g_incr(c);
+    ^
+Loop.c:21:5: remark: Moving accesses to memory location out of the loop [-Rpass=licm]
+  g += c;
+    ^
+Loop.c:21:5: remark: Moving accesses to memory location out of the loop [-Rpass=licm]
+Loop.c:33:3: remark: Loop deleted because it is invariant [-Rpass=loop-delete]
+  for (i = a; i < b; i++) {
+  ^
+Loop.c:37:16: remark: load of type i32 eliminated [-Rpass=gvn]
+  return ret + g;
