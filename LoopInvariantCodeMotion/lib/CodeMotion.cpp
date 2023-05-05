@@ -31,12 +31,12 @@ public:
 
 
   virtual bool isLoopInvariant(Instruction *inst, Loop* loop){
-    //calcolo reaching definitions
     //utilizzando Use faccio senza fare il controllo delle costanti, riducendo così la quantità di lavoro
-    for(Use &uses : inst->operands()){
+    for(Use &use : inst->operands()){
+
       if(isa<BranchInst>(inst))
         return false;
-      Value *val = uses.get();
+      Value *val = use.get();
       if(Instruction *DefInst = dyn_cast<Instruction>(val)){
         if (loop->contains(DefInst)){
           return false;
@@ -55,7 +55,7 @@ public:
           BasicBlock *B = *BI;
           for (auto iter = B->begin(); iter != B->end(); ++iter) {
             (*iter).print(outs());
-            outs()<<": "<<isLoopInvariant(&(*iter),L)<<" \n";
+            outs()<<"Risultato: "<<isLoopInvariant(&(*iter),L)<<" \n";
           }
     }
     return false;
