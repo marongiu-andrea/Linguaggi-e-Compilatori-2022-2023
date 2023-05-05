@@ -4,7 +4,9 @@
 
 using namespace llvm;
 
+#include <iostream>
 
-llvm::PreservedAnalyses run([[maybe_unused]] llvm::Function &F, llvm::FunctionAnalysisManager &AM) {
+
+llvm::PreservedAnalyses TransformPass::run([[maybe_unused]] llvm::Function &F, llvm::FunctionAnalysisManager &AM) {
   auto &LI = AM.getResult<LoopAnalysis>(F);
 }
