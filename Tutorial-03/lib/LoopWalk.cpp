@@ -29,7 +29,7 @@ public:
   }
 
   virtual bool runOnLoop(Loop *L, LPPassManager &LPM) override {
-    outs() << "\nLOOPPASS INIZIATO...\n"; 
+    outs() << "\nLOOPPASS INIZIATO...\n"; 1
 
     DominatorTree *DT = &getAnalysis<DominatorTreeWrapperPass>().getDomTree();
 
