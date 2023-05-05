@@ -23,10 +23,10 @@ extern "C" PassPluginLibraryInfo llvmGetPassPluginInfo() {
                 // LoopPass
                 // RegionPass
                 // BasicBlockPass
-                [](StringRef Name, FunctionPassManager &MPM,
+                [](StringRef Name, FunctionPassManager &FPM,
                    ArrayRef<PassBuilder::PipelineElement>) -> bool {
                   if (Name == "transform") {
-                    MPM.addPass(TransformPass());
+                    FPM.addPass(TransformPass());
                     return true;
                   }
 
