@@ -95,6 +95,8 @@ bool runOnFunction(Function &F)
 PreservedAnalyses TransformPass::run([[maybe_unused]] Module &M,
                                      ModuleAnalysisManager &)
 {
+  // FunctionAnalysisManager &AM
+  // auto &LI = AM.getResult<LoopAnalysis>(F)
 
   // Un semplice passo di esempio di manipolazione della IR
   for (auto Iter = M.begin(); Iter != M.end(); ++Iter)
