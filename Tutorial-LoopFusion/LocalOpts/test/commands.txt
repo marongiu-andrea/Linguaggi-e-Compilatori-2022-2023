@@ -1,0 +1,5 @@
+clang -O0 -Xclang -disable-O0-optnone -emit-llvm -c Loop.c
+
+opt -passes=mem2reg Loop.bc -o Loop.opt.bc
+
+llvm-dis Loop.opt.bc -o loop.opt.ll
