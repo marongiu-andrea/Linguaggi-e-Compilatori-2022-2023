@@ -125,13 +125,13 @@ bool LoopInvariantCodeMotionPass::isDeadAfterLoop(const Instruction* instr)
 
         if (user == nullptr)
         {
-                //...
+            //...
 
-                return false;
+            return false;
         }
         else
         {
-                return this->currentLoop->contains(user);
+            return this->currentLoop->contains(user);
         }
     });
 }
