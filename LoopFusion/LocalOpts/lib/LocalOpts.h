@@ -3,10 +3,10 @@
 #include <llvm/IR/PassManager.h>
 #include <llvm/IR/Constants.h>
 
-class TransformPass final
-    : public llvm::PassInfoMixin<TransformPass> {
+
+class LoopFusionPass final
+    : public llvm::PassInfoMixin<LoopFusionPass> {
 public:
-  llvm::PreservedAnalyses run(llvm::Module &,
-                              llvm::ModuleAnalysisManager &);
+  llvm::PreservedAnalyses run(llvm::Function &, llvm::FunctionAnalysisManager &);
 }; // class AlgebraicIdentityPass
 
