@@ -1,4 +1,6 @@
 #include "LocalOpts.h"
+#include "llvm/IR/Function.h"
+#include "llvm/Analysis/LoopPass.h"
 /*
 #include "llvm/IR/InstrTypes.h"
 #include "llvm/IR/DerivedTypes.h"
@@ -14,13 +16,12 @@ using namespace llvm;
 PreservedAnalyses UnioneLoopPass::run([[maybe_unused]] Function &F,
                                              FunctionAnalysisManager &AM) {
 
-  /*// Un semplice passo di esempio di manipolazione della IR
-  for (auto Iter = M.begin(); Iter != M.end(); ++Iter) {
-    if (runOnFunctionMultiInstr(*Iter)) {
-      return PreservedAnalyses::none();
-    }
-  }
-    */
+    auto &LI = AM.getResult<LoopAnalysis>(F);
+
+    /*AU.addRequired<DominatorTreeWrapperPass>();
+    AU.addRequired<LoopInfoWrapperPass>();*/
+
+
   return PreservedAnalyses::none();
 }
 
