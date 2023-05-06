@@ -1,0 +1,6 @@
+*.o
+*.so
+Tutorial-01/TestPass/ir
+Tutorial-02/LocalOpts/testTransform/*opt.*
+LICM/test/*.opt.*
+.vscode
