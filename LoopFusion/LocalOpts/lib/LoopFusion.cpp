@@ -10,11 +10,13 @@ using namespace llvm;
 //opt -passes=mem2reg Loop.bc -o Loop.opt.bc
 //llvm-dis Loop.opt.bc -o Loop.opt.ll
 
+//opt -load-pass-plugin=./libLocalOpts.so -passes=loopfusion test/Loop.opt.ll -o test/test.loopfusion.optimized.bc
+//llvm-dis test/test.loopfusion.optimized.bc -o test/test.loopfusion.optimized.ll
 
-PreservedAnalyses LoopFusionPass::run([[maybe_unused]] Function &F, FunctionAnalysisManager &FAM) 
+PreservedAnalyses LoopFusionPass::run(Function &F, FunctionAnalysisManager &FAM) 
 { 	
-	auto &LI = FAM.getResult<LoopAnalysis>(F);
-
+	//auto &LI = FAM.getResult<LoopAnalysis>(F);
+	//outs()<<"AAA\n";
 	//1) The loops must be adjacent (there cannot be any statements between the two loops).
 
 	//SmallVector<LoopT *, 4> loops = LI.getLoopsInPreorder();
