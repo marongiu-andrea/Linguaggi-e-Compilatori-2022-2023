@@ -8,7 +8,7 @@ using namespace llvm;
 extern "C" PassPluginLibraryInfo llvmGetPassPluginInfo() 
 {
   	return 
-  	{
+	{
 		.APIVersion = LLVM_PLUGIN_API_VERSION,
 		.PluginName = "LocalOpts",
 		.PluginVersion = LLVM_VERSION_STRING,
@@ -17,7 +17,7 @@ extern "C" PassPluginLibraryInfo llvmGetPassPluginInfo()
 			{
             	PB.registerPipelineParsingCallback(
 
-				[](StringRef Name, ModulePassManager &MPM,
+				[](StringRef Name, FunctionPassManager &MPM,
 						ArrayRef<PassBuilder::PipelineElement>) -> bool {
 						if (Name == "loopfusion") {
 							MPM.addPass(LoopFusionPass());
@@ -25,6 +25,6 @@ extern "C" PassPluginLibraryInfo llvmGetPassPluginInfo()
 						}
 						return false;
 						});
-          } // RegisterPassBuilderCallbacks
-  };        // struct PassPluginLibraryInfo
+          	}
+  	};        
 }
