@@ -2,7 +2,9 @@
 #include "llvm/IR/InstrTypes.h"
 #include "llvm/IR/PassManager.h"
 #include "llvm/Analysis/LoopInfo.h"
-#include "llvm/Frontend/OpenMP/OMPIRBuilder.h"
+#include <llvm/IR/Dominators.h>
+#include "llvm/Analysis/ScalarEvolution.h"
+#include "llvm/Analysis/PostDominators.h"
 
 using namespace llvm;
 
@@ -17,11 +19,12 @@ using namespace llvm;
 llvm::PreservedAnalyses LoopFusionPass::run([[maybe_unused]] Function &F, FunctionAnalysisManager &FAM) 
 {
 	auto &LI = FAM.getResult<LoopAnalysis>(F);
+	ScalarEvolution &SE = FAM.getResult<ScalarEvolutionAnalysis>(F);
+	DominatorTree * DT = &FAM.getResult<DominatorTreeAnalysis>(F);
+	PostDominatorTree *PDT = &FAM.getResult<PostDominatorTreeAnalysis>(F);
 
 	SmallVector<Loop *> loops = LI.getLoopsInPreorder(); // SmallVector contenente tutti i loop
 	SmallVector<BasicBlock *> loopExits;
-	
-	bool adjacent; // True - Se tutte le uscite del primo loop sono uguali al preheader del secondo
 
 	// Itera su tutti i loop
 	for (auto &IterLoop1 : loops)
@@ -30,40 +33,82 @@ llvm::PreservedAnalyses LoopFusionPass::run([[maybe_unused]] Function &F, Functi
 		{
 			if (IterLoop1 != IterLoop2)
 			{
-				adjacent = true;
-
-				(*IterLoop1).getExitBlocks(loopExits);
+				BasicBlock * exitBlockL1 = (*IterLoop1).getExitBlock();
 				BasicBlock * preheaderL2 = (*IterLoop2).getLoopPreheader();
 
-				// Itera su tutte le uscite di IterLoop1
-				for (auto &IterExit : loopExits)
-				{
-					// Affinché due loop siano adiacenti è necessario assicurarsi che tutte 
-					//  le uscite di IterLoop1 corrispondano al preheader di IterLoop2
-					if (IterExit != preheaderL2)
-						adjacent = false;
-				}	
-				if (adjacent) 
+				// I due loop sono adiacenti se l'Exit Block di IterLoop1 è uguale al Preheader di IterLoop2
+				if (exitBlockL1 == preheaderL2)
 				{
 					outs()<<"I Loop:\n"<<*IterLoop1<<*IterLoop2<<" sono adiacenti\n----------------------\n";
+					
+					const SCEV* tripCountL1 = SE.getBackedgeTakenCount(IterLoop1);
+					const SCEV* tripCountL2 = SE.getBackedgeTakenCount(IterLoop2);
+					
+					// Controlla che il trip count tra i due loop sia calcolabile e che sia uguale
+					if ((!isa<SCEVCouldNotCompute>(tripCountL1)) && (!isa<SCEVCouldNotCompute>(tripCountL2)) && (tripCountL1 == tripCountL2))
+					{
+						outs()<<"I Loop:\n"<<*IterLoop1<<*IterLoop2<<" hanno lo stesso trip count\n----------------------\n";
 
-					// Assumiamo per semplicità che la condizione di controllo del loop sia 
-					//  solo una, il controllo venga effettuato per una variabile nel LHS
-					//   per una costante nel RHS
+						// Due Loop sono Control-Flow Equivalent se l'esecuzione di uno assicura l'esecuzione dell'altro.
+						//  Per verificare che due loop siano Control-Flow Equivalent si usa l'analisi dei dominatori e
+						//   dei post-dominatori:
+						//    Se il Loop j domina il Loop k, e il Loop k post-domina il loop j
+						//     ---> i due Loop sono Control-Flow Equivalent
 
+						// Dominator: un nodo x domina un nodo y se ogni percorso dall'entry block a y contiene x
+						// Post-dominator: un nodo y post-domina un nodo x se ogni percorso da x all'uscita contiene y
 
+						// Se IterLoop1 domina IterLoop2 e se IterLoop2 post-domina IterLoop1
+						if ((*DT).dominates((*IterLoop1).getLoopPreheader(), (*IterLoop2).getLoopPreheader()) 
+							&& (*PDT).dominates((*IterLoop2).getLoopPreheader(), (*IterLoop1).getLoopPreheader()))
+						{
+							outs()<<"Il Loop: "<<*IterLoop1<<" domina ---> "<<*IterLoop2<<"\n";
+							outs()<<"Il Loop: "<<*IterLoop2<<" post-domina ---> "<<*IterLoop1<<"\n";
+							
+							/*
+							// TODO: DA RIVEDERE
+							
+							//4) There cannot be any negative distance dependencies between the loops. 
+							//    If all of these conditions are satisfied, it is safe to fuse the loops.
+							// 	   There cannot be any negative distance dependencies between Lj and Lk
+							//	    A negative distance dependence occurs between Lj and Lk, Lj before Lk, 
+							//   	 when at iteration m Lk uses a value
+							//		  that is computed by Lj at a future iteration m+n (where n > 0)
+
+							// Use SCEV to determine if there could be negative
+							// dependencies between the two loops
+
+							bool HasNegativeDependencies = false;
+
+							if (!SE->isLoopInvariant(tripCountL1) && !SE->isLoopInvariant(tripCountL2)) 
+							{
+								if (SE->hasComputableLoopEvolution(tripCountL1) && SE->hasComputableLoopEvolution(tripCountL2)) 
+								{
+									const SCEV *Delta = SE->getMinusSCEV(inductionVarL1, inductionVarL2);
+									if (!SE->isLoopInvariant(Delta)) 
+									{
+										HasNegativeDependencies = true;
+									}
+								}
+							}
+
+							// Se i due loop non hanno dipendenze negative
+							if (!HasNegativeDependencies) 
+							{
+								
+							} 
+							*/
+						}		
+
+					}
 				}
+				
+
 			}
 
 		}
 	}
 
-
-	//2) The loops must be conforming (they must execute the same number of iterations).
-
-	//3) The loops must be control flow equivalent (if one loop executes, the other is guaranteed to execute).
-	
-	//4) There cannot be any negative distance dependencies between the loops. If all of these conditions are satisfied, it is safe to fuse the loops.
   	return PreservedAnalyses::none();
 }
 
