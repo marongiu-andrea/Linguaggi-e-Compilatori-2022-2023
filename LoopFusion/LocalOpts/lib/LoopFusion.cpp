@@ -8,13 +8,17 @@
 
 using namespace llvm;
 
-//Per generare il file .ll da Loop.c
-//clang -O0 -Xclang -disable-O0-optnone -emit-llvm -c Loop.c
-//opt -passes=mem2reg Loop.bc -o Loop.opt.bc
-//llvm-dis Loop.opt.bc -o Loop.opt.ll
+// Per generare il file .ll da Loop.c
+//  clang -O0 -Xclang -disable-O0-optnone -emit-llvm -c Loop.c
+//  opt -passes=mem2reg Loop.bc -o Loop.opt.bc
+//  llvm-dis Loop.opt.bc -o Loop.opt.ll
 
-//opt -load-pass-plugin=./libLocalOpts.so -passes=loopfusion test/Loop.opt.ll -o test/test.loopfusion.optimized.bc
-//llvm-dis test/test.loopfusion.optimized.bc -o test/test.loopfusion.optimized.ll
+// mem2reg - The mem2reg pass converts non-SSA form of LLVM IR into SSA form,
+//  raising loads and stores to stack-allocated values to “registers” (SSA values).
+// -----------------------------------------------------------------------------------
+
+// opt -load-pass-plugin=./libLocalOpts.so -passes=loopfusion test/Loop.opt.ll -o test/test.loopfusion.optimized.bc
+// llvm-dis test/test.loopfusion.optimized.bc -o test/test.loopfusion.optimized.ll
 
 llvm::PreservedAnalyses LoopFusionPass::run([[maybe_unused]] Function &F, FunctionAnalysisManager &FAM) 
 {
@@ -58,7 +62,7 @@ llvm::PreservedAnalyses LoopFusionPass::run([[maybe_unused]] Function &F, Functi
 						// Dominator: un nodo x domina un nodo y se ogni percorso dall'entry block a y contiene x
 						// Post-dominator: un nodo y post-domina un nodo x se ogni percorso da x all'uscita contiene y
 
-						// Se IterLoop1 domina IterLoop2 e se IterLoop2 post-domina IterLoop1
+						// Se IterLoop1 domina IterLoop2 e se IterLoop2 post-domina IterLoop1 sono Control-Flow Equivalent
 						if ((*DT).dominates((*IterLoop1).getLoopPreheader(), (*IterLoop2).getLoopPreheader()) 
 							&& (*PDT).dominates((*IterLoop2).getLoopPreheader(), (*IterLoop1).getLoopPreheader()))
 						{
@@ -75,8 +79,7 @@ llvm::PreservedAnalyses LoopFusionPass::run([[maybe_unused]] Function &F, Functi
 							//   	 when at iteration m Lk uses a value
 							//		  that is computed by Lj at a future iteration m+n (where n > 0)
 
-							// Use SCEV to determine if there could be negative
-							// dependencies between the two loops
+							// Use SCEV to determine if there could be negative dependencies between the two loops
 
 							bool HasNegativeDependencies = false;
 
@@ -84,6 +87,7 @@ llvm::PreservedAnalyses LoopFusionPass::run([[maybe_unused]] Function &F, Functi
 							{
 								if (SE->hasComputableLoopEvolution(tripCountL1) && SE->hasComputableLoopEvolution(tripCountL2)) 
 								{
+									// !!!!! Calcolo del delta per verificare se ci siano dipendenze negative tra le induction variable dei due loop 
 									const SCEV *Delta = SE->getMinusSCEV(inductionVarL1, inductionVarL2);
 									if (!SE->isLoopInvariant(Delta)) 
 									{
