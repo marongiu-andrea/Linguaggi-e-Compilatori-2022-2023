@@ -1,3 +1,4 @@
+
 #include <llvm/Analysis/LoopPass.h>
 #include <llvm/Analysis/LoopInfo.h>
 #include <llvm/Transforms/Utils/BasicBlockUtils.h>
@@ -79,36 +80,56 @@ namespace {
             return true;
         }
         
-        bool isSafeToMove(Instruction *instr, Loop *loop) {
-            DominatorTree* dt = &getAnalysis<DominatorTreeWrapperPass>().getDomTree();
+        bool isDead(Instruction *instr, Loop *loop) {
+            bool result = true;
             
-            SmallVector<BasicBlock*> vec;
-            // Tutte le uscite del blocco
-            loop->getExitBlocks(vec);
-            for(auto it = vec.begin(); it != vec.end(); ++it)
-            {
-                BasicBlock* exitBlock = *it;
-                if(!dt->dominates(instr, exitBlock))
-                    return false;
+            for(auto user = instr->use_begin(); user != instr->use_end() && result; ++user) {
+                Instruction *instr = dyn_cast<Instruction>(&*user);
+                if(!loop->contains(instr))
+                    result = false;
             }
+            
+            return result;
+        }
+        
+        bool isInstrTypeMovable(Instruction *instr) {
+            if(dyn_cast<ReturnInst>(instr)) return false;
+            if(dyn_cast<BranchInst>(instr)) return false;
             
             return true;
         }
         
         virtual bool runOnLoop(Loop* l, LPPassManager& lpm) override {
+            static int count = 0;
+            
             if(!l)
                 return false;
+            
+            DominatorTree *dt = &getAnalysis<DominatorTreeWrapperPass>().getDomTree();
             
             bool modified = false;
             
             DFSIterator it(l->getHeader());
             while(auto block = it.next()) {
+                bool dominatesAllExits = true;
+                
+                SmallVector<BasicBlock*> vec;
+                l->getExitBlocks(vec);
+                for(auto it = vec.begin(); it != vec.end(); ++it) {
+                    BasicBlock *exitBlock = *it;
+                    if(!dt->dominates(&*block, exitBlock))
+                        dominatesAllExits = false;
+                }
+                
                 for(auto instr = block->begin(); instr != block->end(); ++instr) {
-                    if(isLoopInvariant(&*instr, l) && isSafeToMove(&*instr, l)) {
+                    if(!isInstrTypeMovable(&*instr)) continue;
+                    
+                    if(isLoopInvariant(&*instr, l) && (dominatesAllExits || isDead(&*instr, l))) {
                         LLVMContext &ctx = instr->getContext();
                         MDNode *node = MDNode::get(ctx, MDString::get(ctx, "hoistable"));
                         instr->setMetadata("HOIST", node);
                     }
+                    
                 }
             }
             
