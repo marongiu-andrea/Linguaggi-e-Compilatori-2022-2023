@@ -73,7 +73,6 @@ bool runOnBasicBlock(BasicBlock &B) {
 
 
 
-<<<<<<< HEAD
 PreservedAnalyses TransformPass::run([[maybe_unused]] Function &F, FunctionAnalysisManager &AM) {
 
   auto &LI = AM.getResult<LoopAnalysis>(F);
@@ -95,19 +94,11 @@ PreservedAnalyses TransformPass::run([[maybe_unused]] Function &F, FunctionAnaly
       /*const SCEV *TripCountSCEV = SE.getBackedgeTakenCount(L);
       const APInt TripCount = dyn_cast<SCEVConstant>(TripCountSCEV)->getAPInt();
       errs() << "Loop has " << TripCount.toString(10) << " iterations.\n";*/
-=======
-PreservedAnalyses TransformPass::run([[maybe_unused]] Module &M, ModuleAnalysisManager &) {
-
-  // Un semplice passo di esempio di manipolazione della IR
-  for (auto Iter = M.begin(); Iter != M.end(); ++Iter) {
-    if (runOnFunction(*Iter)) {
-      return PreservedAnalyses::none();
->>>>>>> 18d89016306e42a6743f35bdac70056fa07fd6b2
     }
   }
-  for (auto Iter = F.begin(); Iter != F.end(); ++Iter) {
+  /*for (auto Iter = F.begin(); Iter != F.end(); ++Iter) {
 
-  }
+  }*/
 
   return PreservedAnalyses::none();
 }
