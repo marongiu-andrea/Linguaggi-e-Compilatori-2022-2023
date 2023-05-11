@@ -39,85 +39,80 @@ public:
     if (VisitedInstrs.count(&Inst))
         return true;
     VisitedInstrs.insert(&Inst);
+
     for(auto *opIter = Inst.op_begin(); opIter != Inst.op_end(); ++opIter){
-      Value *op = *opIter;
-      
+        Value *op = *opIter;
       //Se non e' una const
-      if(Instruction *arg = dyn_cast<Instruction>(op))
-      {
-        if(L->contains(arg))//dichiarato dentro loop
+      if (Instruction *arg = dyn_cast<Instruction>(op)) {
+        if (L->contains(arg)) // dichiarato dentro loop
         {
-          //outs() << "arg is inside the loop: " << *arg << "\n";
-            //if(arg == &Inst)
-            //  return false;
-            if(!isLoopInvariant(*arg,L,VisitedInstrs))
-              return false;
-        }else { // I is outside the loop
-          //outs() << "arg is outside the loop: " << *arg << "\n";
-          if (!isa<Constant>(op)) {
+          if(!isLoopInvariant(*arg,L,VisitedInstrs))
             return false;
-          }
         }
-        //outs() << "Istruzione che definisce: " << *op <<"\n";
-        //outs() << "Basic Block dell'istruzione:\n" << *arg->getParent() << "\n";
-      } else { // It is not an instruction
-          //outs() << "op is a constant: " << *op << "\n";
-          if (!isa<Constant>(op)) {
+        else { // I is outside the loop
+          if (!isa<Constant>(op))
             return false;
-          }
+        }
+
+      }
+      else { // It is not an instruction
+        if (!isa<Constant>(op))
+          return false;
         }
     }
     return true;
-  } 
+  }
 
-  SmallVector<BasicBlock*> dominatesAllExits( DominatorTree &DT, Loop *L) {
+  SmallVector<BasicBlock*> getExitDominators( DominatorTree &DT, Loop *L) {
 
     BasicBlock *dominator = nullptr;
     SmallVector<BasicBlock*> exits;
-    SmallVector<BasicBlock*> dominators;
-// Find the nearest common dominator of the exit block and all the blocks inside the loop
+    SmallVector<BasicBlock *> dominators;
+    // Find the nearest common dominator of the exit block and all the blocks inside the loop
     for (auto *block : L->getBlocks()) {
       if (block != L->getHeader() && L->isLoopExiting(block))
         exits.push_back(block);
-      
-      if (dominator == nullptr) {
-        // First time through the loop, set the dominator to the current block
+
+      if (dominator == nullptr)
         dominator = block;
-      } else {
-        // Update the dominator to be the nearest common dominator of the current block and the previous dominator
+      else
         dominator = DT.findNearestCommonDominator(dominator, block);
-      }
     }
 
-    //getExitingBlocks non viene trovato, abbiamo deciso di andare a creare la lista noi 
-
-
-  for (auto *exit : exits) {
-    if (DT.dominates(dominator, exit))
-      dominators.push_back(dominator);
-    
-  }
+    for (auto *exit : exits) {
+      if (DT.dominates(dominator, exit))
+        dominators.push_back(dominator);
+    }
   return dominators;
 }
 
+  bool dominatesUseBlocks(DominatorTree &DT, Instruction *inst){
+    BasicBlock *BaseDom = inst->getParent();
 
+    for (auto Iter = inst->user_begin(); Iter != inst->user_end(); ++Iter) {
+      if (!DT.dominates(BaseDom, (dyn_cast<Instruction>(*Iter))->getParent())) {
+        return false;
+      }
+    }
+    return true;
+  }
 
   virtual bool runOnLoop(Loop *L, LPPassManager &LPM) override {
-    outs() << "\nLOOPPASS INIZIATO...\n"; 
+    outs() << "\nLOOPPASS INIZIATO...\n";
     DominatorTree *DT = &getAnalysis<DominatorTreeWrapperPass>().getDomTree();
     SmallVector<Instruction*> Invariants;
-    SmallVector<BasicBlock*> Dominators = dominatesAllExits(*DT,L);
+    SmallVector<BasicBlock*> Dominators = getExitDominators(*DT,L);
     std::set<Instruction*> Visited;
+    SmallVector<Instruction*> Movable;
 
     for (auto bb : Dominators){
       outs()<<"Dominator: " << bb<< "\n";
     }
     // LoopInfo *LI = &getAnalysis<LoopInfoWrapperPass>().getLoopInfo();
-
     // verificare la forma normalizzata
     if (L->isLoopSimplifyForm()){
       outs() << "\nLoop in forma normalizzata\n";
-      
+
       // controllo preheader
       BasicBlock *B1 = L->getLoopPreheader();
       outs() << "\nPreheader del loop: " <<  *B1 << "\n";
@@ -142,20 +137,24 @@ public:
         }
       }
 
-          for (auto *inst : Invariants)
+      for (auto *inst : Invariants)
+      {
+        for (auto *block : Dominators)
+        {
+          if (inst->getParent() == block)
           {
-            for (auto *block : Dominators)
-            {
-              if (inst->getParent() == block)
-              {
-                outs()<<"L'istruzione "<<*inst<<" is trova nel dominatore: "<< block<<"\n";
-              }
+            outs()<<"L'istruzione "<<*inst<<" is trova nel dominatore: "<< block <<"\n";
+
+            if (dominatesUseBlocks(*DT, inst)){
+              Movable.push_back(inst);
+              outs()<<"Trovata istruzione movable!! \t Inst: "<<inst<<"\n";
             }
           }
-      
+        }
+      }
       return true;
     }
-    return false; 
+    return false;
   }
 };
 
