@@ -3,6 +3,8 @@
 #include "llvm/Analysis/LoopPass.h"
 
 #include "llvm/Analysis/LoopInfo.h"
+#include "llvm/IR/BasicBlock.h"
+#include "llvm/IR/Instruction.h"
 /*
 #include "llvm/IR/InstrTypes.h"
 #include "llvm/IR/DerivedTypes.h"
@@ -15,9 +17,11 @@
 using namespace llvm;
 
 /*Funzione per verificare che due loop abbiano lo stesso numero di iterazioni*/
-bool hannoStesseIterazioni(Loop *L1, Loop *L2, ScalarEvolution *SE){
+bool hannoStesseIterazioni(Loop *L1, Loop *L2){
  /* const auto *viaggioL1 = L1->getTripCount();
   const SCEV *viaggioL2 = L2->getTripCount();*/
+  //L1->getSmallConstantTripCount();
+  //L1->getTripCount();
   return false;
 }
 
@@ -27,6 +31,44 @@ bool sonoFlowEquivalent(Loop *L1, Loop *L2){
   if (L1->getLoopGuardBranch() != L2->getLoopGuardBranch())
     return false;
   
+  return true;
+}
+
+bool sonoAdiacenti(Loop *L1, Loop* L2){
+
+  //BasicBlock *EL1 = L1->getExitingBlock();
+  BasicBlock *EL1 = L1->getUniqueExitBlock();
+  //BasicBlock *EL1 = L1->getLoopPreheader();
+  BasicBlock *PHL2 = L2->getLoopPreheader();
+  //BasicBlock *PHL1 = L1->getLoopPreheader();
+  unsigned int nUscite=0;
+  
+  //outs() << *EL1<< "\n --------- \n" <<*PHL2 <<"\n";
+  //controllo che l'uscita di L1 sia il preheader di L2
+  if( EL1 != PHL2)
+    return false;
+
+  //COntrollo che dal preheader di L1 si possa solo andare in L2, e da solo un punto
+  for(auto Iter = PHL2->begin(); Iter != PHL2->end(); ++Iter){
+    Instruction *inst = dyn_cast<Instruction>(Iter);
+    
+    if(BranchInst* BI = dyn_cast<llvm::BranchInst>(inst)){
+      if(BI->isConditional() || BI->isUnconditional()){
+        //outs() << *inst << "\n";
+        if(BI->getNumSuccessors() > 1)
+          return false;
+        if(BI->getSuccessor(0) == L2->getHeader()){
+          printf("segs\n");
+        }
+        nUscite++;
+        if(nUscite>1){
+          //c'è più di un uscita
+          return false;
+        }
+      }
+    }
+
+  }
   return true;
 }
 
@@ -40,24 +82,32 @@ PreservedAnalyses UnioneLoopPass::run([[maybe_unused]] Function &F,
     //LI.getLoopsInPreorder(Loops);
     for(Loop *L : LI){
       Loops.push_back(L);
-
+      //outs()<< *L <<"\n-----\n";
     }
-    
+    std::reverse(Loops.begin(),Loops.end());
+
     for( int i =0; i<Loops.size()-1; i++){
       if(Loops[i]->contains(Loops[i+1])){
         //sono innestati = non adiacenti
-      }else{//sono adiacenti
+      }else{
         outs() << "Loop "<< Loops[i] <<" \n";
         
-        //Controllo cabbiano lo stesso numero di iterazioni TODO
-        //outs() << LI.getTripCount(Loops[i]) <<" \n";
 
-        //controllo che siano FlowEquivalent
-        if(sonoFlowEquivalent(Loops[i],Loops[i+1])){
-          printf("Sono flow equivalenti \n");
-        }else{
-          printf("Non sono equivalenti \n");
+        //controllo che siano adiacenti
+        if(sonoAdiacenti(Loops[i],Loops[i+1])){
+          outs()<< "Adiacenti\n";
+          if(sonoFlowEquivalent(Loops[i],Loops[i+1])){
+            //printf("Sono flow equivalenti e adiacenti\n");
+            outs()<< Loops[i] << " e " << Loops[i+1] << " sono adiacenti e flow equivalent\n";
+            //Controllo cabbiano lo stesso numero di iterazioni TODO
+
+
+            
+          }else{
+            outs()<< Loops[i] << " e " << Loops[i+1] << " non sono adiacenti e flow equivalent\n";
+          }
         }
+        
       }
     }
 
