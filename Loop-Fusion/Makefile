@@ -1,7 +1,10 @@
 # https://llvm.org/docs/NewPassManager.html#invoking-opt
 PASSES_STRING := function(my-loop-fusion)
 
+TO_OPTIMIZE_SRC_C := test/test.c
 TO_OPTIMIZE_SRC := test/test.ll
+TO_OPTIMIZE_BC := test/test.bc
+
 OPTIMIZED_BYTECODE := test.optimized.bc
 OPTIMIZED_LL := test.optimized.ll
 
@@ -17,7 +20,12 @@ all: $(OPTIMIZED_LL)
 $(OPTIMIZER): $(OBJs)
 	$(CXX) -dylib -shared $^ -o $@
 
-$(OPTIMIZED_BYTECODE): $(OPTIMIZER)
+$(TO_OPTIMIZE_SRC): $(TO_OPTIMIZE_SRC_C)
+	clang-$(LLVM_VERSION) $(TO_OPTIMIZE_SRC_C) -c -Xclang -disable-O0-optnone -O0 -emit-llvm -o $(TO_OPTIMIZE_BC)
+	opt-$(LLVM_VERSION) $(TO_OPTIMIZE_BC) -passes=mem2reg -o $(TO_OPTIMIZE_BC)
+	llvm-dis-$(LLVM_VERSION) $(TO_OPTIMIZE_BC) -o $(TO_OPTIMIZE_SRC)
+
+$(OPTIMIZED_BYTECODE): $(OPTIMIZER) $(TO_OPTIMIZE_SRC)
 	opt-$(LLVM_VERSION) -load-pass-plugin=./$(OPTIMIZER) -passes="$(PASSES_STRING)" $(TO_OPTIMIZE_SRC) -o $(OPTIMIZED_BYTECODE)
 
 $(OPTIMIZED_LL): $(OPTIMIZED_BYTECODE)
@@ -27,7 +35,7 @@ run: clean-optimized $(OPTIMIZED_LL)
 
 .PHONY: clean
 clean:
-	$(RM) $(OPTIMIZER) $(OBJs) $(OPTIMIZED_BYTECODE) $(OPTIMIZED_LL)
+	$(RM) $(OPTIMIZER) $(OBJs) $(OPTIMIZED_BYTECODE) $(OPTIMIZED_LL) $(TO_OPTIMIZE_BC)
 
 clean-optimized:
 	$(RM) $(OPTIMIZED_BYTECODE) $(OPTIMIZED_LL)
