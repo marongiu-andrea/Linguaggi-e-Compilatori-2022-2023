@@ -43,11 +43,9 @@ public:
       //se non e' un PHINode
       if(isa<PHINode>(Inst) || isa<BranchInst>(Inst))
         return false;
-
       //Se non e' una const
       if (Instruction *arg = dyn_cast<Instruction>(op)) {
-        if (L->contains(arg)) // dichiarato dentro loop
-        {
+        if (L->contains(arg)){// dichiarato dentro loop
           if(!isLoopInvariant(*arg,L))
             return false;
         }
@@ -59,7 +57,6 @@ public:
   bool dominatesExits(Instruction *inst, DominatorTree &DT, Loop *L) {
 
     SmallVector<BasicBlock*> exits;
-    // SmallVector<BasicBlock *> dominators;
 
     for (auto *block : L->getBlocks()) {
       if (block != L->getHeader() && L->isLoopExiting(block))
@@ -70,6 +67,7 @@ public:
       if (!DT.dominates(inst->getParent(), exit))
         return false;
     }
+
   return true;
 }
 
@@ -86,20 +84,11 @@ public:
     outs() << "\nLOOPPASS INIZIATO...\n";
     DominatorTree *DT = &getAnalysis<DominatorTreeWrapperPass>().getDomTree();
     SmallVector<Instruction*> Invariants;
-    SmallVector<BasicBlock*> Dominators;
     SmallVector<Instruction*> Movable;
 
-    for (auto bb : Dominators){
-      outs()<<"Dominator: " << bb<< "\n";
-    }
-    // LoopInfo *LI = &getAnalysis<LoopInfoWrapperPass>().getLoopInfo();
     // verificare la forma normalizzata
     if (L->isLoopSimplifyForm()){
       outs() << "\nLoop in forma normalizzata\n";
-
-      // controllo preheader
-      BasicBlock *preHeader = L->getLoopPreheader();
-      outs() << "\nPreheader del loop: " <<  *preHeader << "\n";
 
       // itero sui basic blocks del loop
       int i = 1;
@@ -113,31 +102,26 @@ public:
           Instruction &Inst = *InstIter;
 
           if(isLoopInvariant(Inst, L)){
-            outs() << "E' loop invariant " <<Inst<< "\n";
+            outs() << Inst << "E' loop invariant " << "\n";
             Invariants.push_back(&Inst);
-          }else{
-            outs() << "Non è loop invariant" <<"\n";
           }
+          else
+            outs() << "Non è loop invariant" <<"\n";
         }
       }
 
       for (auto *inst : Invariants)
       {
-          if (dominatesExits(inst,*DT ,L ))
-          {
-            if (dominatesUseBlocks(*DT, inst)){
-              Movable.push_back(inst);
-            }
-          }
-
+        if (dominatesExits(inst,*DT ,L ) && dominatesUseBlocks(*DT, inst))
+          Movable.push_back(inst);
       }
 
+      BasicBlock *preHeader = L->getLoopPreheader();
       for (auto elem : Movable)
       {
         outs()<<"Trovata istruzione movable: "<<*elem<<"\n";
         elem->moveBefore(&preHeader->back());
       }
-
       return true;
     }
     return false;
