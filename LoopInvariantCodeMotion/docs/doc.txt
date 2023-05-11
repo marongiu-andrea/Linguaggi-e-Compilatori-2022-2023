@@ -1,0 +1,31 @@
+DOCUMENTAZIONE LOOP INVARIANT CODE MOTION
+	Funzioni principali:
+		isLoopInvariant(Instruction *inst, Loop* loop):
+			Funzione che prende in ingresso una instruzione e il loop a cui appartiene ritornando true/false a seconda se sia loop inviant o meno.
+
+			Cicliamo sugli usi degli operandi dell'istruzione e nel caso questi siano Branch o Phi ritorniamo false in quanto non sono Loop Invariant se consideriamo solamente istruzioni del tipo A=B+C.
+
+			Viene anche controllato che le istruzioni contenute in ogni operando siano a loro volta loop invariant.
+			
+
+		getExits(Loop* loop):
+			Funzione che prende in ingresso un loop e restituisce tutti i suoi BB di uscita.
+			Cicla sui blocchi del loop e mette in un vettore tutti i BB uscenti da esso.
+
+		dominatesAllExits(Instruction *inst, DominatorTree *DT, SmallVector<BasicBlock*> exitBlocks):
+			Funzione che prende in ingresso un'istruzione, un dominator tree e il vettore degli BB di uscita del loop.
+			Per prima cosa prendiamo il BB dell'istruzione passata e controlliamo se questo BB domina tutti i BB all'interno del vettore degli exitBlocks ritornando true o false.
+
+		dominatesInstrUsage(Instruction *inst, DominatorTree *DT):
+			Funzione che prende in ingresso un'istruzione ed un dominator tree.
+			Scorriamo tutti i suoi user e guardiamo se l'istruzione li domina tutti.
+
+		runOnLoop(Loop *L, LPPassManager &LPM):
+			Per prima cosa definiamo il Dominator Tree, il vettore degli BB uscenti del loop ed un vettore 
+			che contiene le istruzioni che possiamo muovere nel preHeader.
+
+			Cicliamo sui blocchi e a sua volta sulle istruzioni del loop e controlliamo per prima cosa che 
+			l'istruzione sia loop invariant, in caso affermativo controlliamo se domina tutte le sue uscite
+			e usi.
+			Se tutti questi controlli sono positivi flagghiamo l'istruzione come HOISTABLE tramite metadati (Un istruzione HOSTABLE è un'instruzione che può essere spostata nel preHeader del loop) e aggiungiamo la stessa ad un vettore (movableInst) di istruzioni "Movable".
+			Alla fine di tutto ciò spostiamo le istruzioni del vettore movableInst nel preHeader.
