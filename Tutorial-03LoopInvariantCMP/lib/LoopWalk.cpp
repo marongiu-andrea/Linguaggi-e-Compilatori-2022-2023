@@ -1,7 +1,7 @@
 #include <llvm/Analysis/LoopPass.h>
 #include <llvm/IR/Dominators.h>
 #include <llvm/Analysis/ValueTracking.h>
-#include <llvm/IR/Instruction.h>
+#include <llvm/IR/Instructions.h>
 //#include <llvm/Support/GenericLoopInfo.h>
 
 //#include <llvm/ADT/SmallVector.h>
@@ -36,28 +36,21 @@ public:
   //if genitore is in lista allora false e quindi non è loop invariant.
 
   //primitiva contains
-  bool isLoopInvariant(Instruction &Inst, Loop *L, std::set<Instruction*> &VisitedInstrs) {
-    if (VisitedInstrs.count(&Inst))
-        return true;
-    VisitedInstrs.insert(&Inst);
+  bool isLoopInvariant(Instruction &Inst, Loop *L) {
 
     for(auto *opIter = Inst.op_begin(); opIter != Inst.op_end(); ++opIter){
         Value *op = opIter->get();
       //se non e' un PHINode
-      if(isa<PHINode>(op) || isa<BranchInst>(op))
+      if(isa<PHINode>(Inst) || isa<BranchInst>(Inst))
         return false;
 
       //Se non e' una const
       if (Instruction *arg = dyn_cast<Instruction>(op)) {
         if (L->contains(arg)) // dichiarato dentro loop
         {
-          if(!isLoopInvariant(*arg,L,VisitedInstrs))
+          if(!isLoopInvariant(*arg,L))
             return false;
         }
-      }
-      else{
-        if (!isa<Constant>(op))
-          return false;
       }
     }
     return true;
@@ -65,18 +58,12 @@ public:
 
   bool dominatesExits(Instruction *inst, DominatorTree &DT, Loop *L) {
 
-    BasicBlock *dominator = nullptr;
     SmallVector<BasicBlock*> exits;
-    SmallVector<BasicBlock *> dominators;
-    // Find the nearest common dominator of the exit block and all the blocks inside the loop
+    // SmallVector<BasicBlock *> dominators;
+
     for (auto *block : L->getBlocks()) {
       if (block != L->getHeader() && L->isLoopExiting(block))
         exits.push_back(block);
-
-      /*if (dominator == nullptr)
-        dominator = block;
-      else
-        dominator = DT.findNearestCommonDominator(dominator, block);*/
     }
 
     for (auto *exit : exits) {
@@ -100,7 +87,6 @@ public:
     DominatorTree *DT = &getAnalysis<DominatorTreeWrapperPass>().getDomTree();
     SmallVector<Instruction*> Invariants;
     SmallVector<BasicBlock*> Dominators;
-    std::set<Instruction*> Visited;
     SmallVector<Instruction*> Movable;
 
     for (auto bb : Dominators){
@@ -126,7 +112,7 @@ public:
         for(auto InstIter = BB->begin(); InstIter != BB->end(); ++InstIter){
           Instruction &Inst = *InstIter;
 
-          if(isLoopInvariant(Inst, L,Visited)){
+          if(isLoopInvariant(Inst, L)){
             outs() << "E' loop invariant " <<Inst<< "\n";
             Invariants.push_back(&Inst);
           }else{
