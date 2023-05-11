@@ -8,6 +8,7 @@
 
 using namespace llvm;
 
+// -----------------------------------------------------------------------------------
 // Per generare il file .ll da Loop.c
 //  clang -O0 -Xclang -disable-O0-optnone -emit-llvm -c Loop.c
 //  opt -passes=mem2reg Loop.bc -o Loop.opt.bc
@@ -19,8 +20,12 @@ using namespace llvm;
 
 // opt -load-pass-plugin=./libLocalOpts.so -passes=loopfusion test/Loop.opt.ll -o test/test.loopfusion.optimized.bc
 // llvm-dis test/test.loopfusion.optimized.bc -o test/test.loopfusion.optimized.ll
+// -----------------------------------------------------------------------------------
 
-bool LoopFusionPass::areL1andL2Adjacent(BasicBlock * exitBlockL1, BasicBlock * preheaderL2, BasicBlock * headerL2)
+// Ritorna true se i due loop analizzati sono adiacenti.
+//  Due Loop sono adiacenti solo quando l'exit block del primo loop corrisponde al preheader del secondo loop
+//   e l'exit block del primo Loop contiene solo un'istruzione di branch che porta all'header del secondo loop
+bool LoopFusionPass::areLoopsAdjacent(BasicBlock * exitBlockL1, BasicBlock * preheaderL2, BasicBlock * headerL2)
 {
 	// Se l'exit Block del Loop1 coincide con il preheader del Loop2
 	if (exitBlockL1 == preheaderL2)
@@ -32,10 +37,8 @@ bool LoopFusionPass::areL1andL2Adjacent(BasicBlock * exitBlockL1, BasicBlock * p
 			outs()<<"La prima istruzione dell'exit block del loop1 è una branch che porta al Loop2\n";
 			return true;
 		}
-		
 	}
 	outs()<<"I due loop NON sono adiacenti\n";
-
 	return false;
 }
 
@@ -47,7 +50,6 @@ llvm::PreservedAnalyses LoopFusionPass::run([[maybe_unused]] Function &F, Functi
 	PostDominatorTree *PDT = &FAM.getResult<PostDominatorTreeAnalysis>(F);
 
 	SmallVector<Loop *> loops = LI.getLoopsInPreorder(); // SmallVector contenente tutti i loop
-	SmallVector<BasicBlock *> loopExits;
 	
 	// Itera su tutti i loop
 	for (auto &IterLoop1 : loops)
@@ -59,10 +61,8 @@ llvm::PreservedAnalyses LoopFusionPass::run([[maybe_unused]] Function &F, Functi
 				BasicBlock * exitBlockL1 = (*IterLoop1).getExitBlock();
 				BasicBlock * preheaderL2 = (*IterLoop2).getLoopPreheader();
 				BasicBlock * headerL2 = (*IterLoop2).getHeader();
-
-				// il block deve contenere solo una branch e la branch deve saltare dentro al loop
-				
-				if (areL1andL2Adjacent(exitBlockL1, preheaderL2, headerL2))
+		
+				if (areLoopsAdjacent(exitBlockL1, preheaderL2, headerL2))
 				{
 					outs()<<"I Loop:\n"<<*IterLoop1<<*IterLoop2<<" sono adiacenti\n----------------------\n";
 					
@@ -89,11 +89,12 @@ llvm::PreservedAnalyses LoopFusionPass::run([[maybe_unused]] Function &F, Functi
 						if ((*DT).dominates((*IterLoop1).getLoopPreheader(), (*IterLoop2).getLoopPreheader()) 
 							&& (*PDT).dominates((*IterLoop2).getLoopPreheader(), (*IterLoop1).getLoopPreheader()))
 						{
+							outs()<<"Ho trovato due loop Control-Flow Equivalent:\n";
 							outs()<<"Il Loop: "<<*IterLoop1<<" domina ---> "<<*IterLoop2<<"\n";
 							outs()<<"Il Loop: "<<*IterLoop2<<" post-domina ---> "<<*IterLoop1<<"\n";
 							
 							/*
-							// TODO: DA RIVEDERE
+							// PROBABILMENTE DA NON FARE (?)
 							
 							//4) There cannot be any negative distance dependencies between the loops. 
 							//    If all of these conditions are satisfied, it is safe to fuse the loops.
@@ -126,15 +127,11 @@ llvm::PreservedAnalyses LoopFusionPass::run([[maybe_unused]] Function &F, Functi
 							} 
 							*/
 						}		
-
 					}
 				}			
-
 			}
-
 		}
 	}
-
   	return PreservedAnalyses::none();
 }
 
