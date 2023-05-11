@@ -1,6 +1,8 @@
 #include <llvm/Analysis/LoopPass.h>
 #include <llvm/IR/BasicBlock.h>
 #include <llvm/Analysis/ValueTracking.h>
+#include "llvm/Analysis/LoopInfo.h"
+#include "llvm/IR/Dominators.h"
 
 using namespace llvm;
 
@@ -65,6 +67,20 @@ namespace
     return (isLoopInvariantOperand(I->getOperand(0), L) && isLoopInvariantOperand(I->getOperand(1), L));
   }
 
+  bool checkDominator(Loop *L, BinaryOperator *I, DominatorTree &DT)
+  {
+    BasicBlock *loopExitBlock = L->getExitBlock();
+    for (auto *exitPred : predecessors(loopExitBlock))
+    {
+      if (!DT.dominates(I, exitPred))
+      {
+        // L'istruzione loop-invariant non domina un'uscita del loop
+        return false;
+      }
+    }
+    return true;
+  }
+
   class LoopInvariantCodeMotion final : public LoopPass
   {
   public:
@@ -74,11 +90,18 @@ namespace
 
     virtual void getAnalysisUsage(AnalysisUsage &AU) const override
     {
+      AU.addRequired<LoopInfoWrapperPass>();
+      AU.addRequired<DominatorTreeWrapperPass>();
+      AU.setPreservesAll();
+      outs() << "getAnalysisUsage\n";
     }
 
     virtual bool runOnLoop(Loop *L, LPPassManager &LPM) override
     {
-      outs() << "\nLOOPPASS INIZIATO...\n";
+      DominatorTree &DT = getAnalysis<DominatorTreeWrapperPass>().getDomTree();
+
+      outs()
+          << "\nLOOPPASS INIZIATO...\n";
       if (L->isLoopSimplifyForm())
       {
         outs() << "FORMA NORMALIZZATA\n";
@@ -106,7 +129,15 @@ namespace
             outs() << "\t###Vediamo dentro###\n";
             // TODO: capire se una istruzione è loop invariant
             if (isLoopInvariant(binOpInstruction, L))
-              outs() << "\t**ISTRUZIONE LOOP INVARIANT**\n";
+            {
+              if (checkDominator(L, binOpInstruction, DT))
+              {
+                outs() << "\t**ISTRUZIONE LOOP INVARIANT E DOMINANTE**\n";
+              }
+              else
+                outs() << "\t**ISTRUZIONE LOOP INVARIANT NON DOMINANTE**\n";
+            }
+
             else
               outs() << "\t**ISTRUZIONE LOOP VARIANT**\n";
           }
