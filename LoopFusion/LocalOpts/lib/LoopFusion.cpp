@@ -20,6 +20,25 @@ using namespace llvm;
 // opt -load-pass-plugin=./libLocalOpts.so -passes=loopfusion test/Loop.opt.ll -o test/test.loopfusion.optimized.bc
 // llvm-dis test/test.loopfusion.optimized.bc -o test/test.loopfusion.optimized.ll
 
+bool LoopFusionPass::areL1andL2Adjacent(BasicBlock * exitBlockL1, BasicBlock * preheaderL2, BasicBlock * headerL2)
+{
+	// Se l'exit Block del Loop1 coincide con il preheader del Loop2
+	if (exitBlockL1 == preheaderL2)
+	{
+		// Se la PRIMA istruzione dell'exit Block del Loop1 è una branch, e se la branch porta al Loop2
+		if (((*exitBlockL1).front()).getOpcode() == Instruction::Br 
+			&& ((*exitBlockL1).front()).getOperand(0) == headerL2)
+		{
+			outs()<<"La prima istruzione dell'exit block del loop1 è una branch che porta al Loop2\n";
+			return true;
+		}
+		
+	}
+	outs()<<"I due loop NON sono adiacenti\n";
+
+	return false;
+}
+
 llvm::PreservedAnalyses LoopFusionPass::run([[maybe_unused]] Function &F, FunctionAnalysisManager &FAM) 
 {
 	auto &LI = FAM.getResult<LoopAnalysis>(F);
@@ -29,7 +48,7 @@ llvm::PreservedAnalyses LoopFusionPass::run([[maybe_unused]] Function &F, Functi
 
 	SmallVector<Loop *> loops = LI.getLoopsInPreorder(); // SmallVector contenente tutti i loop
 	SmallVector<BasicBlock *> loopExits;
-
+	
 	// Itera su tutti i loop
 	for (auto &IterLoop1 : loops)
 	{
@@ -39,9 +58,11 @@ llvm::PreservedAnalyses LoopFusionPass::run([[maybe_unused]] Function &F, Functi
 			{
 				BasicBlock * exitBlockL1 = (*IterLoop1).getExitBlock();
 				BasicBlock * preheaderL2 = (*IterLoop2).getLoopPreheader();
+				BasicBlock * headerL2 = (*IterLoop2).getHeader();
 
-				// I due loop sono adiacenti se l'Exit Block di IterLoop1 è uguale al Preheader di IterLoop2
-				if (exitBlockL1 == preheaderL2)
+				// il block deve contenere solo una branch e la branch deve saltare dentro al loop
+				
+				if (areL1andL2Adjacent(exitBlockL1, preheaderL2, headerL2))
 				{
 					outs()<<"I Loop:\n"<<*IterLoop1<<*IterLoop2<<" sono adiacenti\n----------------------\n";
 					
@@ -52,6 +73,8 @@ llvm::PreservedAnalyses LoopFusionPass::run([[maybe_unused]] Function &F, Functi
 					if ((!isa<SCEVCouldNotCompute>(tripCountL1)) && (!isa<SCEVCouldNotCompute>(tripCountL2)) && (tripCountL1 == tripCountL2))
 					{
 						outs()<<"I Loop:\n"<<*IterLoop1<<*IterLoop2<<" hanno lo stesso trip count\n----------------------\n";
+
+						// TODO : CONTROLLARE CHE I BOUND DEI DUE LOOP SIANO UGUALI (MAGARI ANCHE LE VARIABILI D'INDUZIONE?)
 
 						// Due Loop sono Control-Flow Equivalent se l'esecuzione di uno assicura l'esecuzione dell'altro.
 						//  Per verificare che due loop siano Control-Flow Equivalent si usa l'analisi dei dominatori e
@@ -105,8 +128,7 @@ llvm::PreservedAnalyses LoopFusionPass::run([[maybe_unused]] Function &F, Functi
 						}		
 
 					}
-				}
-				
+				}			
 
 			}
 
