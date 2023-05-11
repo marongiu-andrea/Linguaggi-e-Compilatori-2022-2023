@@ -8,6 +8,8 @@ using namespace llvm;
 
 namespace
 {
+  std::vector<Instruction *> instructionsToMove;
+
   bool isLoopInvariant(BinaryOperator *I, Loop *L);
   bool isLoopInvariantOperand(Value *op, Loop *L);
 
@@ -133,6 +135,7 @@ namespace
               if (checkDominator(L, binOpInstruction, DT))
               {
                 outs() << "\t**ISTRUZIONE LOOP INVARIANT E DOMINANTE**\n";
+                instructionsToMove.push_back(binOpInstruction);
               }
               else
                 outs() << "\t**ISTRUZIONE LOOP INVARIANT NON DOMINANTE**\n";
@@ -146,6 +149,15 @@ namespace
 
         outs() << "\n\n";
       }
+      outs() << "\n\n"
+             << "INIZIO MOVIMENTO ISTRUZIONI\n";
+
+      for (auto *I : instructionsToMove)
+      {
+        outs() << *I << "\n";
+        I->moveBefore(L->getLoopPreheader()->getTerminator());
+      }
+
       return false;
     }
   };
