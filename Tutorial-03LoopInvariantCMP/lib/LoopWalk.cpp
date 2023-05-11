@@ -1,6 +1,7 @@
 #include <llvm/Analysis/LoopPass.h>
 #include <llvm/IR/Dominators.h>
 #include <llvm/Analysis/ValueTracking.h>
+#include <llvm/IR/Instruction.h>
 //#include <llvm/Support/GenericLoopInfo.h>
 
 //#include <llvm/ADT/SmallVector.h>
@@ -62,7 +63,7 @@ public:
     return true;
   }
 
-  SmallVector<BasicBlock*> getExitDominators( DominatorTree &DT, Loop *L) {
+  bool dominatesExits(Instruction *inst, DominatorTree &DT, Loop *L) {
 
     BasicBlock *dominator = nullptr;
     SmallVector<BasicBlock*> exits;
@@ -72,17 +73,17 @@ public:
       if (block != L->getHeader() && L->isLoopExiting(block))
         exits.push_back(block);
 
-      if (dominator == nullptr)
+      /*if (dominator == nullptr)
         dominator = block;
       else
-        dominator = DT.findNearestCommonDominator(dominator, block);
+        dominator = DT.findNearestCommonDominator(dominator, block);*/
     }
 
     for (auto *exit : exits) {
-      if (DT.dominates(dominator, exit))
-        dominators.push_back(dominator);
+      if (!DT.dominates(inst->getParent(), exit))
+        return false;
     }
-  return dominators;
+  return true;
 }
 
   bool dominatesUseBlocks(DominatorTree &DT, Instruction *inst){
@@ -98,7 +99,7 @@ public:
     outs() << "\nLOOPPASS INIZIATO...\n";
     DominatorTree *DT = &getAnalysis<DominatorTreeWrapperPass>().getDomTree();
     SmallVector<Instruction*> Invariants;
-    SmallVector<BasicBlock*> Dominators = getExitDominators(*DT,L);
+    SmallVector<BasicBlock*> Dominators;
     std::set<Instruction*> Visited;
     SmallVector<Instruction*> Movable;
 
@@ -136,23 +137,19 @@ public:
 
       for (auto *inst : Invariants)
       {
-        for (auto *block : Dominators)
-        {
-          if (inst->getParent() == block)
+          if (dominatesExits(inst,*DT ,L ))
           {
-            outs()<<"L'istruzione "<<*inst<<" is trova nel dominatore: "<< block <<"\n";
-
             if (dominatesUseBlocks(*DT, inst)){
               Movable.push_back(inst);
             }
           }
-        }
+
       }
 
       for (auto elem : Movable)
       {
         outs()<<"Trovata istruzione movable: "<<*elem<<"\n";
-        elem->moveBefore(preHeader->getTerminator());
+        elem->moveBefore(&preHeader->back());
       }
 
       return true;
