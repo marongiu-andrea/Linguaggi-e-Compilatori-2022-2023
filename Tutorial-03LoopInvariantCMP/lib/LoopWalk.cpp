@@ -41,7 +41,11 @@ public:
     VisitedInstrs.insert(&Inst);
 
     for(auto *opIter = Inst.op_begin(); opIter != Inst.op_end(); ++opIter){
-        Value *op = *opIter;
+        Value *op = opIter->get();
+      //se non e' un PHINode
+      if(isa<PHINode>(op) || isa<BranchInst>(op))
+        return false;
+
       //Se non e' una const
       if (Instruction *arg = dyn_cast<Instruction>(op)) {
         if (L->contains(arg)) // dichiarato dentro loop
@@ -49,16 +53,11 @@ public:
           if(!isLoopInvariant(*arg,L,VisitedInstrs))
             return false;
         }
-        else { // I is outside the loop
-          if (!isa<Constant>(op))
-            return false;
-        }
-
       }
-      else { // It is not an instruction
+      else{
         if (!isa<Constant>(op))
           return false;
-        }
+      }
     }
     return true;
   }
@@ -87,10 +86,8 @@ public:
 }
 
   bool dominatesUseBlocks(DominatorTree &DT, Instruction *inst){
-    BasicBlock *BaseDom = inst->getParent();
-
     for (auto Iter = inst->user_begin(); Iter != inst->user_end(); ++Iter) {
-      if (!DT.dominates(BaseDom, (dyn_cast<Instruction>(*Iter))->getParent())) {
+      if (!DT.dominates(inst, dyn_cast<Instruction>(*Iter))) {
         return false;
       }
     }
@@ -114,8 +111,8 @@ public:
       outs() << "\nLoop in forma normalizzata\n";
 
       // controllo preheader
-      BasicBlock *B1 = L->getLoopPreheader();
-      outs() << "\nPreheader del loop: " <<  *B1 << "\n";
+      BasicBlock *preHeader = L->getLoopPreheader();
+      outs() << "\nPreheader del loop: " <<  *preHeader << "\n";
 
       // itero sui basic blocks del loop
       int i = 1;
@@ -147,11 +144,17 @@ public:
 
             if (dominatesUseBlocks(*DT, inst)){
               Movable.push_back(inst);
-              outs()<<"Trovata istruzione movable!! \t Inst: "<<inst<<"\n";
             }
           }
         }
       }
+
+      for (auto elem : Movable)
+      {
+        outs()<<"Trovata istruzione movable: "<<*elem<<"\n";
+        elem->moveBefore(preHeader->getTerminator());
+      }
+
       return true;
     }
     return false;
