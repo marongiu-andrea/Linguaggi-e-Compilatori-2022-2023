@@ -3,7 +3,7 @@
 
 ; void foo(int a) {
 ;   int r0 = a + 0;
-;   int r1 = r0 * 16;
+;   int r1 = r0 * 15;
 ;   int r2 = r1 * r0;
 ;   int r3 = r2 / a;
 ;   int r4 = r2 / 10;
@@ -17,7 +17,7 @@
 
 define dso_local void @foo(i32 noundef %0) {
   %2 = add nsw i32 %0, 0
-  %3 = mul nsw i32 %2, 16
+  %3 = mul nsw i32 %2, 15
   %4 = mul nsw i32 %3, %2
   %5 = sdiv i32 %4, %0
   %6 = sdiv i32 %4, 10
