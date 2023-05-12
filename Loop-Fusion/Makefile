@@ -1,4 +1,6 @@
 # https://llvm.org/docs/NewPassManager.html#invoking-opt
+PRE_PASSES_STRING := mem2reg,loop-rotate
+
 PASSES_STRING := function(my-loop-fusion)
 
 TO_OPTIMIZE_SRC_C := test/test.c
@@ -22,7 +24,7 @@ $(OPTIMIZER): $(OBJs)
 
 $(TO_OPTIMIZE_SRC): $(TO_OPTIMIZE_SRC_C)
 	clang-$(LLVM_VERSION) $(TO_OPTIMIZE_SRC_C) -c -Xclang -disable-O0-optnone -O0 -emit-llvm -o $(TO_OPTIMIZE_BC)
-	opt-$(LLVM_VERSION) $(TO_OPTIMIZE_BC) -passes=mem2reg -o $(TO_OPTIMIZE_BC)
+	opt-$(LLVM_VERSION) $(TO_OPTIMIZE_BC) -passes=$(PRE_PASSES_STRING) -o $(TO_OPTIMIZE_BC)
 	llvm-dis-$(LLVM_VERSION) $(TO_OPTIMIZE_BC) -o $(TO_OPTIMIZE_SRC)
 
 $(OPTIMIZED_BYTECODE): $(OPTIMIZER) $(TO_OPTIMIZE_SRC)

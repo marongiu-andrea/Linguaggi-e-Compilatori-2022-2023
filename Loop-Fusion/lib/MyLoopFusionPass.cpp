@@ -1,9 +1,12 @@
 #include "LocalOpts.h"
+
 #include "llvm/IR/InstrTypes.h"
 #include "llvm/IR/InstIterator.h"
-#include "llvm/Analysis/LoopInfo.h"
 #include "llvm/IR/Dominators.h"
+
+#include "llvm/Analysis/ScalarEvolution.h"
 #include "llvm/Analysis/PostDominators.h"
+#include "llvm/Analysis/LoopInfo.h"
 
 using namespace llvm;
 
@@ -26,11 +29,53 @@ bool are_adjacent(Loop* l1, Loop* l2) {
   return bb->size() == 1;
 }
 
+bool have_identical_trip_count(Loop* a, Loop* b, ScalarEvolution& SE) {
+  const SCEV* a_tripCount = SE.getBackedgeTakenCount(a);
+  if (isa<SCEVCouldNotCompute>(a_tripCount))
+    return false;
 
-typedef SmallVector<Loop*> CfeSet;
+  const SCEV* b_tripCount = SE.getBackedgeTakenCount(b);
+  if (isa<SCEVCouldNotCompute>(b_tripCount))
+    return false;
 
-void runOnCfeSet(CfeSet cfe_set) {
+  return a_tripCount == b_tripCount;
+}
 
+typedef SmallVector<Loop*> CfeSet; 
+
+void fuse(Loop* a, Loop* b, ScalarEvolution &SE) {
+  outs() << "Fusing ";
+  a->getLoopPreheader()->printAsOperand(outs());
+  outs() << " with ";
+  b->getLoopPreheader()->printAsOperand(outs());
+  outs() << "\n";
+  
+  auto iv = a->getInductionVariable(SE);
+  if (iv) {
+    iv->printAsOperand(outs());
+    outs() << "\n";
+  } else {
+    outs() << "No induction variable found.\n";
+  }
+}
+
+void runOnCfeLoopPair(Loop* a, Loop* b, ScalarEvolution& SE) {
+  if (!are_adjacent(a, b))
+    return;
+
+  if (!have_identical_trip_count(a, b, SE))
+    return;
+
+  fuse(a, b, SE);
+}
+
+void runOnCfeSet(CfeSet& cfe_set, ScalarEvolution& SE) {
+  const int N = cfe_set.size();
+  for (int i = 0; i < N; ++i) {
+    for (int j = i + 1; j < N; ++j) {
+      runOnCfeLoopPair(cfe_set[i], cfe_set[j], SE);
+    }
+  }
 }
 
 PreservedAnalyses MyLoopFusionPass::run(Function &F,
@@ -40,11 +85,12 @@ PreservedAnalyses MyLoopFusionPass::run(Function &F,
   const LoopInfo &LI = AM.getResult<LoopAnalysis>(F);
   const DominatorTree &DT = AM.getResult<DominatorTreeAnalysis>(F);
   const PostDominatorTree &PDT = AM.getResult<PostDominatorTreeAnalysis>(F);
+  ScalarEvolution &SE = AM.getResult<ScalarEvolutionAnalysis>(F);
 
   SmallVector<CfeSet> cfe_sets;
   
   for (Loop* loop : LI) {
-    if (!loop->isLoopSimplifyForm())
+    if (!loop->isLoopSimplifyForm() || !loop->isRotatedForm())
       continue;
 
     BasicBlock* loopPreheader = loop->getLoopPreheader();
@@ -57,10 +103,9 @@ PreservedAnalyses MyLoopFusionPass::run(Function &F,
             then loop is CFE with the set.
         */
         BasicBlock* l_preheader = (*set.begin())->getLoopPreheader();
-
         auto dom_condition = [&DT, &PDT](BasicBlock* a, BasicBlock* b) {
           return DT.dominates(a, b)
-            && PDT.dominates(a, b);  
+            && PDT.dominates(b, a); 
         };
 
         return dom_condition(loopPreheader, l_preheader)
@@ -68,7 +113,9 @@ PreservedAnalyses MyLoopFusionPass::run(Function &F,
       }
     );
 
-    if (set) {
+    
+    if (set != cfe_sets.end()) {
+
       // If there is a set with which loop is CFE, then add loop to that set
       set->push_back(loop);
 
@@ -87,7 +134,7 @@ PreservedAnalyses MyLoopFusionPass::run(Function &F,
       return DT.dominates(a->getLoopPreheader(), b->getLoopPreheader());
     });
 
-    runOnCfeSet(cfe_set);
+    runOnCfeSet(cfe_set, SE);
   }
 
   return PreservedAnalyses::none();
