@@ -1,5 +1,7 @@
 #include "LoopFusion.h"
 
+#include <cstddef>
+#include <llvm/ADT/STLExtras.h>
 #include <llvm/Analysis/LoopAnalysisManager.h>
 #include <llvm/Analysis/LoopInfo.h>
 #include <llvm/IR/BasicBlock.h>
@@ -9,53 +11,67 @@
 #include <llvm/Passes/PassBuilder.h>
 #include <llvm/Passes/PassPlugin.h>
 #include <llvm/Transforms/Utils/LoopSimplify.h>
+#include <vector>
 
 using namespace llvm;
 
-PreservedAnalyses LoopFusion::run(Function& function, FunctionAnalysisManager& fam)
+bool LoopFusion::areLoopsAdjacent(const Loop* i, const Loop* j) const
 {
-    LoopInfo& loopInfo = fam.getResult<LoopAnalysis>(function);
-    SmallVector<Loop*, 4> loops = loopInfo.getLoopsInPreorder();
+    const BasicBlock* iExitBlock = i->getExitBlock();
+    const BasicBlock* jPreheader = j->getLoopPreheader();
 
-    if (loops.size() == 0)
+    return iExitBlock != nullptr &&
+           jPreheader != nullptr &&
+           iExitBlock == jPreheader &&
+           jPreheader->getInstList().size() == 1;
+    /*
+     * Non c'è bisogno di controllare anche il tipo dell'istruzione contenuta nel preheader.
+     * Per definizione, il preheader di un loop contiene un'istruzione branch all'header del loop.
+     * Se quindi nel preheader c'è una sola istruzione, sicuramente quella è una branch.
+     */
+}
+
+void LoopFusion::findAdjacentLoops(const std::vector<Loop*>& loops) const
+{
+    auto allLoopsSubLoopsRange = make_filter_range(
+        map_range(loops, [](const Loop* loop) -> const std::vector<Loop*>& {
+            return loop->getSubLoops();
+        }),
+        [](const std::vector<Loop*>& subLoops) {
+            // per evitare chiamate ricorsive inutili, considero solo i loop che hanno almeno 2 loop interni
+            return subLoops.size() > 1;
+        });
+
+    for (const auto& subLoops : allLoopsSubLoopsRange)
     {
-        outs() << "Non ci sono loop nella funzione.\n";
+        findAdjacentLoops(subLoops);
     }
-    else if (loops.size() == 1)
+
+    // itero in [1, loop.size()) anziché [0, loops.size() - 1) per evitare negative overflow quando loops.size() == 0
+    for (size_t i = 1; i < loops.size(); i++)
     {
-        outs() << "Nella funzione c'è un solo loop. Impossibile dare informazioni sull'adiacenza.\n";
-    }
-    else
-    {
-        for (unsigned int i = 0; i < loops.size() - 1; i++)
+        const Loop* loopi = loops[i - 1];
+        const Loop* loopj = loops[i];
+
+        if (areLoopsAdjacent(loopi, loopj))
         {
-            unsigned int j = i + 1;
-            Loop* loopi = loops[i];
-            Loop* loopj = loops[i + 1];
-            BasicBlock* loopiExitBlock = loopi->getExitBlock();
-            BasicBlock* loopjPreheader = loopj->getLoopPreheader();
-
-            if (loopiExitBlock == nullptr)
-            {
-                outs() << "loop[i] ha più di un'uscita. Impossibile dare informazioni sull'adiacenza.\n";
-            }
-            else if (loopjPreheader == nullptr)
-            {
-                outs() << "loop[j] non è in forma normalizzata. Impossibile dare informazioni sull'adiacenza.\n";
-            }
-            else
-            {
-                if (loopiExitBlock == loopjPreheader)
-                {
-                    outs() << "loop[" << i << "] è adiacente a loop[" << j << "].\n";
-                }
-                else
-                {
-                    outs() << "loop[" << i << "] non è adiacente a loop[" << j << "].\n";
-                }
-            }
+            outs() << "Ho trovato due loop adiacenti:\n";
+            outs() << " - ";
+            loopi->print(outs(), false, false);
+            outs() << "\n - ";
+            loopj->print(outs(), false, false);
+            outs() << "\n";
         }
     }
+}
+
+PreservedAnalyses LoopFusion::run(Function& function, FunctionAnalysisManager& fam)
+{
+    const LoopInfo& loopInfo = fam.getResult<LoopAnalysis>(function);
+    const std::vector<Loop*>& topLevelLoops = loopInfo.getTopLevelLoops();
+    const std::vector<Loop*>& topLevelLoopsInPreorder = std::vector(topLevelLoops.rbegin(), topLevelLoops.rend());
+
+    findAdjacentLoops(topLevelLoopsInPreorder);
 
     return PreservedAnalyses::all();
 }
