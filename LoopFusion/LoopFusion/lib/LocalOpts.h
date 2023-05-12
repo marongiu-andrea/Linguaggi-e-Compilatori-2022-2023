@@ -3,8 +3,8 @@
 #include <llvm/IR/PassManager.h>
 #include <llvm/IR/Constants.h>
 
-class Mem2RegPass final
-    : public llvm::PassInfoMixin<Mem2RegPass> {
+class LoopFusionPass final
+    : public llvm::PassInfoMixin<LoopFusionPass> {
 public:
   llvm::PreservedAnalyses run(llvm::Function &F, llvm::FunctionAnalysisManager &AM);
 }; // class AlgebraicIdentityPass

@@ -25,8 +25,8 @@ extern "C" PassPluginLibraryInfo llvmGetPassPluginInfo() {
 		// BasicBlockPass
 		[](StringRef Name, FunctionPassManager &FPM,
                    ArrayRef<PassBuilder::PipelineElement>) -> bool {
-                  if (Name == "mem2reg") {
-                    FPM.addPass(Mem2RegPass());
+                  if (Name == "loopfusion") {
+                    FPM.addPass(LoopFusionPass());
                     return true;
                   }
                   // TODO: Implementare gli stub per
