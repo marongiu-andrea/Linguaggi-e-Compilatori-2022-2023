@@ -24,7 +24,7 @@ extern "C" PassPluginLibraryInfo llvmGetPassPluginInfo() {
           // BasicBlockPass
 
           [](StringRef Name, FunctionPassManager &MPM, ArrayRef<PassBuilder::PipelineElement>) -> bool {
-                  MPM.addPass(TransformPass());
+                  MPM.addPass(LoopFusionPass());
                   return false;
                 });
           } // RegisterPassBuilderCallbacks

@@ -25,7 +25,7 @@ bool runOnBasicBlock(BasicBlock &B) {
 
 
 
-PreservedAnalyses TransformPass::run([[maybe_unused]] Function &F, FunctionAnalysisManager &AM) {
+PreservedAnalyses LoopFusionPass::run([[maybe_unused]] Function &F, FunctionAnalysisManager &AM) {
 
   LoopInfo &LI = AM.getResult<LoopAnalysis>(F);
   int l = 0;
