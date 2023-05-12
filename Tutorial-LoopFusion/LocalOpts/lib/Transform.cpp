@@ -34,7 +34,7 @@ PreservedAnalyses LoopFusionPass::run([[maybe_unused]] Function &F, FunctionAnal
   SmallVector<Loop*> PreOrderLoops = LI.getLoopsInPreorder();
   Loop *LP = nullptr;
   for(Loop *L: PreOrderLoops){
-    outs() << "PROCESSING LOOP> " << l++ << "\n";
+    outs() << "PROCESSING LOOP> " << ++l << "\n";
     if(LP == nullptr)
     {
       LP = L;
