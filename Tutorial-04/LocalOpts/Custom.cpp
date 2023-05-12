@@ -147,35 +147,67 @@ llvm::PreservedAnalyses TransformPass::run([[maybe_unused]] llvm::Function &F, l
         }
 
         
+        outs()<<"-----------Performing Loop Fusion------------------\n";
 
-        // Accorpamento dei loop L1 e L2.
-        // Cambio dei latch.
+        // PART 0 ------------CHANGE USES ------------------
+        PHINode *IV1 = L1->getInductionVariable(SE);
+        outs()<<"L1 Induction variable: "<<*IV1<<"\n";
+        PHINode *IV2 = L2->getInductionVariable(SE);        
+        outs()<<"L2 Induction variable: "<<*IV2<<"\n";
+        IV2->replaceAllUsesWith(IV1);
+        outs()<<"Replaced\n";
+
+        // PART 1--------------BODY LOOP1 --> BODY LOOP2----------------     
+        BasicBlock *FINAL = L2->getExitBlock();
+        outs()<<"ExitBlock di Loop2 "<<*L2->getExitBlock()<<"\n";
+
         BasicBlock *LL1 = L1->getLoopLatch();                 // Latch loop1.
-        BasicBlock *LB1 = LL1->getPrevNode();                 // Body loop1.
+        outs()<<"Latch loop1: "<<*LL1<<"\n";
+
+        BasicBlock *LB1 = LL1->getPrevNode();                 // Body loop1.        
+        outs()<<"Body loop1: "<<*LB1<<"\n";        
+
         BasicBlock *HB2 = L2->getHeader();                    // Header loop2.
-        Instruction *I1 = dyn_cast<Instruction>(HB2->end());  // 
-        BranchInst *BI1 = dyn_cast<llvm::BranchInst>(I1);     // 1° operando branch.
-        BasicBlock *LB2 = BI1->getSuccessor(0);               // Body loop2.
-        Instruction *I2 = dyn_cast<Instruction>(LB1->end());  // Branch body loop1.
-        BranchInst *BI2 = dyn_cast<llvm::BranchInst>(I2);     // 
-        BI2->setSuccessor(0, LB2);                            // Body loop2 -> body loop1.
+        outs()<<"Header loop2: "<<*HB2<<"\n";        
+
+        // Instruction *I1 = dyn_cast<Instruction>(HB2->end());  //         
+        // BranchInst *BI1 = dyn_cast<llvm::BranchInst>(I1);     // branch dell'header di loop2
+        Instruction *I1 = HB2->getTerminator();        
+        BranchInst *BI1 = dyn_cast<llvm::BranchInst>(I1);        
+        outs()<<"Terminatore come branch instruction"<<*BI1<<"\n";
+
+        BasicBlock *LB2 = BI1->getSuccessor(0);               
+        outs()<<"Successore T del branch dell'header di loop2, quindi primo blocco del body:"<<*LB2<<"\n";
+
+
+        Instruction *I2 = LB1->getTerminator();
+        BranchInst *BI2 = dyn_cast<llvm::BranchInst>(I2);
+        outs()<<"Terminatore come branch inst di Loop1 "<<*BI2<<"\n";        
+        BI2->setSuccessor(0, LB2);
+        outs()<<"Successore modificato del primo loop: "<<*BI2->getSuccessor(0)<<"\n";
+        // PART 2-------------LatchLoop2 -> HeaderLoop1---------------------------------
 
         BasicBlock *LL2 = L2->getLoopLatch();                 // Latch loop2.
-        Instruction *I3 = dyn_cast<Instruction>(LL2->end());  //
-        BranchInst *BI3 = dyn_cast<llvm::BranchInst>(I3);     // Branch latch2.
+        outs() << "Latch loop 2: "<<*LL2<<"\n";
+
+        Instruction *I3 = LL2->getTerminator();
+        BranchInst *BI3 = dyn_cast<llvm::BranchInst>(I3);
+        outs()<<"Branch del latch di loop2: "<<*BI3<<"\n";
+        
         BasicBlock *HB1 = L1->getHeader();                    // Header loop1.
         BI3->setSuccessor(0, HB1);                            // Latch loop2 -> header loop1.
+        outs()<<"Successore del latch di Loop2 dopo l'aggancio: "<<*BI3->getSuccessor(0)<<"\n";
 
-        Instruction *I4 = dyn_cast<Instruction>(HB1->begin());// Branch header loop1.
+        // PART 3-----------Header Loop1->ExitLoop2--------------------------------
+
+        Instruction *I4 = HB1->getTerminator();// Branch header loop1.
         BranchInst *BI4 = dyn_cast<llvm::BranchInst>(I4);     //
-        BasicBlock *LE2 = L2->getExitBlock();                 // Uscita loop2.
-        BI4->setSuccessor(1, LE2);                            // Header loop1 -> exit loop2.
+        outs()<<"Branch dell'header di Loop1 come branch: "<<*BI4<<"\n";
+                        
+        BI4->setSuccessor(1, FINAL);                            // Header loop1 -> exit loop2.
+        outs() << "Successore dell'header di Loop1 dopo l'aggancio: "<<*BI4->getSuccessor(1)<<"\n";
 
         // Sostituzione degli usi.
-        PHINode *IV1 = L1->getInductionVariable(SE);
-        PHINode *IV2 = L2->getInductionVariable(SE);
-
-        IV2->replaceAllUsesWith(IV1);
 
 
         /* BasicBlock *LL1 = L1->getLoopLatch();
