@@ -22,7 +22,7 @@ extern "C" PassPluginLibraryInfo llvmGetPassPluginInfo() {
           // LoopPass
           // RegionPass
           // BasicBlockPass
-          [](StringRef Name, ModulePassManager &MPM,
+          [](StringRef Name, FunctionPassManager &MPM,
              ArrayRef<PassBuilder::PipelineElement>) -> bool {
                   MPM.addPass(TransformPass());
                   return false;
