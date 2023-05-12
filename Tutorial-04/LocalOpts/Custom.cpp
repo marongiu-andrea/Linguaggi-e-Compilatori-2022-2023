@@ -147,15 +147,7 @@ llvm::PreservedAnalyses TransformPass::run([[maybe_unused]] llvm::Function &F, l
         }
 
         
-        outs()<<"-----------Performing Loop Fusion------------------\n";
-
-        // PART 0 ------------CHANGE USES ------------------
-        PHINode *IV1 = L1->getInductionVariable(SE);
-        outs()<<"L1 Induction variable: "<<*IV1<<"\n";
-        PHINode *IV2 = L2->getInductionVariable(SE);        
-        outs()<<"L2 Induction variable: "<<*IV2<<"\n";
-        IV2->replaceAllUsesWith(IV1);
-        outs()<<"Replaced\n";
+        outs()<<"-----------Performing Loop Fusion------------------\n";                
 
         // PART 1--------------BODY LOOP1 --> BODY LOOP2----------------     
         BasicBlock *FINAL = L2->getExitBlock();
@@ -169,6 +161,8 @@ llvm::PreservedAnalyses TransformPass::run([[maybe_unused]] llvm::Function &F, l
 
         BasicBlock *HB2 = L2->getHeader();                    // Header loop2.
         outs()<<"Header loop2: "<<*HB2<<"\n";        
+        Instruction* L2PHI = dyn_cast<Instruction>(HB2->begin());
+        outs()<<"FINAL DEBUG: PHINODE of Loop2 "<<L2PHI<<"\n";
 
         // Instruction *I1 = dyn_cast<Instruction>(HB2->end());  //         
         // BranchInst *BI1 = dyn_cast<llvm::BranchInst>(I1);     // branch dell'header di loop2
@@ -186,17 +180,28 @@ llvm::PreservedAnalyses TransformPass::run([[maybe_unused]] llvm::Function &F, l
         BI2->setSuccessor(0, LB2);
         outs()<<"Successore modificato del primo loop: "<<*BI2->getSuccessor(0)<<"\n";
         // PART 2-------------LatchLoop2 -> HeaderLoop1---------------------------------
+        // PART 2-------------BodyLoop2 -> LatchLoop1----------------------------
 
         BasicBlock *LL2 = L2->getLoopLatch();                 // Latch loop2.
         outs() << "Latch loop 2: "<<*LL2<<"\n";
+        
+        BasicBlock *LB2E = LL2->getPrevNode();
+        Instruction *LB2E_branch = LB2E->getTerminator();
+        outs()<<"TERMINATOR: "<<*LB2E_branch<<"\n";
 
-        Instruction *I3 = LL2->getTerminator();
-        BranchInst *BI3 = dyn_cast<llvm::BranchInst>(I3);
-        outs()<<"Branch del latch di loop2: "<<*BI3<<"\n";
+        LB2E_branch->setSuccessor(0,LL1);
+
+
+        // Instruction *I3 = LL2->getTerminator();
+        // BranchInst *BI3 = dyn_cast<llvm::BranchInst>(I3);
+        // outs()<<"Branch del latch di loop2: "<<*BI3<<"\n";
         
         BasicBlock *HB1 = L1->getHeader();                    // Header loop1.
-        BI3->setSuccessor(0, HB1);                            // Latch loop2 -> header loop1.
-        outs()<<"Successore del latch di Loop2 dopo l'aggancio: "<<*BI3->getSuccessor(0)<<"\n";
+        Instruction* L1PHI = dyn_cast<Instruction>(HB1->begin());
+        outs()<<"FINAL DEBUG: "<<L1PHI<<"\n";
+
+        // BI3->setSuccessor(0, HB1);                            // Latch loop2 -> header loop1.
+        // outs()<<"Successore del latch di Loop2 dopo l'aggancio: "<<*BI3->getSuccessor(0)<<"\n";
 
         // PART 3-----------Header Loop1->ExitLoop2--------------------------------
 
@@ -206,30 +211,10 @@ llvm::PreservedAnalyses TransformPass::run([[maybe_unused]] llvm::Function &F, l
                         
         BI4->setSuccessor(1, FINAL);                            // Header loop1 -> exit loop2.
         outs() << "Successore dell'header di Loop1 dopo l'aggancio: "<<*BI4->getSuccessor(1)<<"\n";
-
-        // Sostituzione degli usi.
-
-
-        /* BasicBlock *LL1 = L1->getLoopLatch();
-        Instruction *I1 = dyn_cast<Instruction>(LL1->end());
-        BranchInst *BI1 = dyn_cast<llvm::BranchInst>(I1);
-        BI1->setSuccessor(0, L2->getHeader());
-        
-        BasicBlock *HB1 = L1->getHeader();
-        Instruction *I2 = dyn_cast<Instruction>(HB1->end());
-        BranchInst *BI2 = dyn_cast<llvm::BranchInst>(I2);
-        BI2->setSuccessor(1, L2->getHeader());
-
-        BasicBlock *LL2 = L2->getLoopLatch();
-        Instruction *I3 = dyn_cast<Instruction>(LL2->end());
-        BranchInst *BI3 = dyn_cast<llvm::BranchInst>(I3);
-        BI2->setSuccessor(0, L1->getHeader()); */
-
-        
-        
-
-        std::cout << "Loop 1 latch:" << std::endl;
-        outs() << *LL1 << "\n";
+        Value *CastedL1PHI = dyn_cast<Value>(L1PHI);
+        L2PHI->replaceAllUsesWith(CastedL1PHI);
+        L2PHI->eraseFromParent();
+        outs()<<"End of loop fusion\n";
       }
     }
   }
