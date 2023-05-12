@@ -40,7 +40,7 @@ PreservedAnalyses LoopFusionPass::run([[maybe_unused]] Function &F, FunctionAnal
       LP = L;
       continue;
     }
-    if (LP->back() != L->front())
+    if (LP->getExitBlock() != L->getHeader())
       continue;
     else {
       outs() << LP << " è un loop adiacente a " << L << "\n";
