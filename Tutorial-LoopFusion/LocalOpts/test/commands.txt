@@ -1,0 +1,21 @@
+clang -O0 -Xclang -disable-O0-optnone -emit-llvm -c Loop.c 
+-> genera Loop.bc
+
+opt -passes=mem2reg Loop.bc -o Loop.opt.bc
+-> genera Loop.opt.bc
+
+llvm-dis Loop.opt.bc -o loop.opt.ll
+-> genera loop.opt.ll
+
+opt -load-pass-plugin=./libLocalOpts.so -passes=transform test/Loop.opt.ll -disable-output
+
+Usare scalar evolution
+ScalarEvolution &SE = AM.getResult<ScalarEvolutionAnalysis>(F);
+Su esso posso chiamare i metodi offerti.
+
+Control flow equivalent
+DominatorTree &DT
+PostDominatorTree &PDT
+
+Trasformazione del codice:
+Una volta controllato le condizioni vado a fare due cose.

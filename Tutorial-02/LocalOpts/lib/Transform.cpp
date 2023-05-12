@@ -12,7 +12,7 @@ bool runOnBasicBlock(BasicBlock &B) {
     // primo operando della seconda istruzione (per costruzione dell'esempio)
     assert(&Inst1st == Inst2nd.getOperand(0));
 
-    // Stampa la prima istruzione
+    // Stampa laMultiInstructionPass prima istruzione
     outs() << "PRIMA ISTRUZIONE: " << Inst1st << "\n";
     // Stampa la prima istruzione come operando
     outs() << "COME OPERANDO: ";

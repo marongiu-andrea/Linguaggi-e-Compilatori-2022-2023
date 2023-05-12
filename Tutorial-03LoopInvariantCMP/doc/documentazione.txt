@@ -1,0 +1,49 @@
+Documentazione Loop-Invariant Code Motion
+
+ - virtual bool runOnLoop(Loop *L, LPPassManager &LPM)
+Funzione principale del programma in cui inizia il 
+LoopPass.
+Dichiariamo subiro alcune strutture dati che ci servono 
+nel corso del programma e in seguito controlliamo che il 
+Loop sia in forma normalizzata.
+In caso di esito positivo cominciamo ad iterare sui 
+basic block del loop.
+Andiamo poi a scorrere le istruzioni del BB andandole a 
+passare alla funzione isLoopInvariant(1) per verificare 
+se sono instruzione loop invariant o meno.
+Le inseriamo in un SmallVector per andarle poi a scorrere 
+nel loop dopo.
+In questo for usiamo le funzioni dominatesExits(2) e 
+dominatesUseBlocks(3) per determinare se sono istruzioni movable.
+Inseriamo queste istruzioni nel SmallVector Movable e in seguito 
+le spostiamo nel preHeader.
+
+1 - isLoopInvariant(Instruction &Inst, Loop *L)
+Funzione che prende come parametri un'istruzione 
+e il puntatore al Loop a cui appartiene.
+Ritorna true in caso di istruzione loop invariant,
+false altrimenti.
+Nella funzione controlliamo se l'istruzione è un 
+PHINode o una branch e nel caso returniamo False.
+Controlliamo poi se l'istruzione è una costante tramite
+un dynamic cast. Se risulta una variabile tramite la 
+primitiva contains verifichiamo che l'istruzione è
+dichiarata dentro al loop. In caso di esito positivo 
+andiamo a richiamare ricorsivamente isLoopInvariant
+per verififcare che le istruzioni degli operandi siano 
+a loro volta loop invariant.
+
+2 - bool dominatesExits(Instruction *inst, DominatorTree &DT, Loop *L)
+Funzione che prende in ingresso un'istruzione un dominator tree e il
+puntatore al loop.
+Si occupa di controllare che l'istruzione appartenga ad un blocco che 
+domina le uscite del loop.
+
+3 - bool dominatesUseBlocks(DominatorTree &DT, Instruction *inst)
+Funzione che prende in ingresso un dominator tree e un puntatore
+ad un'istruzione.
+Controlla che il blocco a cui appartiene l'istruzione domini i blocchi 
+dove viene poi usata l'istruzione. Lo fa andando ad iterare sugli operatori
+dell'istruzione. Dentro a questo for vado a richiamare la funzione 
+dominates di DOmination tree che prende in ingresso l'istruzione e 
+l'operatore in esame.
