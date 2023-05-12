@@ -1,6 +1,9 @@
 #include "LocalOpts.h"
 #include "llvm/IR/InstrTypes.h"
 #include "llvm/Analysis/LoopPass.h"
+#include "llvm/Analysis/ScalarEvolution.h"
+#include "llvm/Analysis/ScalarEvolutionExpressions.h"
+
 
 // ScalarEvolution &SE = AM.getResult<ScalarEvolutionAnalysis>(F);
 
