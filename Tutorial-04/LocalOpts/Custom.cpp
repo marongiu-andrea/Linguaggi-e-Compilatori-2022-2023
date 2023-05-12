@@ -10,6 +10,7 @@
 using namespace llvm;
 
 #include "llvm/ADT/SmallVector.h"
+#include "llvm/Analysis/ScalarEvolution.h"
 
 
 // Funzione appoggio per ordinare gli insiemi di loop CFG-equivalenti secondo dominanza.
@@ -34,6 +35,7 @@ llvm::PreservedAnalyses TransformPass::run([[maybe_unused]] llvm::Function &F, l
   auto &LI = AM.getResult<LoopAnalysis>(F);
   auto &DT = AM.getResult<DominatorTreeAnalysis>(F);
   auto &PDT = AM.getResult<PostDominatorTreeAnalysis>(F);
+  auto &SE = AM.getResult<ScalarEvolutionAnalysis>(F);
 
 
   llvm::SmallVector<Loop*> LoopVector = LI.getLoopsInPreorder();  // Vector dei loop.
@@ -126,22 +128,58 @@ llvm::PreservedAnalyses TransformPass::run([[maybe_unused]] llvm::Function &F, l
           }
 
           if (instruction_count != 1) {
-            // std::cout << "Loop non adiacenti!" << std::endl;
             continue;
           }
 
-          /*
-          Instruction &I = *MiddleBlock->begin();
-          BranchInst *BI = dyn_cast<llvm::BranchInst*>(I);
+          Instruction *I = dyn_cast<Instruction>(MiddleBlock->begin());
+          BranchInst *BI = dyn_cast<llvm::BranchInst>(I);
 
           if (!(BI && BI->getSuccessor(0) == L2->getHeader())) {
             continue;
           }
-          */
+
+          // Controllo n°2.
+          if (!((SE.getSmallConstantTripCount(L1) == SE.getSmallConstantTripCount(L2)) &&
+            (SE.getSmallConstantMaxTripCount(L1) == SE.getSmallConstantMaxTripCount(L2))))
+            continue;
+          
+          // Controllo n°3 già garantito dalle operazioni preliminari.
         }
 
-        BasicBlock *L1L = L1->getLoopLatch();
-        Instruction *I1 = dyn_cast<Instruction>(L1L->end());
+        
+
+        // Accorpamento dei loop L1 e L2.
+        // Cambio dei latch.
+        BasicBlock *LL1 = L1->getLoopLatch();                 // Latch loop1.
+        BasicBlock *LB1 = LL1->getPrevNode();                 // Body loop1.
+        BasicBlock *HB2 = L2->getHeader();                    // Header loop2.
+        Instruction *I1 = dyn_cast<Instruction>(HB2->end());  // 
+        BranchInst *BI1 = dyn_cast<llvm::BranchInst>(I1);     // 1° operando branch.
+        BasicBlock *LB2 = BI1->getSuccessor(0);               // Body loop2.
+        Instruction *I2 = dyn_cast<Instruction>(LB1->end());  // Branch body loop1.
+        BranchInst *BI2 = dyn_cast<llvm::BranchInst>(I2);     // 
+        BI2->setSuccessor(0, LB2);                            // Body loop2 -> body loop1.
+
+        BasicBlock *LL2 = L2->getLoopLatch();                 // Latch loop2.
+        Instruction *I3 = dyn_cast<Instruction>(LL2->end());  //
+        BranchInst *BI3 = dyn_cast<llvm::BranchInst>(I3);     // Branch latch2.
+        BasicBlock *HB1 = L1->getHeader();                    // Header loop1.
+        BI3->setSuccessor(0, HB1);                            // Latch loop2 -> header loop1.
+
+        Instruction *I4 = dyn_cast<Instruction>(HB1->begin());// Branch header loop1.
+        BranchInst *BI4 = dyn_cast<llvm::BranchInst>(I4);     //
+        BasicBlock *LE2 = L2->getExitBlock();                 // Uscita loop2.
+        BI4->setSuccessor(1, LE2);                            // Header loop1 -> exit loop2.
+
+        // Sostituzione degli usi.
+        PHINode *IV1 = L1->getInductionVariable(SE);
+        PHINode *IV2 = L2->getInductionVariable(SE);
+
+        IV2->replaceAllUsesWith(IV1);
+
+
+        /* BasicBlock *LL1 = L1->getLoopLatch();
+        Instruction *I1 = dyn_cast<Instruction>(LL1->end());
         BranchInst *BI1 = dyn_cast<llvm::BranchInst>(I1);
         BI1->setSuccessor(0, L2->getHeader());
         
@@ -150,13 +188,16 @@ llvm::PreservedAnalyses TransformPass::run([[maybe_unused]] llvm::Function &F, l
         BranchInst *BI2 = dyn_cast<llvm::BranchInst>(I2);
         BI2->setSuccessor(1, L2->getHeader());
 
-        BasicBlock *H2L = L2->getLoopLatch();
-        Instruction *I3 = dyn_cast<Instruction>(H2L->end());
+        BasicBlock *LL2 = L2->getLoopLatch();
+        Instruction *I3 = dyn_cast<Instruction>(LL2->end());
         BranchInst *BI3 = dyn_cast<llvm::BranchInst>(I3);
-        BI2->setSuccessor(0, L1->getHeader());
+        BI2->setSuccessor(0, L1->getHeader()); */
+
+        
+        
 
         std::cout << "Loop 1 latch:" << std::endl;
-        outs() << *L1L << "\n";
+        outs() << *LL1 << "\n";
       }
     }
   }
