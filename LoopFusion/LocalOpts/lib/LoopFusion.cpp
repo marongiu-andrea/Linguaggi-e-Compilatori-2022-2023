@@ -137,13 +137,40 @@ bool LoopFusionPass::areLoopsControlFlowEquivalent(Loop * L1, Loop * L2, Dominat
 }
 
 // Esegue la loop fusion:
-// 1) Connette il Body del Loop 1 con il Body del Loop 2
-// 2) Connette il Body del Loop 2 con il Latch del Loop 1
-// 3) L'Exit Block del Loop 1 diventa l'Exit Block del Loop 2
-// 4) (Extra?) L'header del Loop 2 viene connesso al Latch del loop 2
 void LoopFusionPass::loopFusion(Loop * L1, Loop * L2)
 {
+	// Loop 1
+	BasicBlock * latchL1 = (*L1).getLoopLatch();
+	BasicBlock * endBodyL1 = (*latchL1).getPrevNode();
+	Instruction * bodyTerminatorL1 = (*endBodyL1).getTerminator();
+	BasicBlock * headerL1 = (*L1).getHeader();
+	Instruction * headerTerminatorL1 = (*headerL1).getTerminator();
+	Instruction * headerPhiL1 = dyn_cast<Instruction>((*headerL1).begin());
 
+	// Loop 2
+	BasicBlock * headerL2 = (*L2).getHeader();
+	Instruction * headerTerminatorL2 = (*headerL2).getTerminator();
+	BasicBlock * latchL2 = (*L2).getLoopLatch();
+	BasicBlock * beginBodyL2 = (*headerL2).getNextNode();
+	BasicBlock * endBodyL2 = (*latchL2).getPrevNode();
+	Instruction * bodyTerminatorL2 = (*endBodyL2).getTerminator();
+	BasicBlock * exitBlockL2 = (*L2).getExitBlock();
+	Instruction * headerPhiL2 = dyn_cast<Instruction>((*headerL2).begin());
+
+	// 1) Connette il Body del Loop 1 con il Body del Loop 2
+	(*bodyTerminatorL1).setSuccessor(0, beginBodyL2);
+
+	// Rimpiazza tutti gli usi della istruzione PHI dell'header del Loop 2 con la PHI dell'header del Loop 1
+	(*headerPhiL2).replaceAllUsesWith(headerPhiL1);
+	
+	// 2) Connette il Body del Loop 2 con il Latch del Loop 1
+	(*bodyTerminatorL2).setSuccessor(0, latchL1);
+
+	// 3) L'Exit Block del Loop 1 diventa l'Exit Block del Loop 2
+	(*headerTerminatorL1).setSuccessor(1, exitBlockL2);
+
+	// 4) L'header del Loop 2 viene connesso al Latch del loop 2
+	(*headerTerminatorL2).setSuccessor(0, latchL2);
 }
 
 
