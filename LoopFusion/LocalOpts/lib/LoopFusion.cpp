@@ -6,6 +6,8 @@
 #include "llvm/Analysis/ScalarEvolution.h"
 #include "llvm/Analysis/PostDominators.h"
 
+#include "llvm/Analysis/ScalarEvolutionExpressions.h"
+
 using namespace llvm;
 
 // -----------------------------------------------------------------------------------
@@ -45,8 +47,11 @@ bool LoopFusionPass::areLoopsAdjacent(BasicBlock * exitBlockL1, BasicBlock * pre
 // Ritorna true se i trip count dei due loop sono uguali, false se sono diversi o non calcolabili
 bool LoopFusionPass::sameTripCount(Loop * L1, Loop * L2, ScalarEvolution &SE)
 {
-	const SCEV* tripCountL1 = SE.getBackedgeTakenCount(L1);
-	const SCEV* tripCountL2 = SE.getBackedgeTakenCount(L2);
+	const SCEV * tripCountL1 = SE.getBackedgeTakenCount(L1);
+	const SCEV * tripCountL2 = SE.getBackedgeTakenCount(L2);
+
+	outs()<<"TRIP COUNT L1: "<<*tripCountL1<<"\n";
+	outs()<<"TRIP COUNT L2: "<<*tripCountL2<<"\n";
 
 	// Controlla che il trip count tra i due loop sia calcolabile e che sia uguale
 	if ((!isa<SCEVCouldNotCompute>(tripCountL1)) && (!isa<SCEVCouldNotCompute>(tripCountL2)) && (tripCountL1 == tripCountL2))
@@ -58,9 +63,39 @@ bool LoopFusionPass::sameTripCount(Loop * L1, Loop * L2, ScalarEvolution &SE)
 // Ritorna true se i bound dei due loop sono uguali, false altrimenti
 bool LoopFusionPass::sameBounds(Loop * L1, Loop * L2, ScalarEvolution &SE)
 {
-	Optional<Loop::LoopBounds> boundsL1 = L1->getBounds(SE);
+	//Optional<Loop::LoopBounds> boundsL1 = L1->getBounds(SE);
 
+	/*
+	auto* inductionVariableL1 = L1->getInductionVariable(SE);
+	if (inductionVariableL1 == nullptr)
+		outs()<<"NULLPTR\n";
+
+	auto boundsL1 = L1->getBounds(SE);
+	if (&boundsL1 == nullptr)
+		outs()<<"getBounds NULL\n";
+	else
+	{
+		//ConstantInt *initialValue = dyn_cast<ConstantInt>(&boundsL1->getInitialIVValue());
+		
+	}*/
+
+	//outs()<<"L1 induction variable: "<<*((*inductionVariableL1).getOperand(0))<<"\n";
+
+	//const SCEV * LoopSCEV = SE.getSCEV(inductionVariableL1);
+	//const SCEVAddRecExpr* AddRec = dyn_cast<SCEVAddRecExpr>(LoopSCEV);
+
+	//auto Initial = AddRec->getStart();
+	//outs()<<"Initial L1: "<<*Initial<<"\n";
+	//auto Last = AddRec->getStart() + (*tripCountL1) - 1;
+
+	//outs()<<"HAS VALUE: "<<boundsL1.hasValue()<<"\n";
 	//TODO: Da rivedere
+
+	//Alternativa:
+	// Se le variabili di induzione sono uguali all'inizio dei rispettivi loop
+	// Se I passi dei loop sono uguali
+	// E se il trip count è uguale
+	// --> Allora i bounds sono uguali(?)
 
 	//outs()<<"VALORE INIZIALE: "<<boundsL1.hasValue();
 	//ConstantInt *initialValue = dyn_cast<ConstantInt>(&boundsL1->getInitialIVValue());
@@ -101,6 +136,16 @@ bool LoopFusionPass::areLoopsControlFlowEquivalent(Loop * L1, Loop * L2, Dominat
 	return false;
 }
 
+// Esegue la loop fusion:
+// 1) Connette il Body del Loop 1 con il Body del Loop 2
+// 2) Connette il Body del Loop 2 con il Latch del Loop 1
+// 3) L'Exit Block del Loop 1 diventa l'Exit Block del Loop 2
+// 4) (Extra?) L'header del Loop 2 viene connesso al Latch del loop 2
+void LoopFusionPass::loopFusion(Loop * L1, Loop * L2)
+{
+
+}
+
 
 llvm::PreservedAnalyses LoopFusionPass::run([[maybe_unused]] Function &F, FunctionAnalysisManager &FAM) 
 {
@@ -133,7 +178,7 @@ llvm::PreservedAnalyses LoopFusionPass::run([[maybe_unused]] Function &F, Functi
 				if (areLoopsAdjacent(exitBlockL1, preheaderL2, headerL2))
 				{
 					outs()<<"I Loop:\n"<<*IterLoop1<<*IterLoop2<<" sono adiacenti\n----------------------\n";
-					
+
 					// TODO : aggiustare sameBounds()
 					if (sameTripCount(IterLoop1, IterLoop2, SE) && sameBounds(IterLoop1, IterLoop2, SE))
 					{
@@ -145,6 +190,8 @@ llvm::PreservedAnalyses LoopFusionPass::run([[maybe_unused]] Function &F, Functi
 							outs()<<"Ho trovato due loop Control-Flow Equivalent:\n";
 							outs()<<"Il Loop: "<<*IterLoop1<<" domina ---> "<<*IterLoop2<<"\n";
 							outs()<<"Il Loop: "<<*IterLoop2<<" post-domina ---> "<<*IterLoop1<<"----------------------\n";
+
+							loopFusion(IterLoop1, IterLoop2);
 						}		
 					}
 				}			

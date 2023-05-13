@@ -19,5 +19,6 @@ class LoopFusionPass final : public llvm::PassInfoMixin<LoopFusionPass>
 		bool sameTripCount(llvm::Loop * L1, llvm::Loop * L2, llvm::ScalarEvolution &SE);
 		bool sameBounds(llvm::Loop * L1, llvm::Loop * L2, llvm::ScalarEvolution &SE);
 		bool areLoopsControlFlowEquivalent(llvm::Loop * L1, llvm::Loop * L2, llvm::DominatorTree * DT, llvm::PostDominatorTree *PDT);
+		void loopFusion(llvm::Loop * L1, llvm::Loop * L2);
 };
 
