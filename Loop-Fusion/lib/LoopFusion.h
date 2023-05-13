@@ -3,15 +3,21 @@
 #include <llvm/IR/PassManager.h>
 #include <llvm/IR/Constants.h>
 #include <llvm/Pass.h>
+#include <llvm/Analysis/LoopInfo.h>
+#include <llvm/Analysis/ScalarEvolution.h>
+#include <llvm/IR/Dominators.h>
+#include <llvm/Analysis/PostDominators.h>
 
-class LoopFusionPass final : public llvm::ModulePass {
+
+class LoopFusionPass final : public llvm::PassInfoMixin<LoopFusionPass> {
     public:
-    static char ID;
-    
-    LoopFusionPass() : llvm::ModulePass(LoopFusionPass::ID) {}
-    
-    virtual bool runOnModule(llvm::Module &) override;
-    virtual void getAnalysisUsage(llvm::AnalysisUsage &AU) const override;
+    llvm::PreservedAnalyses run(llvm::Function &,
+                                llvm::FunctionAnalysisManager &MM);
 
-    bool runOnFunction(llvm::Function &F);
+private:
+    bool isLoopAdjacent(llvm::Loop *a, llvm::Loop *b);
+    bool checkBounds(llvm::Loop *a, llvm::Loop *b, llvm::ScalarEvolution &sce);
+    bool checkDominance(llvm::Loop *a, llvm::Loop *b, llvm::DominatorTree &dt, 
+                        llvm::PostDominatorTree &pdt);
+    void loopFusion(llvm::Loop *a, llvm::Loop *b, llvm::ScalarEvolution &sce);
 }; 

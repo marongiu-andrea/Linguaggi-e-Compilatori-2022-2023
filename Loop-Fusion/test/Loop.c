@@ -1,7 +1,7 @@
 
 #define N 100
 
-void populate(int a[N], int b[N], int c[N])
+void populate(int a[N], int b[N], int c[N], int pippo)
 {
     int i;
     for(i = 0; i < N; i++)
