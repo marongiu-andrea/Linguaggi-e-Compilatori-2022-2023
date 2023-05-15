@@ -163,9 +163,7 @@ llvm::PreservedAnalyses TransformPass::run([[maybe_unused]] llvm::Function &F, l
         outs()<<"Header loop2: "<<*HB2<<"\n";        
         Instruction* L2PHI = dyn_cast<Instruction>(HB2->begin());
         outs()<<"FINAL DEBUG: PHINODE of Loop2 "<<L2PHI<<"\n";
-
-        // Instruction *I1 = dyn_cast<Instruction>(HB2->end());  //         
-        // BranchInst *BI1 = dyn_cast<llvm::BranchInst>(I1);     // branch dell'header di loop2
+        
         Instruction *I1 = HB2->getTerminator();        
         BranchInst *BI1 = dyn_cast<llvm::BranchInst>(I1);        
         outs()<<"Terminatore come branch instruction"<<*BI1<<"\n";
@@ -179,7 +177,6 @@ llvm::PreservedAnalyses TransformPass::run([[maybe_unused]] llvm::Function &F, l
         outs()<<"Terminatore come branch inst di Loop1 "<<*BI2<<"\n";        
         BI2->setSuccessor(0, LB2);
         outs()<<"Successore modificato del primo loop: "<<*BI2->getSuccessor(0)<<"\n";
-        // PART 2-------------LatchLoop2 -> HeaderLoop1---------------------------------
         // PART 2-------------BodyLoop2 -> LatchLoop1----------------------------
 
         BasicBlock *LL2 = L2->getLoopLatch();                 // Latch loop2.
