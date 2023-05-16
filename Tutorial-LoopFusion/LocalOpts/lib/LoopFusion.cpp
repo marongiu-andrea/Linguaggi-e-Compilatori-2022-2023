@@ -4,27 +4,7 @@
 #include "llvm/Analysis/ScalarEvolution.h"
 #include "llvm/Analysis/ScalarEvolutionExpressions.h"
 
-
-// ScalarEvolution &SE = AM.getResult<ScalarEvolutionAnalysis>(F);
-
 using namespace llvm;
-
-bool runOnBasicBlock(BasicBlock &B) {
-    return false;
-  }
-
-  bool runOnFunction(Function &F) {
-    bool Transformed = false;
-
-    for (auto Iter = F.begin(); Iter != F.end(); ++Iter) {
-      if (runOnBasicBlock(*Iter)) {
-        Transformed = true;
-      }
-    }
-
-    return Transformed;
-  }
-
 
 bool areBlocksAdjacent(const llvm::BasicBlock* block1, const llvm::BasicBlock* block2) {
 
@@ -38,13 +18,27 @@ bool areBlocksAdjacent(const llvm::BasicBlock* block1, const llvm::BasicBlock* b
     return false;
 }
 
+bool isLoopControlFlowEquivalent(Loop *L1, Loop *L2, DominatorTree &DT, PostDominatorTree &PDT) {
+  // Check if L1 dominates L2
+  if (!DT.dominates(L1->getHeader(), L2->getHeader()))
+    return false;
+
+  // Check if L2 post-dominates L1
+  if (!PDT.dominates(L2->getHeader(), L1->getHeader()))
+    return false;
+
+  return true;
+}
 
 PreservedAnalyses LoopFusionPass::run([[maybe_unused]] Function &F, FunctionAnalysisManager &AM) {
 
   LoopInfo &LI = AM.getResult<LoopAnalysis>(F);
+  ScalarEvolution &SE = AM.getResult<ScalarEvolutionAnalysis>(F);
+  DominatorTree &DT = AM.getResult<DominatorTreeAnalysis>(F);
+  PostDominatorTree &PDT = AM.getResult<PostDominatorTreeAnalysis>(F);
   int l = 0;
   int BID = 0;
-
+  
   SmallVector<Loop*> PreOrderLoops = LI.getLoopsInPreorder();
   Loop *LP = nullptr;
   for(Loop *L: PreOrderLoops){
@@ -54,13 +48,28 @@ PreservedAnalyses LoopFusionPass::run([[maybe_unused]] Function &F, FunctionAnal
       LP = L;
       continue;
     }
-    if (!areBlocksAdjacent(LP->getExitBlock(),L->getHeader()))
-      continue;
-    else {
+    if (areBlocksAdjacent(LP->getExitBlock(),L->getHeader()))
+    {
       outs() << LP << " è un loop adiacente a " << L << "\n";
-      /*const SCEV *TripCountSCEV = SE.getBackedgeTakenCount(L);
-      const APInt TripCount = dyn_cast<SCEVConstant>(TripCountSCEV)->getAPInt();
-      errs() << "Loop has " << TripCount.toString(10) << " iterations.\n";*/
+      const SCEV *TripCountSCEVLP = SE.getBackedgeTakenCount(LP);
+      const APInt TripCountLP = dyn_cast<SCEVConstant>(TripCountSCEVLP)->getAPInt();
+      const SCEV *TripCountSCEVL = SE.getBackedgeTakenCount(L);
+      const APInt TripCountL = dyn_cast<SCEVConstant>(TripCountSCEVL)->getAPInt();
+      if(TripCountLP == TripCountL)
+      {
+        outs() << "I due Loop hanno lo stenno numero di iterazioni: "<< TripCountL << "\n";
+      }
+      else{
+        continue;
+      }
+
+      if(isLoopControlFlowEquivalent(LP,L,DT,PDT))
+      {
+        outs() << "I due loop sono Control Flow Equivalent " << "\n";
+      }
+    }
+    else{
+      continue;
     }
   }
 
