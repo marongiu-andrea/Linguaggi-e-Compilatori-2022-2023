@@ -82,15 +82,16 @@ PreservedAnalyses LoopFusionPass::run([[maybe_unused]] Function &F, FunctionAnal
 
   for(Loop *L: PreOrderLoops){
     outs() << "PROCESSING LOOP: " << ++l << "\n";
-    if(LP == nullptr)
-    {
+    if(LP == nullptr){
       LP = L;
       continue;
     }
 
     //Se i due loop non sono adiacenti continua
-    if(!areBlocksAdjacent(LP->getExitBlock(),L->getHeader()))
+    if(!areBlocksAdjacent(LP->getExitBlock(),L->getHeader())){
+      LP = L;
       continue;
+    }
 
     outs() << "Loop Adiacente trovato\n";
 
@@ -101,14 +102,20 @@ PreservedAnalyses LoopFusionPass::run([[maybe_unused]] Function &F, FunctionAnal
     const APInt TripCountL = dyn_cast<SCEVConstant>(TripCountSCEVL)->getAPInt();
 
     //Se le iterazioni dei loop non sono uguali continua
-    if(!TripCountLP == TripCountL)
-        continue;
+    if(!TripCountLP == TripCountL){
+      LP = L;
+      continue;
+    }
     outs() << "Numero di iterazioni uguale\n";
 
     //Se I due loop non sono CFG equivalenti continua
-    if(!isLoopControlFlowEquivalent(LP,L,DT,PDT))
+    if(!isLoopControlFlowEquivalent(LP,L,DT,PDT)){
+      LP = L;
       continue;
+    }
     outs() << "I due loop sono Control Flow Equivalent\n";
+
+//  Per il punto di Negative Distance Dependencies, Abbiamo considerato sia implicito nel punto 3, dato che il loop1 domina il loop2
 
     mergeLoops(LP, L, LI);
 
