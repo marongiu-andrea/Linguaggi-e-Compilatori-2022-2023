@@ -28,6 +28,37 @@ bool isLoopControlFlowEquivalent(Loop *L1, Loop *L2, DominatorTree &DT, PostDomi
   return true;
 }
 
+void mergeLoops(Loop* L1, Loop* L2, LoopInfo& LI) {
+  // Ottenere i blocchi del primo loop
+  SmallVector<BasicBlock*, 8> L1Blocks;
+  for (auto* BB : L1->getBlocks())
+    L1Blocks.push_back(BB);
+
+  // Ottenere i blocchi del secondo loop
+  SmallVector<BasicBlock*, 8> L2Blocks;
+  for (auto* BB : L2->getBlocks())
+    L2Blocks.push_back(BB);
+
+  // Trovare il blocco di terminazione del primo loop
+  BasicBlock* L1ExitBlock = L1->getExitBlock();
+
+  // Trovare il blocco di test del secondo loop
+  BasicBlock* L2HeaderBlock = L2->getHeader();
+
+  // Collegare il blocco di terminazione del primo loop al blocco di test del secondo loop
+  L1ExitBlock->getTerminator()->replaceSuccessorWith(L2HeaderBlock, L1->getExitingBlock());
+
+  // Aggiornare il CFG
+  LI.removeBlock(L2HeaderBlock);
+  LI.changeLoopFor(L1ExitBlock, L1);
+  L1->addBasicBlockToLoop(L2HeaderBlock, LI);
+  L1Blocks.insert(L1Blocks.end(), L2Blocks.begin(), L2Blocks.end());
+
+  // Rimuovere il secondo loop dal LoopInfo
+  LI.erase(L2);
+}
+
+
 PreservedAnalyses LoopFusionPass::run([[maybe_unused]] Function &F, FunctionAnalysisManager &AM) {
 
   LoopInfo &LI = AM.getResult<LoopAnalysis>(F);
