@@ -4,6 +4,8 @@
 #include "llvm/Analysis/ScalarEvolution.h"
 #include "llvm/Analysis/ScalarEvolutionExpressions.h"
 #include "llvm/Analysis/PostDominators.h"
+#include <llvm/IR/Instructions.h>
+#include <llvm/Support/Casting.h>
 
 using namespace llvm;
 
@@ -29,13 +31,20 @@ bool isLoopControlFlowEquivalent(Loop *L1, Loop *L2, DominatorTree &DT, PostDomi
 }
 
 void mergeLoops(Loop* L1, Loop* L2, LoopInfo& LI) {
+
+  //Operiamo sulle Induction variables
+  PHINode *InductionL1 = L1->getCanonicalInductionVariable();
+  PHINode *InductionL2 = L2->getCanonicalInductionVariable();
+
+  InductionL2->replaceAllUsesWith(InductionL1);
+
   // Ottenere i blocchi del primo loop
-  SmallVector<BasicBlock*, 8> L1Blocks;
+  SmallVector<BasicBlock*> L1Blocks;
   for (auto* BB : L1->getBlocks())
     L1Blocks.push_back(BB);
 
   // Ottenere i blocchi del secondo loop
-  SmallVector<BasicBlock*, 8> L2Blocks;
+  SmallVector<BasicBlock*> L2Blocks;
   for (auto* BB : L2->getBlocks())
     L2Blocks.push_back(BB);
 
@@ -58,9 +67,9 @@ void mergeLoops(Loop* L1, Loop* L2, LoopInfo& LI) {
   LI.erase(L2);
 }
 
-
 PreservedAnalyses LoopFusionPass::run([[maybe_unused]] Function &F, FunctionAnalysisManager &AM) {
 
+  //Analisi necessarie
   LoopInfo &LI = AM.getResult<LoopAnalysis>(F);
   ScalarEvolution &SE = AM.getResult<ScalarEvolutionAnalysis>(F);
   DominatorTree &DT = AM.getResult<DominatorTreeAnalysis>(F);
@@ -79,24 +88,34 @@ PreservedAnalyses LoopFusionPass::run([[maybe_unused]] Function &F, FunctionAnal
       continue;
     }
 
+    //Se i due loop non sono adiacenti continua
     if(!areBlocksAdjacent(LP->getExitBlock(),L->getHeader()))
       continue;
 
     outs() << "Loop Adiacente trovato\n";
 
+    //Crea i count delle iterazioni dei loop
     const SCEV *TripCountSCEVLP = SE.getBackedgeTakenCount(LP);
     const APInt TripCountLP = dyn_cast<SCEVConstant>(TripCountSCEVLP)->getAPInt();
     const SCEV *TripCountSCEVL = SE.getBackedgeTakenCount(L);
     const APInt TripCountL = dyn_cast<SCEVConstant>(TripCountSCEVL)->getAPInt();
 
+    //Se le iterazioni dei loop non sono uguali continua
     if(!TripCountLP == TripCountL)
         continue;
     outs() << "Numero di iterazioni uguale\n";
 
+    //Se I due loop non sono CFG equivalenti continua
     if(!isLoopControlFlowEquivalent(LP,L,DT,PDT))
       continue;
-
     outs() << "I due loop sono Control Flow Equivalent\n";
+
+    mergeLoops(LP, L, LI);
+
+    outs() << "Codice sostituito\n";
+
+    //Avanziamo LP
+    LP = L;
   }
 
   return PreservedAnalyses::none();
