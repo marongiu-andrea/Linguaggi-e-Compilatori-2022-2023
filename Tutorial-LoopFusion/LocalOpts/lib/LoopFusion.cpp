@@ -26,6 +26,17 @@ bool runOnBasicBlock(BasicBlock &B) {
   }
 
 
+bool areBlocksAdjacent(const llvm::BasicBlock* block1, const llvm::BasicBlock* block2) {
+
+    const llvm::Instruction* terminator = block1->getTerminator();
+ 
+        // Verifica se il ramo non condizionale punta al secondo basic block
+        if (terminator->getSuccessor(0) == block2) {
+            return true;
+        }
+
+    return false;
+}
 
 
 PreservedAnalyses LoopFusionPass::run([[maybe_unused]] Function &F, FunctionAnalysisManager &AM) {
@@ -43,7 +54,7 @@ PreservedAnalyses LoopFusionPass::run([[maybe_unused]] Function &F, FunctionAnal
       LP = L;
       continue;
     }
-    if (LP->getExitBlock() != L->getHeader())
+    if (!areBlocksAdjacent(LP->getExitBlock(),L->getHeader()))
       continue;
     else {
       outs() << LP << " è un loop adiacente a " << L << "\n";
