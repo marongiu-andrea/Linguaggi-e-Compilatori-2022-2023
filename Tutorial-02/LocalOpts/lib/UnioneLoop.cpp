@@ -8,6 +8,8 @@
 #include "llvm/IR/Instruction.h"
 //per conto loop iteration
 #include "llvm/Analysis/ScalarEvolution.h"
+//spostamento struzioni
+#include "llvm/IR/IRBuilder.h"
 /*
 #include "llvm/IR/InstrTypes.h"
 #include "llvm/IR/DerivedTypes.h"
@@ -145,35 +147,50 @@ PreservedAnalyses UnioneLoopPass::run([[maybe_unused]] Function &F,
         continue;
 
       Loop *Sorgente = LoopsSorgente[i];
-      Loop* Destinazione = LoopsDestinazione[i];
+      Loop *Destinazione = LoopsDestinazione[i];
       
       /*Più avanti dovrò sostituire in sorgente di destinazione col nuovo loop creato perche
       se A si può unire a B e B si può unire ad C allora anche A si può unire a C, e di conseguenza
       anche AB*/
       
-      for(int i = 0; i<LoopsDestinazione.size(); i++){
-        if(LoopsDestinazione[i] == Destinazione){
-          //LoopsDestinazione[i] = nullptr;
+      for(int i = 0; i<LoopsSorgente.size(); i++){
+        if(LoopsSorgente[i] == Destinazione){
+          LoopsSorgente[i] = nullptr;
           //TODO marco per sostituzione dopo
         }
       }
       
-      //uniamo i loop
-      //Sorgente->getInductionVariable(SE);
-      
-      PHINode *IVDest= Destinazione->getInductionVariable(SE);
-      
-      
-     // outs() << "controllo: " << IVDest<< "\n";
-      //IVDest->replaceAllUsesWith(Sorgente->getInductionVariable(SE));
+      outs() << "\n" << *Sorgente << "\n" << *Destinazione<< "\n";
+      //sostituisco gli usi della Induction variable con quella del primo loop
+      Instruction* LDestIV = dyn_cast<Instruction>(Destinazione->getCanonicalInductionVariable());
+      LDestIV->replaceAllUsesWith(Sorgente->getCanonicalInductionVariable());
 
-      
-      for(auto *BB : Destinazione->getBlocks()){
-        
-        outs() << *BB << "\n ------ \n";
+      //preparo un nuovo loop
+      Loop *nuovo = LI.AllocateLoop();
+      //inserisco l'apertura del primo loop
+      nuovo->addBasicBlockToLoop(Sorgente->getHeader(),LI);
+      //inserisco i blocchi centrali del primo loop
+      for(BasicBlock *BB : Sorgente->blocks()){
+        if(BB != Sorgente->getHeader() && BB != Sorgente->getLoopLatch()){
+          //outs() <<"\n"<<*BB<<"\n";
+          nuovo->addBasicBlockToLoop(BB,LI);
+        }
       }
-      
+      //inserisco i blocchi centrali del secondo loop
+      for(BasicBlock *BB : Destinazione->blocks()){
+        if(BB != Destinazione->getHeader() && BB != Destinazione->getLoopLatch()){
+          //outs() <<"\n"<<*BB<<"\n";
+          nuovo->addBasicBlockToLoop(BB,LI);
+        }
+      }
+      //inserisco la chiusura del primo
+      nuovo->addBasicBlockToLoop(Sorgente->getLoopLatch(),LI);
 
+      //ho tutti i blocchi e in ordine, ma il problema sono le branch, vecchie che vanno sistemato
+      //ogni blocco deve saltare al successivo (tranne l'header)
+      for(BasicBlock *BB : nuovo->blocks()){
+        outs() << "\n" << *BB << "\n";
+      }
     } 
     
   return PreservedAnalyses::none();
