@@ -3,8 +3,11 @@
 #include "llvm/Analysis/LoopPass.h"
 
 #include "llvm/Analysis/LoopInfo.h"
+
 #include "llvm/IR/BasicBlock.h"
 #include "llvm/IR/Instruction.h"
+//per conto loop iteration
+#include "llvm/Analysis/ScalarEvolution.h"
 /*
 #include "llvm/IR/InstrTypes.h"
 #include "llvm/IR/DerivedTypes.h"
@@ -16,12 +19,18 @@
 
 using namespace llvm;
 
-/*Funzione per verificare che due loop abbiano lo stesso numero di iterazioni*/
-bool hannoStesseIterazioni(Loop *L1, Loop *L2){
- /* const auto *viaggioL1 = L1->getTripCount();
-  const SCEV *viaggioL2 = L2->getTripCount();*/
-  //L1->getSmallConstantTripCount();
-  //L1->getTripCount();
+/*Funzione per verificare che due loop abbiano lo stesso numero di iterazioni
+Non c'è un metodo che mi da quell'informazione...
+alternativa, controllo le branch instruction dell'header*/
+bool hannoStesseIterazioni(llvm::Loop *Loop1, llvm::Loop *Loop2, ScalarEvolution &SE){
+  if( SE.getSmallConstantTripCount(Loop1) == SE.getSmallConstantTripCount(Loop2)){
+   
+    //cntrollo per un bound di cicli
+    if( SE.getSmallConstantMaxTripCount(Loop1) == SE.getSmallConstantMaxTripCount(Loop2)){
+      return true;
+    }
+    
+  }
   return false;
 }
 
@@ -58,7 +67,7 @@ bool sonoAdiacenti(Loop *L1, Loop* L2){
         if(BI->getNumSuccessors() > 1)
           return false;
         if(BI->getSuccessor(0) == L2->getHeader()){
-          printf("segs\n");
+          
         }
         nUscite++;
         if(nUscite>1){
@@ -72,27 +81,36 @@ bool sonoAdiacenti(Loop *L1, Loop* L2){
   return true;
 }
 
+/*Placeholder per futuro*/
+bool nonHannoDipendenzeNegative(Loop* L1, Loop* L2){
+  return true;
+}
+
 PreservedAnalyses UnioneLoopPass::run([[maybe_unused]] Function &F,
                                              FunctionAnalysisManager &AM) {
 
     auto &LI = AM.getResult<LoopAnalysis>(F);
+    ScalarEvolution &SE = AM.getResult<ScalarEvolutionAnalysis>(F);
+    
     
     ///per questo esempio specifico ci sono solo 2 loop, metto il cinque come valore più generico
-    SmallVector<Loop *, 5> Loops; 
+    SmallVector<Loop *, 5> Loops;
+    SmallVector<Loop *, 5> LoopsSorgente;
+    SmallVector<Loop *,5> LoopsDestinazione;
     //LI.getLoopsInPreorder(Loops);
     for(Loop *L : LI){
       Loops.push_back(L);
       //outs()<< *L <<"\n-----\n";
     }
+    //metto i loop in preorder nel vettore
     std::reverse(Loops.begin(),Loops.end());
 
     for( int i =0; i<Loops.size()-1; i++){
       if(Loops[i]->contains(Loops[i+1])){
         //sono innestati = non adiacenti
       }else{
-        outs() << "Loop "<< Loops[i] <<" \n";
+        //outs() << "Loop "<< Loops[i] <<" \n";
         
-
         //controllo che siano adiacenti
         if(sonoAdiacenti(Loops[i],Loops[i+1])){
           outs()<< "Adiacenti\n";
@@ -100,9 +118,14 @@ PreservedAnalyses UnioneLoopPass::run([[maybe_unused]] Function &F,
             //printf("Sono flow equivalenti e adiacenti\n");
             outs()<< Loops[i] << " e " << Loops[i+1] << " sono adiacenti e flow equivalent\n";
             //Controllo cabbiano lo stesso numero di iterazioni TODO
+            if(hannoStesseIterazioni(Loops[i],Loops[i+1],SE)){
+              if(nonHannoDipendenzeNegative(Loops[i],Loops[i+1])){
+                outs()<< "Hanno le stesse iterazione E nessuna dipendenza negativa, SI POSSONO UNIRE\n";
+                LoopsSorgente.push_back(Loops[i]);
+                LoopsDestinazione.push_back(Loops[i+1]);
+              }
 
-
-            
+            }
           }else{
             outs()<< Loops[i] << " e " << Loops[i+1] << " non sono adiacenti e flow equivalent\n";
           }
@@ -111,28 +134,48 @@ PreservedAnalyses UnioneLoopPass::run([[maybe_unused]] Function &F,
       }
     }
 
-    /*
-    std::vector<Loop*> listaLoop;
-    printf("Inizio Funzione \n");
-    
-    //controllo di adiacenza
-    for( int i = 0; i < listaLoop.size()-1; i++ ){
-      Loop* primo = listaLoop[i];
-      Loop* secondo = listaLoop[i+1];
+    //li voglio in ordine giusto
+    std::reverse(LoopsSorgente.begin(),LoopsSorgente.end());
+    std::reverse(LoopsDestinazione.begin(),LoopsDestinazione.end());
 
-      //ill loop deve avere una sola usira
-      if(primo->isLoopSimplifyForm() && secondo->isLoopSimplifyForm()){
-        printf("E' in forma normalizzata \n");
-        BasicBlock *exitPrimo = primo->getExitingBlock();
-        BasicBlock *preSecondo = secondo->getLoopPreheader();
+    for(int i = 0; i<LoopsSorgente.size(); i++){
+      //se il loop è sparito durante un unione salto il passaggio, questo
+      //per evitare errori
+      if(LoopsSorgente[i] == nullptr || LoopsDestinazione[i] == nullptr)
+        continue;
 
-        if(preSecondo->getUniquePredecessor() == exitPrimo){
-          printf("Sono adiacenti \n");
+      Loop *Sorgente = LoopsSorgente[i];
+      Loop* Destinazione = LoopsDestinazione[i];
+      
+      /*Più avanti dovrò sostituire in sorgente di destinazione col nuovo loop creato perche
+      se A si può unire a B e B si può unire ad C allora anche A si può unire a C, e di conseguenza
+      anche AB*/
+      
+      for(int i = 0; i<LoopsDestinazione.size(); i++){
+        if(LoopsDestinazione[i] == Destinazione){
+          //LoopsDestinazione[i] = nullptr;
+          //TODO marco per sostituzione dopo
         }
       }
+      
+      //uniamo i loop
+      //Sorgente->getInductionVariable(SE);
+      
+      PHINode *IVDest= Destinazione->getInductionVariable(SE);
+      
+      
+     // outs() << "controllo: " << IVDest<< "\n";
+      //IVDest->replaceAllUsesWith(Sorgente->getInductionVariable(SE));
 
-    }*/
+      
+      for(auto *BB : Destinazione->getBlocks()){
+        
+        outs() << *BB << "\n ------ \n";
+      }
+      
 
+    } 
+    
   return PreservedAnalyses::none();
 }
 
