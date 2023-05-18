@@ -20,11 +20,11 @@ bool areBlocksAdjacent(const llvm::BasicBlock* block1, const llvm::BasicBlock* b
 
 bool isLoopControlFlowEquivalent(Loop *L1, Loop *L2, DominatorTree &DT, PostDominatorTree &PDT) {
   // Check se L1 domina L2
-  if (!DT.dominates(L1->getHeader(), L2->getHeader()))
+  if (!DT.dominates(L1->getLoopPreheader(), L2->getLoopPreheader()))
     return false;
 
   // Check se L2 post-domina L1
-  if (!PDT.dominates(L2->getHeader(), L1->getHeader()))
+  if (!PDT.dominates(L2->getLoopPreheader(), L1->getLoopPreheader()))
     return false;
 
   return true;
@@ -36,7 +36,13 @@ void mergeLoops(Loop* L1, Loop* L2, LoopInfo& LI) {
   PHINode *InductionL1 = L1->getCanonicalInductionVariable();
   PHINode *InductionL2 = L2->getCanonicalInductionVariable();
 
-  InductionL2->replaceAllUsesWith(InductionL1);
+  for(auto &use : InductionL2->uses()){
+    BasicBlock *parentBlock = dyn_cast<Instruction>(use)->getParent();
+    if(parentBlock != L2->getLoopPreheader() && parentBlock != L2->getLoopLatch()){
+      User *user = use.getUser();
+      user->replaceUsesOfWith(use, InductionL1);
+    }
+  }
 
   // Ottenere i blocchi del primo loop
   SmallVector<BasicBlock*> L1Blocks;
