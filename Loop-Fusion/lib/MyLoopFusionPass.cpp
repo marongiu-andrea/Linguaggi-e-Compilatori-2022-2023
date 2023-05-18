@@ -41,22 +41,20 @@ bool have_identical_trip_count(Loop* a, Loop* b, ScalarEvolution& SE) {
   return a_tripCount == b_tripCount;
 }
 
+bool have_negative_distance_dependencies(Loop* a, Loop* b, ScalarEvolution& SE) {
+  return true;
+}
+
 typedef SmallVector<Loop*> CfeSet; 
 
-void fuse(Loop* a, Loop* b, ScalarEvolution &SE) {
+void fuse(Loop* a, Loop* b, Value* iv_a, Value* iv_b) {
   outs() << "Fusing ";
   a->getLoopPreheader()->printAsOperand(outs());
   outs() << " with ";
   b->getLoopPreheader()->printAsOperand(outs());
   outs() << "\n";
-  
-  auto iv = a->getInductionVariable(SE);
-  if (iv) {
-    iv->printAsOperand(outs());
-    outs() << "\n";
-  } else {
-    outs() << "No induction variable found.\n";
-  }
+
+  iv_b->replaceAllUsesWith(iv_a);
 }
 
 void runOnCfeLoopPair(Loop* a, Loop* b, ScalarEvolution& SE) {
@@ -66,7 +64,23 @@ void runOnCfeLoopPair(Loop* a, Loop* b, ScalarEvolution& SE) {
   if (!have_identical_trip_count(a, b, SE))
     return;
 
-  fuse(a, b, SE);
+  auto iv_a = a->getCanonicalInductionVariable();
+  if (iv_a == nullptr)
+    return;
+  
+  auto iv_b = b->getCanonicalInductionVariable();
+  if (iv_b == nullptr)
+    return;
+  
+  /* iv_a and iv_b are canonical (they start from 0 and are incremented by one)
+      and the two loops have the same trip count
+      => iv_a and iv_b have the same range.
+  */
+
+  if (have_negative_distance_dependencies(a, b))
+    return;
+
+  fuse(a, b, iv_a, iv_b);
 }
 
 void runOnCfeSet(CfeSet& cfe_set, ScalarEvolution& SE) {
@@ -90,9 +104,9 @@ PreservedAnalyses MyLoopFusionPass::run(Function &F,
   SmallVector<CfeSet> cfe_sets;
   
   for (Loop* loop : LI) {
-    if (!loop->isLoopSimplifyForm() || !loop->isRotatedForm())
+    if (!loop->isLoopSimplifyForm())
       continue;
-
+    
     BasicBlock* loopPreheader = loop->getLoopPreheader();
 
     // Find a set with which loop is CFE
@@ -103,6 +117,7 @@ PreservedAnalyses MyLoopFusionPass::run(Function &F,
             then loop is CFE with the set.
         */
         BasicBlock* l_preheader = (*set.begin())->getLoopPreheader();
+
         auto dom_condition = [&DT, &PDT](BasicBlock* a, BasicBlock* b) {
           return DT.dominates(a, b)
             && PDT.dominates(b, a); 

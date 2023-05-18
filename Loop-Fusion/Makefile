@@ -1,5 +1,5 @@
 # https://llvm.org/docs/NewPassManager.html#invoking-opt
-PRE_PASSES_STRING := mem2reg,loop-rotate
+PRE_PASSES_STRING := mem2reg
 
 PASSES_STRING := function(my-loop-fusion)
 
