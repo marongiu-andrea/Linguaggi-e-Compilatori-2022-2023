@@ -22,3 +22,9 @@ setup:
 pass:
 	opt -load-pass-plugin=./libLocalOpts.so -passes=loopfusion ./test/Loop.opt.ll -o Loop.bc
 	llvm-dis Loop.bc -o Loop.opt.ll
+
+compile:
+	llc test/Loop.opt.bc -filetype=obj -o Loop.opt.o
+	llc test/Loop.bc -filetype=obj -o Loop.o
+	gcc Loop.o Main.c -o Lnf
+	gcc Loop.opt.o Main.c -o Lf
