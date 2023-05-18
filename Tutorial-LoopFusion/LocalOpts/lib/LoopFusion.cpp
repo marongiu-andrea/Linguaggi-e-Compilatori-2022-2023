@@ -63,6 +63,8 @@ void mergeLoops(Loop* L1, Loop* L2, LoopInfo& LI) {
   // Collegare il blocco di terminazione del primo loop al blocco di test del secondo loop
   L1ExitBlock->getTerminator()->replaceSuccessorWith(L2HeaderBlock, L1->getExitingBlock());
 
+  //La logica del CFG e' sbagliata: l'header di L1 deve puntare L2_Exit, e l'header di L2 deve puntare al latch di L2
+
   // Aggiornare il CFG
   LI.removeBlock(L2HeaderBlock);
   LI.changeLoopFor(L1ExitBlock, L1);
@@ -102,10 +104,13 @@ PreservedAnalyses LoopFusionPass::run([[maybe_unused]] Function &F, FunctionAnal
     outs() << "Loop Adiacente trovato\n";
 
     //Crea i count delle iterazioni dei loop
-    const SCEV *TripCountSCEVLP = SE.getBackedgeTakenCount(LP);
-    const APInt TripCountLP = dyn_cast<SCEVConstant>(TripCountSCEVLP)->getAPInt();
-    const SCEV *TripCountSCEVL = SE.getBackedgeTakenCount(L);
-    const APInt TripCountL = dyn_cast<SCEVConstant>(TripCountSCEVL)->getAPInt();
+    // const SCEV *TripCountSCEVLP = SE.getBackedgeTakenCount(LP);
+    // const APInt TripCountLP = dyn_cast<SCEVConstant>(TripCountSCEVLP)->getAPInt();
+    // const SCEV *TripCountSCEVL = SE.getBackedgeTakenCount(L);
+    // const APInt TripCountL = dyn_cast<SCEVConstant>(TripCountSCEVL)->getAPInt();
+    int TripCountL = SE.getSmallConstantTripCount(L);
+    int TripCountLP = SE.getSmallConstantTripCount(LP);
+
 
     //Se le iterazioni dei loop non sono uguali continua
     if(!TripCountLP == TripCountL){
