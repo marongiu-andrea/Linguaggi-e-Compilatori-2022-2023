@@ -3,9 +3,10 @@
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/Analysis/LoopInfo.h"
 #include "llvm/Analysis/ScalarEvolution.h"
-#include "llvm/Analysis/ScalarEvolutionExpressions.h"
 #include "llvm/IR/BasicBlock.h"
 #include "llvm/IR/Constants.h"
+#include "llvm/IR/Dominators.h"
+#include "llvm/Analysis/PostDominators.h"
 #include "llvm/IR/Function.h"
 #include "llvm/IR/InstrTypes.h"
 #include "llvm/IR/PassManager.h"
@@ -25,6 +26,8 @@ bool runOnFunction(Function &F) {
 PreservedAnalyses TransformPass::run([[maybe_unused]] Function &F,FunctionAnalysisManager &AM) {
   auto &LI = AM.getResult<LoopAnalysis>(F);
   ScalarEvolution &SE = AM.getResult<ScalarEvolutionAnalysis>(F);
+  DominatorTree &DT = AM.getResult<DominatorTreeAnalysis>(F);
+  PostDominatorTree &PDT = AM.getResult<PostDominatorTreeAnalysis>(F);
   int l = 0;
   int BID = 0;
   SmallVector<Loop *, 4> PreOrderLoops = LI.getLoopsInPreorder();
@@ -45,6 +48,13 @@ PreservedAnalyses TransformPass::run([[maybe_unused]] Function &F,FunctionAnalys
       continue;
     
     outs() << "same trip\n";
+
+    //control flow equivalence
+    if (!(DT.dominates(current->getHeader(),next->getHeader()) && PDT.dominates(next->getHeader(),current->getHeader())))
+      continue;
+    
+    outs() <<"control flow eq\n";
+    
   }
 /*
   bool firstRound = true;
