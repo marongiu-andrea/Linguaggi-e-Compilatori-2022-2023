@@ -63,10 +63,24 @@ bool LoopFusionPass::sameTripCount(Loop * L1, Loop * L2, ScalarEvolution &SE)
 // Ritorna true se i bound dei due loop sono uguali, false altrimenti
 bool LoopFusionPass::sameBounds(Loop * L1, Loop * L2, ScalarEvolution &SE)
 {
-	//Optional<Loop::LoopBounds> boundsL1 = L1->getBounds(SE);
+	Optional<Loop::LoopBounds> boundsL1 = L1->getBounds(SE);
 
+	//ConstantInt * initialValue = dyn_cast<ConstantInt>(&boundsL1->getInitialIVValue());
+	//ConstantInt * FinalValue = dyn_cast<ConstantInt>(&boundsL1->getInitialIVValue());
+	
+
+	outs()<<"HAS VAL: "<<boundsL1.hasValue()<<"\n";
+	//outs()<<"BOUNDS: "<<boundsL1->getInitialIVValue()<<"\n";
+
+
+	// ------------------------------------------------------------------------------
+
+	//unsigned int smallConstTripCountL1 = SE.getSmallConstantTripCount(L1);
+	//outs()<<smallConstTripCountL1<<"\n";
+
+	// opt -passes=mem2reg -instcombine --loop-simplify -loop-rotate Loop.bc -o Loop.opt.test.bc
+	// llvm-dis Loop.opt.test.bc -o Loop.opt.test.ll
 	/*
-	auto* inductionVariableL1 = L1->getInductionVariable(SE);
 	if (inductionVariableL1 == nullptr)
 		outs()<<"NULLPTR\n";
 
