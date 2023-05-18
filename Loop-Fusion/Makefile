@@ -3,12 +3,9 @@ PRE_PASSES_STRING := mem2reg,loop-rotate
 
 PASSES_STRING := function(my-loop-fusion)
 
-TO_OPTIMIZE_SRC_C := test/test.c
-TO_OPTIMIZE_SRC := test/test.ll
-TO_OPTIMIZE_BC := test/test.bc
-
-OPTIMIZED_BYTECODE := test.optimized.bc
-OPTIMIZED_LL := test.optimized.ll
+TO_OPTIMIZE := test/test
+OPTIMIZED := test.optimized
+BENCHMARK := test/bench
 
 OPTIMIZER := libLocalOpts.so
 OBJs := $(subst .cpp,.o,$(wildcard lib/*.cpp))
@@ -17,27 +14,45 @@ LLVM_VERSION ?= 14
 
 CXXFLAGS := $(shell llvm-config-$(LLVM_VERSION) --cxxflags) -fPIC
 
-all: $(OPTIMIZED_LL)
+all: $(OPTIMIZED).ll
 
 $(OPTIMIZER): $(OBJs)
 	$(CXX) -dylib -shared $^ -o $@
 
-$(TO_OPTIMIZE_SRC): $(TO_OPTIMIZE_SRC_C)
-	clang-$(LLVM_VERSION) $(TO_OPTIMIZE_SRC_C) -c -Xclang -disable-O0-optnone -O0 -emit-llvm -o $(TO_OPTIMIZE_BC)
-	opt-$(LLVM_VERSION) $(TO_OPTIMIZE_BC) -passes=$(PRE_PASSES_STRING) -o $(TO_OPTIMIZE_BC)
-	llvm-dis-$(LLVM_VERSION) $(TO_OPTIMIZE_BC) -o $(TO_OPTIMIZE_SRC)
+$(TO_OPTIMIZE).bc: $(TO_OPTIMIZE).c
+	clang-$(LLVM_VERSION) $(TO_OPTIMIZE).c -c -Xclang -disable-O0-optnone -O0 -emit-llvm -o $(TO_OPTIMIZE).bc
+	opt-$(LLVM_VERSION) $(TO_OPTIMIZE).bc -passes=$(PRE_PASSES_STRING) -o $(TO_OPTIMIZE).bc
 
-$(OPTIMIZED_BYTECODE): $(OPTIMIZER) $(TO_OPTIMIZE_SRC)
-	opt-$(LLVM_VERSION) -load-pass-plugin=./$(OPTIMIZER) -passes="$(PASSES_STRING)" $(TO_OPTIMIZE_SRC) -o $(OPTIMIZED_BYTECODE)
+$(TO_OPTIMIZE).ll: $(TO_OPTIMIZE).bc
+	llvm-dis-$(LLVM_VERSION) $(TO_OPTIMIZE).bc -o $(TO_OPTIMIZE).ll
 
-$(OPTIMIZED_LL): $(OPTIMIZED_BYTECODE)
-	llvm-dis-$(LLVM_VERSION) $(OPTIMIZED_BYTECODE) -o $(OPTIMIZED_LL)
+$(OPTIMIZED).bc: $(OPTIMIZER) $(TO_OPTIMIZE).ll
+	opt-$(LLVM_VERSION) -load-pass-plugin=./$(OPTIMIZER) -passes="$(PASSES_STRING)" $(TO_OPTIMIZE).ll -o $(OPTIMIZED).bc
 
-run: clean-optimized $(OPTIMIZED_LL)
+$(OPTIMIZED).ll: $(OPTIMIZED).bc
+	llvm-dis-$(LLVM_VERSION) $(OPTIMIZED).bc -o $(OPTIMIZED).ll
 
-.PHONY: clean
+$(OPTIMIZED).s: $(OPTIMIZED).bc
+	llc-$(LLVM_VERSION) $(OPTIMIZED).bc -o $(OPTIMIZED).s
+
+$(TO_OPTIMIZE).s: $(TO_OPTIMIZE).bc
+	llc-$(LLVM_VERSION) $(TO_OPTIMIZE).bc -o $(TO_OPTIMIZE).s
+
+run: clean-optimized $(OPTIMIZED).ll
+
+.PHONY: clean clean-optimized benchmark
+
 clean:
-	$(RM) $(OPTIMIZER) $(OBJs) $(OPTIMIZED_BYTECODE) $(OPTIMIZED_LL) $(TO_OPTIMIZE_BC)
+	$(RM) $(OPTIMIZER) $(OBJs) $(OPTIMIZED).bc $(OPTIMIZED).ll $(TO_OPTIMIZE).bc
+	$(RM) $(BENCHMARK).o $(OPTIMIZED).s $(TO_OPTIMIZE).s
+
+benchmark-optimized: $(BENCHMARK).c $(OPTIMIZED).s
+	gcc $(BENCHMARK).c $(OPTIMIZED).s -o $(BENCHMARK).o
+	./$(BENCHMARK).o
+
+benchmark-non-optimized: $(BENCHMARK).c $(TO_OPTIMIZE).s
+	gcc $(BENCHMARK).c $(TO_OPTIMIZE).s -o $(BENCHMARK).o
+	./$(BENCHMARK).o
 
 clean-optimized:
-	$(RM) $(OPTIMIZED_BYTECODE) $(OPTIMIZED_LL)
+	$(RM) $(OPTIMIZED).bc $(OPTIMIZED).ll
