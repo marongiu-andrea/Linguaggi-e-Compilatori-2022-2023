@@ -7,7 +7,7 @@ opt -passes=mem2reg Loop.bc -o Loop.opt.bc
 llvm-dis Loop.opt.bc -o loop.opt.ll
 -> genera loop.opt.ll
 
-opt -load-pass-plugin=./libLocalOpts.so -passes=loopFusion test/Loop.opt.ll -disable-output
+opt -load-pass-plugin=./libLocalOpts.so -passes=loopFusion test/loop.opt.ll -disable-output
 
 Usare scalar evolution
 ScalarEvolution &SE = AM.getResult<ScalarEvolutionAnalysis>(F);
