@@ -185,13 +185,50 @@ PreservedAnalyses UnioneLoopPass::run([[maybe_unused]] Function &F,
       }
       //inserisco la chiusura del primo
       nuovo->addBasicBlockToLoop(Sorgente->getLoopLatch(),LI);
+      //outs()<< "\n" << *nuovo << "\n";
 
       //ho tutti i blocchi e in ordine, ma il problema sono le branch, vecchie che vanno sistemato
       //ogni blocco deve saltare al successivo (tranne l'header)
-      for(BasicBlock *BB : nuovo->blocks()){
-        outs() << "\n" << *BB << "\n";
+      
+      Loop::block_iterator niter;
+      for (Loop::block_iterator iter = nuovo->block_begin(); iter!= nuovo->block_end(); ++iter){
+        BasicBlock *BB = *iter;
+          if(BB != nuovo->getHeader() && BB != nuovo->getLoopLatch()){
+            //prendo il successore nel loop
+            niter=iter;
+            ++niter;
+            BasicBlock *Next = *niter;
+
+            //cambio il bersaglio della branch del blocco con quello successivo
+            BB->getTerminator()->setSuccessor(0,Next);
+
+          }
+
+        //outs() << "\n" << *BB << "\n";
       }
-    } 
+      //ora devo cambiare la condizione della branch dell'header del primo loop
+      
+      BranchInst *BI = dyn_cast<BranchInst>(Destinazione->getHeader()->getTerminator());
+      //cambio il taret del vecchio header
+      nuovo->getHeader()->getTerminator()->setSuccessor(1,BI->getSuccessor(1));
+      /*for(BasicBlock* BB : nuovo->blocks()){
+        outs()<< *BB <<"\n";
+      }*/
+      
+      LI.changeLoopFor(Sorgente->getHeader(),nuovo);
+      
+      for(int i = 0; i<LoopsSorgente.size(); i++){
+        if(LoopsSorgente[i] == nullptr){
+          LoopsSorgente[i] = nuovo;
+          //TODO marco per sostituzione dopo
+        }
+      }
+     
+      //LI.destroy(Destinazione);
+
+    }
+
+    
     
   return PreservedAnalyses::none();
 }
