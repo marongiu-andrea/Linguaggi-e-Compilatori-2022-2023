@@ -70,7 +70,7 @@ bool LoopFusionPass::sameBounds(Loop * L1, Loop * L2, ScalarEvolution &SE)
 	
 
 	outs()<<"HAS VAL: "<<boundsL1.hasValue()<<"\n";
-	//outs()<<"BOUNDS: "<<boundsL1->getInitialIVValue()<<"\n";
+	outs()<<"BOUNDS: "<<boundsL1->getInitialIVValue()<<"\n";
 
 
 	// ------------------------------------------------------------------------------
@@ -220,8 +220,7 @@ llvm::PreservedAnalyses LoopFusionPass::run([[maybe_unused]] Function &F, Functi
 				{
 					outs()<<"I Loop:\n"<<*IterLoop1<<*IterLoop2<<" sono adiacenti\n----------------------\n";
 
-					// TODO : aggiustare sameBounds()
-					if (sameTripCount(IterLoop1, IterLoop2, SE) && sameBounds(IterLoop1, IterLoop2, SE))
+					if (sameTripCount(IterLoop1, IterLoop2, SE))
 					{
 						outs()<<"I Loop:\n"<<*IterLoop1<<*IterLoop2<<" hanno lo stesso trip count\n----------------------\n";
 
