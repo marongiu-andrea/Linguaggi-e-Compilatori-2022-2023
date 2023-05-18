@@ -1,8 +1,9 @@
 #include <stdio.h>
-#include <sys/time.h>
 #include <time.h>
 
-#define N 100
+#define N 1000
+
+// gcc main.c Loop.c -o measurePerfTime
 
 // llc -filetype=obj -o Loop.opt.o Loop.opt.bc
 // gcc main.c Loop.opt.o -o measurePerfTimeOpt
@@ -17,8 +18,7 @@ int main()
     int b[ARR_LEN];
     int c[ARR_LEN];
 
-    struct timespec start;
-    struct timespec stop;
+    struct timespec start, stop;
 
     clock_gettime(CLOCK_MONOTONIC, &start);
 
@@ -29,7 +29,9 @@ int main()
 
     clock_gettime(CLOCK_MONOTONIC, &stop);
 
-    printf("Tempo: %i\n", (long long unsigned int)(stop.tv_nsec - start.tv_nsec));
+    long long unsigned int elapsedTime = (stop.tv_sec - start.tv_sec) * 1e9 + (stop.tv_nsec - start.tv_nsec);
+
+    printf("Tempo: %llu\n", elapsedTime);
 
     return 0;
 }
