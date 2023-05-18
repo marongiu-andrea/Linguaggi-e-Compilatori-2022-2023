@@ -17,5 +17,22 @@ Control flow equivalent
 DominatorTree &DT
 PostDominatorTree &PDT
 
-Trasformazione del codice:
-Una volta controllato le condizioni vado a fare due cose.
+clang -> loop.ll -> loopfuse -> loop.fused.bc -> llc -> loop.fused.offerti
+void populate(int A[])
+              int B[]
+              int C[]
+
+#include time.h
+#define N
+extern void populate(int *, int *, int *)
+start=clock_gettime();
+for(...N...)
+    populate();
+stop=clock_gettime();
+
+clang -> loop.ll -> loop.fused.bc -> llc -> loop.fused.offerti
+E poi confrontarlo con il file sopra che usa la loopfusion.
+
+Notare la riduzione del tempo dovuto al lavoro della cache.
+
+L'obbiettivo dell'esercitazione è vedere che c'è un improvement significativo.
