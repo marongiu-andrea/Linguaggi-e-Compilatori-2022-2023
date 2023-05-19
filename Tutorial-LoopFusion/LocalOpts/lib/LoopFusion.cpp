@@ -52,6 +52,7 @@ void mergeLoops(Loop* L1, Loop* L2, LoopInfo& LI) {
   BasicBlock *L1_Latch = L1->getLoopLatch();
   BasicBlock *L1_Header = L1->getHeader();
   BasicBlock *L2_Header = L2->getHeader();
+
   BasicBlock *L2_BodyEnd;
   for(auto *BB : L2->getBlocks()){
     if(BB == L2->getLoopLatch())
@@ -108,7 +109,6 @@ PreservedAnalyses LoopFusionPass::run([[maybe_unused]] Function &F, FunctionAnal
   PostDominatorTree &PDT = AM.getResult<PostDominatorTreeAnalysis>(F);
   
   int l = 0;
-  int BID = 0;
   SmallVector<Loop*> PreOrderLoops = LI.getLoopsInPreorder();
   Loop *LP = nullptr;
 
@@ -128,16 +128,12 @@ PreservedAnalyses LoopFusionPass::run([[maybe_unused]] Function &F, FunctionAnal
     outs() << "Loop Adiacente trovato\n";
 
     //Crea i count delle iterazioni dei loop
-    // const SCEV *TripCountSCEVLP = SE.getBackedgeTakenCount(LP);
-    // const APInt TripCountLP = dyn_cast<SCEVConstant>(TripCountSCEVLP)->getAPInt();
-    // const SCEV *TripCountSCEVL = SE.getBackedgeTakenCount(L);
-    // const APInt TripCountL = dyn_cast<SCEVConstant>(TripCountSCEVL)->getAPInt();
     int TripCountL = SE.getSmallConstantTripCount(L);
     int TripCountLP = SE.getSmallConstantTripCount(LP);
 
 
     //Se le iterazioni dei loop non sono uguali continua
-    if(!TripCountLP == TripCountL){
+    if(TripCountLP != TripCountL){
       LP = L;
       continue;
     }
