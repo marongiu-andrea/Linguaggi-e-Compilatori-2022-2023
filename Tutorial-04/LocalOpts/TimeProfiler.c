@@ -4,25 +4,41 @@
 #include <time.h>
 #include <unistd.h>
 #include <string.h>
+#include <math.h>
 
 extern void populate (int a[], int b[], int c[]);
 
-#define M 1000000
+#define N 100
+#define OOMS 10
+#define BASE 10
+
 
 void main() {
-    clock_t start = clock();
+    
+    FILE *fp = fopen("loopopt.txt", "w");
 
-    int a[100], b[100], c[100];
+    if (fp == NULL)
+        return;
 
-    for (int i = 0; i < 100; i++) {
+    int a[N], b[N], c[N];
+
+    for (int i = 0; i < N; ++i) {
         a[i] = 1;
     }
 
-    for (int i = 0; i < M; i++) {
-        populate(a, b, c);
-    }
+    for (int i = 0; i < OOMS; ++i) {
+        int num_cycles = pow(BASE, i);
 
-    clock_t stop = clock();
+        clock_t start = clock();
 
-    printf("Exec time: %f \n", (stop - start) / (double) CLOCKS_PER_SEC);
+        for (int j = 0; j < num_cycles; ++j) {
+            populate(a, b, c);
+        }
+
+        clock_t stop = clock();
+
+        double time = (stop - start) / (double) CLOCKS_PER_SEC;
+        printf("N° loops: %d, Exec time: %f \n", num_cycles, time);
+        fprintf(fp, "%f\t", time);
+    }    
 }
