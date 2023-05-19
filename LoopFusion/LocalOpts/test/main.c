@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <time.h>
 
-#define N 1000
+#define N 10000
 
 // gcc main.c Loop.c -o measurePerfTime
 
@@ -23,15 +23,12 @@ int main()
     clock_gettime(CLOCK_MONOTONIC, &start);
 
     for (int i = 0; i < N; ++i)
-    {
         populate(a, b, c);
-    }
 
     clock_gettime(CLOCK_MONOTONIC, &stop);
 
-    long long unsigned int elapsedTime = (stop.tv_sec - start.tv_sec) * 1e9 + (stop.tv_nsec - start.tv_nsec);
-
-    printf("Tempo: %llu\n", elapsedTime);
+    long long elapsedTime = (stop.tv_sec - start.tv_sec) * 1e9 + (stop.tv_nsec - start.tv_nsec);
+    printf("Tempo: %llu nanosecondi\n", elapsedTime);
 
     return 0;
 }
