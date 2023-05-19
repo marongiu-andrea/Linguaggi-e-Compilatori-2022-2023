@@ -6,7 +6,7 @@ output_file_opt="outputOpt.txt"
 output_file_clean="clean_output.txt"
 output_file_opt_clean="clean_outputOpt.txt"
 
-declare -i iterations=10;
+declare -i iterations=100;
 
 for ((i=1; i<=iterations; i++))
 do
