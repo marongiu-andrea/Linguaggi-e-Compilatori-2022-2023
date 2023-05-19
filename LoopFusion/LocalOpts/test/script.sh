@@ -41,3 +41,6 @@ done < "$output_file_opt_clean"
 let "average = sumOpt / iterations"
 
 echo "Media Loop ottimizzato su $iterations iterzioni: $average"
+
+rm -rf $output_file_clean
+rm -rf $output_file_opt_clean
