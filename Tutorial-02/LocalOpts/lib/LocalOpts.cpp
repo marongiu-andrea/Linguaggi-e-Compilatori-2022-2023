@@ -6,6 +6,7 @@
 using namespace llvm;
 
 extern "C" PassPluginLibraryInfo llvmGetPassPluginInfo() {
+  
   return {
       .APIVersion = LLVM_PLUGIN_API_VERSION,
       .PluginName = "LocalOpts",

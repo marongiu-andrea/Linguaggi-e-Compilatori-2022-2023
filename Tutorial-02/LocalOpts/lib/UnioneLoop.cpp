@@ -10,6 +10,9 @@
 #include "llvm/Analysis/ScalarEvolution.h"
 //spostamento struzioni
 #include "llvm/IR/IRBuilder.h"
+//controllo control flow
+#include "llvm/IR/Dominators.h"
+
 /*
 #include "llvm/IR/InstrTypes.h"
 #include "llvm/IR/DerivedTypes.h"
@@ -20,6 +23,9 @@
 
 
 using namespace llvm;
+
+//per avere il dominator tree
+
 
 /*Funzione per verificare che due loop abbiano lo stesso numero di iterazioni
 Non c'è un metodo che mi da quell'informazione...
@@ -38,11 +44,12 @@ bool hannoStesseIterazioni(llvm::Loop *Loop1, llvm::Loop *Loop2, ScalarEvolution
 
 /*controlla che abbiano lo stesso guard branch
 Work smart, not harder*/
-bool sonoFlowEquivalent(Loop *L1, Loop *L2){
-  if (L1->getLoopGuardBranch() != L2->getLoopGuardBranch())
-    return false;
+bool sonoFlowEquivalent(Loop *L1, Loop *L2, DominatorTree &DT){
+  /*if (L1->getLoopGuardBranch() != L2->getLoopGuardBranch())
+    return false;*/
   
-  return true;
+  return DT.dominates(L1->getHeader(),L2->getHeader());
+  //return true;
 }
 
 bool sonoAdiacenti(Loop *L1, Loop* L2){
@@ -93,7 +100,7 @@ PreservedAnalyses UnioneLoopPass::run([[maybe_unused]] Function &F,
 
     auto &LI = AM.getResult<LoopAnalysis>(F);
     ScalarEvolution &SE = AM.getResult<ScalarEvolutionAnalysis>(F);
-    
+    DominatorTree &DT = AM.getResult<DominatorTreeAnalysis>(F);
     
     ///per questo esempio specifico ci sono solo 2 loop, metto il cinque come valore più generico
     SmallVector<Loop *, 5> Loops;
@@ -116,7 +123,7 @@ PreservedAnalyses UnioneLoopPass::run([[maybe_unused]] Function &F,
         //controllo che siano adiacenti
         if(sonoAdiacenti(Loops[i],Loops[i+1])){
           outs()<< "Adiacenti\n";
-          if(sonoFlowEquivalent(Loops[i],Loops[i+1])){
+          if(sonoFlowEquivalent(Loops[i],Loops[i+1],DT)){
             //printf("Sono flow equivalenti e adiacenti\n");
             outs()<< Loops[i] << " e " << Loops[i+1] << " sono adiacenti e flow equivalent\n";
             //Controllo cabbiano lo stesso numero di iterazioni TODO
