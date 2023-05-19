@@ -4,6 +4,8 @@
 #include "llvm/Analysis/ScalarEvolution.h"
 #include "llvm/Analysis/ScalarEvolutionExpressions.h"
 #include "llvm/Analysis/PostDominators.h"
+#include <llvm/ADT/SetVector.h>
+#include <llvm/IR/BasicBlock.h>
 #include <llvm/IR/Instructions.h>
 #include <llvm/Support/Casting.h>
 
@@ -44,6 +46,27 @@ void mergeLoops(Loop* L1, Loop* L2, LoopInfo& LI) {
     }
   }
 
+  BasicBlock *L2_Exit = L2->getExitingBlock();
+  BasicBlock *L2_BodyStart = L2->getHeader()->getNextNode();
+  BasicBlock *L2_Latch = L2->getLoopLatch();
+  BasicBlock *L1_Latch = L1->getLoopLatch();
+  BasicBlock *L1_Header = L1->getHeader();
+  BasicBlock *L2_Header = L2->getHeader();
+  BasicBlock *L2_BodyEnd;
+  for(auto *BB : L2->getBlocks()){
+    if(BB == L2->getLoopLatch())
+      break;
+    L2_BodyEnd = BB;
+  }
+
+  L1_Header->getTerminator()->replaceSuccessorWith(L2->getLoopPreheader(), L2_Exit);
+  L1_Header->getNextNode()->getTerminator()->replaceSuccessorWith(L1_Latch, L2_BodyStart);
+  L2_BodyEnd->getTerminator()->replaceSuccessorWith(L2_Latch, L1_Latch);
+  L2_Header->getTerminator()->replaceSuccessorWith(L2_BodyStart, L2_Latch);
+
+
+
+/*
   // Ottenere i blocchi del primo loop
   SmallVector<BasicBlock*> L1Blocks;
   for (auto* BB : L1->getBlocks())
@@ -73,6 +96,7 @@ void mergeLoops(Loop* L1, Loop* L2, LoopInfo& LI) {
 
   // Rimuovere il secondo loop dal LoopInfo
   LI.erase(L2);
+*/
 }
 
 PreservedAnalyses LoopFusionPass::run([[maybe_unused]] Function &F, FunctionAnalysisManager &AM) {
