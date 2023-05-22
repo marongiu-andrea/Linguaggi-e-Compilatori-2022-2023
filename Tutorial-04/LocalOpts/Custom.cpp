@@ -211,6 +211,9 @@ llvm::PreservedAnalyses TransformPass::run([[maybe_unused]] llvm::Function &F, l
         Value *CastedL1PHI = dyn_cast<Value>(L1PHI);
         L2PHI->replaceAllUsesWith(CastedL1PHI);
         L2PHI->eraseFromParent();
+
+        
+
         outs()<<"End of loop fusion\n";
       }
     }
