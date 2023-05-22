@@ -6,6 +6,7 @@
 #include <vector>
 #include <algorithm>
 #include <map>
+#include <utility>
 
 using namespace llvm;
 
@@ -28,7 +29,6 @@ struct less_than_key
   }
 };
 
-
 llvm::PreservedAnalyses TransformPass::run([[maybe_unused]] llvm::Function &F, llvm::FunctionAnalysisManager &AM) {
   
   // Analisi utili nel seguito.
@@ -36,7 +36,6 @@ llvm::PreservedAnalyses TransformPass::run([[maybe_unused]] llvm::Function &F, l
   auto &DT = AM.getResult<DominatorTreeAnalysis>(F);
   auto &PDT = AM.getResult<PostDominatorTreeAnalysis>(F);
   auto &SE = AM.getResult<ScalarEvolutionAnalysis>(F);
-
 
   llvm::SmallVector<Loop*> LoopVector = LI.getLoopsInPreorder();  // Vector dei loop.
   std::map<Loop*, bool> LoopsAssigned;                            // Lookup per loop assegnati ad insiemi.
@@ -207,20 +206,51 @@ llvm::PreservedAnalyses TransformPass::run([[maybe_unused]] llvm::Function &F, l
         outs()<<"Branch dell'header di Loop1 come branch: "<<*BI4<<"\n";
                         
         BI4->setSuccessor(1, FINAL);                            // Header loop1 -> exit loop2.
-        outs() << "Successore dell'header di Loop1 dopo l'aggancio: "<<*BI4->getSuccessor(1)<<"\n";
-        Value *CastedL1PHI = dyn_cast<Value>(L1PHI);
-        L2PHI->replaceAllUsesWith(CastedL1PHI);
-        L2PHI->eraseFromParent();
+        outs() << "Successore dell'header di Loop1 dopo l'aggancio: "<<*BI4->getSuccessor(1)<<"\n";        
+        Value *CastedL1PHI = dyn_cast<Value>(L1PHI);		                
+        outs()<<"L2PHI: "<<*L2PHI<<"\n";        
 
-        
+        // L2PHI->replaceAllUsesWith(CastedL1PHI);
+        // L2PHI->eraseFromParent();
 
-        outs()<<"End of loop fusion\n";
+        std::vector<std::pair<Instruction*, int>> temp;
+
+        for (auto iter_use = L2PHI->user_begin(); iter_use != L2PHI->user_end(); ++iter_use) {
+          Instruction *U = dyn_cast<Instruction>(*iter_use);
+          outs() <<"User: "<<*U<<"\n";
+          BasicBlock *block = U->getParent();
+          if(L2->contains(block)){           
+            int f = 0;            
+            for (auto operand = U->op_begin(); operand != U->op_end(); ++operand) {
+              Value *Operand = *operand;
+              if (dyn_cast<Constant>(Operand)){
+                f++;
+                outs()<<"Costant\n";
+                continue;
+              }
+              Instruction* castedOperand = dyn_cast<Instruction>(Operand);
+              outs() << "Casted operand: "<< *castedOperand << "\n";
+              outs() <<"Index: "<<f<<"\n";
+              if(castedOperand == L2PHI){
+                std::pair<Instruction*, int> to_add = std::make_pair(U, f);                
+                temp.push_back(to_add);
+              }
+              f++;
+            }
+          }
+        }  
+        for(auto iter_vector = temp.begin(); iter_vector != temp.end(); iter_vector++){          
+          Instruction *test = (iter_vector->first);
+          if(test->getParent() != LL2 && test->getParent() != HB2){
+            outs()<<*(iter_vector->first)<<" --> "<<(iter_vector->second)<<"\n";
+            test->setOperand((iter_vector->second), CastedL1PHI);
+            outs()<<*test<<"\n";
+          }
+        }
+        // I1->setSuccessor(0,LL2);
       }
     }
   }
-
-
-
   PreservedAnalyses PA = PreservedAnalyses();
   return PA;
 }
