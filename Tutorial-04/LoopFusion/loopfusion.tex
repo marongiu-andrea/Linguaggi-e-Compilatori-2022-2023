@@ -1,4 +1,4 @@
-% Created 2023-05-15 lun 23:28
+% Created 2023-05-22 lun 12:16
 % Intended LaTeX compiler: pdflatex
 \documentclass[letterpaper, 11pt]{article}
                       \usepackage{lmodern} % Ensures we have the right font
@@ -7,15 +7,13 @@
 \usepackage{sectsty}
 \usepackage{graphicx}
 \usepackage{amsmath, amsthm, amssymb}
-\usepackage[table, xcdraw]{xcolor}
-\pagestyle{fancy}
 \usepackage{multicol}
 \setlength\columnsep{25pt} % This is the default columnsep for all pages
-\definecolor{bblue}{HTML}{0645AD}
 \usepackage[colorlinks]{hyperref}
+\usepackage[noabbrev]{cleveref}
 \usepackage[dvipsnames]{xcolor}
-\hypersetup{colorlinks, linkcolor=blue, urlcolor=bblue}
 \usepackage{titling}
+\usepackage{float}
 \setlength{\droptitle}{-6em}
 \setlength{\parindent}{0pt}
 \setlength{\parskip}{1em}
@@ -57,11 +55,11 @@
 \newpage
 \begin{multicols}{2}
 \section{Requisiti per la loop fusion}
-\label{sec:org7ed5afc}
+\label{sec:org91db0c9}
 Si supponga che si stiano prendendo in considerazione i due loop CFG equivalenti
 \(L_{i}\) e \(L_{k}\).
 \subsection{Adiacenza}
-\label{sec:org64c18cc}
+\label{sec:org672f0d8}
 L'adiacenza dei due loop viene verificata controllando \emph{(i)} che l'\textbf{exit block} di
 \(L_{i}\) corrisponda all'\textbf{header} di \(L_{k}\) \emph{(ii)} e che il suddetto blocco di intersezione
 contenga soltanto un'istruzione di tipo \textbf{branch}, la cui destinazione deve essere necessariamente
@@ -92,7 +90,7 @@ if (L1->getExitBlock() == L2->getLoopPreheader()) {
 \end{verbatim}
 \normalsize
 \subsection{Trip count}
-\label{sec:org1427caf}
+\label{sec:org6eaa71b}
 Serve inoltre verificare che \(L_{i}\) e \(L_{k}\) eseguano in ogni caso
 lo stesso numero di iterazioni, quindi che abbiano lo stesso trip count.
 Per esegure questo controllo è necessaria un'analisi preliminare, che
@@ -104,9 +102,9 @@ auto &SE = AM.getResult<ScalarEvolutionAnalysis>(F);
 \end{verbatim}
 \normalsize
 \subsection{Dipendenze}
-\label{sec:org22ad388}
+\label{sec:org4cf0af8}
 \section{Esecuzione della loop fusion}
-\label{sec:org24525b4}
+\label{sec:org267d6bf}
 Se \(L_{i}\) e \(L_{k}\) hanno superato tutti i controlli, si può
 procedere ad effettuare la loop fusion.
 In LLVM il modo più semplice per modificare il \emph{control flow} del programma
@@ -167,16 +165,88 @@ Da notare in particolare il \emph{latch} di \(L_{k}\), che se lasciato avrebbe c
 doppio incremento della \emph{induction variable}.
 \newpage
 \end{multicols}
-\begin{figure}[htbp]
+
+\begin{figure}[H]
 \centering
-\includegraphics[width=20cm]{/home/eros/Downloads/bfore.png}
+\includegraphics[width=20cm]{./bfore.png}
 \caption{CFG prima del passo di ottimizzazione}
 \end{figure}
-\begin{figure}[htbp]
+
+\begin{figure}[H]
 \centering
-\includegraphics[width=20cm]{/home/eros/Downloads/after.png}
+\includegraphics[width=20cm]{./after.png}
 \caption{CFG dopo il passo di ottimizzazione}
 \end{figure}
 
-asdasdasd
+\newpage
+
+\begin{multicols}{2}
+
+  \section{Attività sperimentali supplementari}
+
+  Al termine dell'esperienza, si sono poi svolti i seguenti lavori aggiuntivi:
+
+  \begin{itemize}
+    \item Confronto delle performance di uno stesso programma, ottimizzato tramite il passo realizzato e non
+    \item Sperimentazione volta a determinare la dimensione delle linee di cache sul medesimo calcolatore usato per svolgere l'esperienza
+  \end{itemize}
+
+  \subsection{Misura delle performance}
+  In primo luogo, si sono ottenuti due file oggetto da \textit{Loop.c}, l'uno servendosi del passo di loop fusion appositamente creato, e l'altro con il comando \textit{llc}, senza fornire particolari flag (dunque non richiedendo esplicitamente ottimizzazioni).\\
+  Tali file oggetto sono stati poi linkati in successione ad un semplice script di profiling scritto in C. Il profiler, richiamando la funzione \textit{populate} definita in \textit{Loop.c} in loop esterni per un numero crescente \textit{i} di iterazioni, andava poi a misurare il tempo di esecuzione, per ogni \textit{i}. I valori di \textit{i} sono stati impostati come potenze del 10, per esponente intero $\in [0,9]$.\\
+
+  \begin{figure}[H]
+    \centering
+    \includegraphics[width = 1.1 \linewidth]{../LocalOpts/graph_1-10.png}
+    \caption{Profiling - confronto tra loop fusion e nessun'ottimizzazione, $ODG \in [1,10]$}
+  \end{figure}
+
+  Pur essendo chiara la tendenza di miglioramento delle performance nel caso di loop fusion per $i = 10^j, j \in [7, 9], j \in \mathbb{N}$, si è reso necessario verificare l'andamento per valori di \textit{i} più bassi, non visibile di fatto su quest'ultimo grafico.
+
+  \begin{figure}[H]
+    \centering
+    \includegraphics[width = 1.1 \linewidth]{../LocalOpts/graph_1-5.png}
+    \caption{Profiling - confronto tra loop fusion e nessun'ottimizzazione, $ODG \in [1,5]$}
+  \end{figure}
+
+  Infine, si è osservato il comportamento del profiler tra i primi 3 ordini di grandezza, confermando quanto già visto.
+
+  \begin{figure}[H]
+    \centering
+    \includegraphics[width = 1.1 \linewidth]{../LocalOpts/graph_1-3.png}
+    \caption{Profiling - confronto tra loop fusion e nessun'ottimizzazione, $ODG \in [1,3]$}
+  \end{figure}
+
+  Il tempo di esecuzione ha una tenenza di crescita esponenziale per entrambe le linee. Si è quindi deciso di eseguire un ulteriore plot, riportando sull'asse \textit{y} il logaritmo del tempo di esecuzione, per meglio osservare il rapporto tra i tempi di esecuzione ad uguali valori di \textit{i}.
+
+  \begin{figure}[H]
+    \centering
+    \includegraphics[width = 1.1 \linewidth]{../LocalOpts/graph_log.png}
+    \caption{Profiling - confronto tra loop fusion e nessun'ottimizzazione, $\log_{10}{t}$ su asse \textit{y}}
+  \end{figure}
+
+  Dopo un iniziale assestamento, ed al crescere di \textit{i}, il rapporto tra le prestazioni con e senza loop fusion si conserva circa stabile (esecuzione $\sim 5-7$ volte più rapida con loop fusion).
+
+  \subsection{Determinazione empirica della dimensione delle cache}
+  Seguendo la proposta del docente, ci siamo proposti di stimare in modo empirico la dimensione della cache del calcolatore su cui abbiamo eseguito l'esperienza (CPU Ryzen 5 2500U).\\
+  Sostanzialmente, ci siamo serviti di un profiler analogo al precedente, linkandolo con la versione ottimizzata di \textit{Loop.c}. La funzione \textit{populate} è stata richiamata dal profiler, eseguendo $10^4$ volte ad ogni misura del tempo, per uno stride \textit{s} crescente ($s = 2^i, i \in [0, 16], i \in \mathbb{N}$). La dimensione degli array di partenza è stata impostata come $size \, = \, base\_size \, * \, stride$, così da avere un numero di accessi uguale, ed un tempo di esecuzione simile al netto delle cache miss, per ogni valore di $s$.
+
+  \begin{figure}[H]
+    \centering
+    \includegraphics[width = 1.1 \linewidth]{../LocalOpts/cache_graph.png}
+    \caption{Cache test - stride vs execution time}
+  \end{figure}
+
+  Lo "scalino" presente in corrispondenza di $s = 1024$ sembrerebbe indicare che di lì in poi si abbiano sole cache miss, dunque la dimensione della singola linea di cache sarebbe 4kb. Ciò non di meno, l'incremento di execution time in $s = 4, 8, \cdots, 64$ sembra decisamente irrilevante per quello che ci si aspetterebbe dalle cache penalties, come si può vedere nel seguente tabulato.
+
+  \begin{figure}[H]
+    \centering
+    \includegraphics[width = 1 \linewidth]{../LocalOpts/cache_tab.png}
+    \caption{Cache test - tabulato dati raccolti}
+  \end{figure}
+
+  Non si esclude che vengano svolte ulteriori ottimizzazioni per sulle cache, delle quali siamo completamente all'oscuro.
+
+\end{multicols}
+
 \end{document}
