@@ -19,7 +19,7 @@ x = [i for i in range(3)]
 
 fig, ax = plt.subplots()
 ax.set_xlabel("number of extern loops (log10)")
-ax.set_ylabel("time (log10 of seconds)")
+ax.set_ylabel("time (seconds)")
 
 plt.plot(x, [i for i in y_loop], label="non-optimized", marker='o', linewidth=2)
 plt.plot(x, [i for i in y_loopopt], label="loop fusion", marker='o', linewidth=2)
