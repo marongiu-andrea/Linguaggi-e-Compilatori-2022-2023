@@ -5,7 +5,6 @@
 #include <llvm/IR/Dominators.h>
 #include "llvm/Analysis/ScalarEvolution.h"
 #include "llvm/Analysis/PostDominators.h"
-
 #include "llvm/Analysis/ScalarEvolutionExpressions.h"
 
 using namespace llvm;
@@ -58,76 +57,6 @@ bool LoopFusionPass::sameTripCount(Loop * L1, Loop * L2, ScalarEvolution &SE)
 		return true;
 
 	return false;
-}
-
-// Ritorna true se i bound dei due loop sono uguali, false altrimenti
-bool LoopFusionPass::sameBounds(Loop * L1, Loop * L2, ScalarEvolution &SE)
-{
-	Optional<Loop::LoopBounds> boundsL1 = L1->getBounds(SE);
-
-	//ConstantInt * initialValue = dyn_cast<ConstantInt>(&boundsL1->getInitialIVValue());
-	//ConstantInt * FinalValue = dyn_cast<ConstantInt>(&boundsL1->getInitialIVValue());
-	
-
-	outs()<<"HAS VAL: "<<boundsL1.hasValue()<<"\n";
-	outs()<<"BOUNDS: "<<boundsL1->getInitialIVValue()<<"\n";
-
-
-	// ------------------------------------------------------------------------------
-
-	//unsigned int smallConstTripCountL1 = SE.getSmallConstantTripCount(L1);
-	//outs()<<smallConstTripCountL1<<"\n";
-
-	// opt -passes=mem2reg -instcombine --loop-simplify -loop-rotate Loop.bc -o Loop.opt.test.bc
-	// llvm-dis Loop.opt.test.bc -o Loop.opt.test.ll
-	/*
-	if (inductionVariableL1 == nullptr)
-		outs()<<"NULLPTR\n";
-
-	auto boundsL1 = L1->getBounds(SE);
-	if (&boundsL1 == nullptr)
-		outs()<<"getBounds NULL\n";
-	else
-	{
-		//ConstantInt *initialValue = dyn_cast<ConstantInt>(&boundsL1->getInitialIVValue());
-		
-	}*/
-
-	//outs()<<"L1 induction variable: "<<*((*inductionVariableL1).getOperand(0))<<"\n";
-
-	//const SCEV * LoopSCEV = SE.getSCEV(inductionVariableL1);
-	//const SCEVAddRecExpr* AddRec = dyn_cast<SCEVAddRecExpr>(LoopSCEV);
-
-	//auto Initial = AddRec->getStart();
-	//outs()<<"Initial L1: "<<*Initial<<"\n";
-	//auto Last = AddRec->getStart() + (*tripCountL1) - 1;
-
-	//outs()<<"HAS VALUE: "<<boundsL1.hasValue()<<"\n";
-	//TODO: Da rivedere
-
-	//Alternativa:
-	// Se le variabili di induzione sono uguali all'inizio dei rispettivi loop
-	// Se I passi dei loop sono uguali
-	// E se il trip count è uguale
-	// --> Allora i bounds sono uguali(?)
-
-	//outs()<<"VALORE INIZIALE: "<<boundsL1.hasValue();
-	//ConstantInt *initialValue = dyn_cast<ConstantInt>(&boundsL1->getInitialIVValue());
-	//outs()<<*initialValue<<"\n";
-
-	//if(ConstantInt *initialValue = dyn_cast<ConstantInt>(&boundsL1->getInitialIVValue()))
-		//outs()<<"OK\n";
-	//else
-		//outs()<<"NO\n";
-
-	//if (initialValue->isZero())
-		//outs()<<"ZERO\n";
-	//outs()<<"SAME BOUNDS: "<<(*bounds).getInitialIVValue();
-
-	//outs()<<"SAME BOUNDS: "<<(*(*L1).LoopBounds).getInitialIVValue();
-	//ConstantInt *InitialIVValue = dyn_cast<ConstantInt>(&bounds->getInitialIVValue());
-	//outs()<<"SAME BOUNDS: "<<InitialIVValue;
-	return true;
 }
 
 // Due Loop sono Control-Flow Equivalent se l'esecuzione di uno assicura l'esecuzione dell'altro.
