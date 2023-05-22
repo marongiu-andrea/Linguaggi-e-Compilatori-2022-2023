@@ -9,16 +9,16 @@
 extern void populate (int a[], int b[], int c[], int N, int S);
 // N -> # loops, S -> stride
 
-#define OOMS 17
+#define OOMS 1025
 #define BASE 2
-#define LOOPS 1000
-#define SIZE 100
+#define LOOPS 10000
+#define SIZE 500
 
 
 void main() {
-
     for (int i = 0; i < OOMS; ++i) {
-        int stride = pow(BASE, i);
+        /* int stride = pow(BASE, i); */
+	    int stride = i;
         int size = SIZE * stride;
         int a[size], b[size], c[size];
 
@@ -31,7 +31,6 @@ void main() {
         for (int j = 0; j < LOOPS; ++j) {
             populate(a, b, c, size, stride);
         }
-
         clock_t stop = clock();
 
         double time = (stop - start) / (double) CLOCKS_PER_SEC;
