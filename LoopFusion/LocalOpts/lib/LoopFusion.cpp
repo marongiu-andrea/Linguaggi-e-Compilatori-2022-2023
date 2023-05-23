@@ -103,16 +103,16 @@ void LoopFusionPass::loopFusion(Loop * L1, Loop * L2)
 	// 1) Connette il Body del Loop 1 con il Body del Loop 2
 	(*bodyTerminatorL1).setSuccessor(0, beginBodyL2);
 
-	// Rimpiazza tutti gli usi della istruzione PHI dell'header del Loop 2 con la PHI dell'header del Loop 1
+	// 2) Rimpiazza tutti gli usi della istruzione PHI dell'header del Loop 2 con la PHI dell'header del Loop 1
 	(*headerPhiL2).replaceAllUsesWith(headerPhiL1);
 	
-	// 2) Connette il Body del Loop 2 con il Latch del Loop 1
+	// 3) Connette il Body del Loop 2 con il Latch del Loop 1
 	(*bodyTerminatorL2).setSuccessor(0, latchL1);
 
-	// 3) L'Exit Block del Loop 1 diventa l'Exit Block del Loop 2
+	// 4) L'Exit Block del Loop 1 diventa l'Exit Block del Loop 2
 	(*headerTerminatorL1).setSuccessor(1, exitBlockL2);
 
-	// 4) L'header del Loop 2 viene connesso al Latch del loop 2
+	// 5) L'header del Loop 2 viene connesso al Latch del loop 2
 	(*headerTerminatorL2).setSuccessor(0, latchL2);
 }
 
@@ -144,7 +144,7 @@ llvm::PreservedAnalyses LoopFusionPass::run([[maybe_unused]] Function &F, Functi
 				BasicBlock * exitBlockL1 = (*IterLoop1).getExitBlock();
 				BasicBlock * preheaderL2 = (*IterLoop2).getLoopPreheader();
 				BasicBlock * headerL2 = (*IterLoop2).getHeader();
-		
+
 				if (areLoopsAdjacent(exitBlockL1, preheaderL2, headerL2))
 				{
 					outs()<<"I Loop:\n"<<*IterLoop1<<*IterLoop2<<" sono adiacenti\n----------------------\n";
@@ -153,7 +153,6 @@ llvm::PreservedAnalyses LoopFusionPass::run([[maybe_unused]] Function &F, Functi
 					{
 						outs()<<"I Loop:\n"<<*IterLoop1<<*IterLoop2<<" hanno lo stesso trip count\n----------------------\n";
 
-						// Se i due loop sono Control-Flow Equivalent
 						if (areLoopsControlFlowEquivalent(IterLoop1, IterLoop2, DT, PDT))
 						{
 							outs()<<"Ho trovato due loop Control-Flow Equivalent:\n";
