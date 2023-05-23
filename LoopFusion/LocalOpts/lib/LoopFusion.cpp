@@ -137,7 +137,7 @@ llvm::PreservedAnalyses LoopFusionPass::run([[maybe_unused]] Function &F, Functi
 		for (auto &IterLoop2 : loops)
 		{
 			loop2++;
-			if (&IterLoop1 != &IterLoop2); //TODO: Ricontrollare questo if perché non funziona "--> Analizzo il loop 1 e il loop 1:"
+			if (IterLoop1 != IterLoop2)
 			{
 				outs()<<"--> Analizzo il loop "<<loop1<<" e il loop "<<loop2<<":\n";
 
