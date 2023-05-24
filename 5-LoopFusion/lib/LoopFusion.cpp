@@ -4,15 +4,19 @@
 #include "llvm/IR/Dominators.h"
 #include <llvm/IR/Function.h>
 #include "llvm/Analysis/ScalarEvolution.h"
-#include "llvm/Analysis/ScalarEvolutionExpressions.h"
 #include <llvm/IR/PassManager.h>
 
 using namespace llvm;
 
 namespace
 {
+  bool areNormalizedLoop(Loop *L1, Loop *L2);
   bool areLoopsAdjacent(Loop *L1, Loop *L2, LoopInfo &LI);
   bool haveLoopsSameTripCount(Loop *L1, Loop *L2, ScalarEvolution &SE);
+  bool haveControlFlowEquivalent(Loop *L1, Loop *L2, DominatorTree &DT);
+  void loopFusion(Loop *L1, Loop *L2);
+  void switchInductionVariable(Loop *L1, Loop *L2);
+  void modifyCFG(Loop *L1, Loop *L2);
 
   class LoopFusion final : public FunctionPass
   {
@@ -23,103 +27,117 @@ namespace
 
     virtual void getAnalysisUsage(AnalysisUsage &AU) const override
     {
-      AU.addRequired<ScalarEvolutionWrapperPass>();
       AU.addRequired<LoopInfoWrapperPass>();
+      AU.addRequired<ScalarEvolutionWrapperPass>();
       AU.addRequired<DominatorTreeWrapperPass>();
-      AU.setPreservesAll();
-    }
-    bool runOnLoop(Loop *L)
-    {
-      outs() << "\nLOOPPASS INIZIATO...\n";
-      if (L->isLoopSimplifyForm())
-      {
-        outs() << "FORMA NORMALIZZATA\n";
-      }
-      BasicBlock *BB = L->getLoopPreheader();
-      if (BB)
-      {
-        outs() << "PREHEADER " << *BB << "\n";
-      }
-      for (Loop::block_iterator BI = L->block_begin(); BI != L->block_end(); ++BI)
-      {
-        BasicBlock *B = *BI;
-
-        outs() << "Basic Block: ";
-        B->printAsOperand(outs(), false);
-        outs() << "\n";
-
-        for (auto Iter = B->begin(); Iter != B->end(); ++Iter)
-        {
-          outs() << *Iter << "\n";
-        }
-      }
-
-      return true;
     }
 
     virtual bool runOnFunction(Function &F) override
     {
-      outs() << "\n\n";
-      bool Transformed = false;
+      outs() << "\nLOOPFUSIONPASS INIZIATO...\n\n";
+
       LoopInfo &LI = getAnalysis<LoopInfoWrapperPass>().getLoopInfo();
       ScalarEvolution &SE = getAnalysis<ScalarEvolutionWrapperPass>().getSE();
+      DominatorTree &DT = getAnalysis<DominatorTreeWrapperPass>().getDomTree();
 
       Loop *nextLoop = nullptr;
       for (Loop *L : LI)
       {
         if (nextLoop)
         {
-          outs() << "LOOP predecessor: " << *nextLoop << "\n";
+          outs() << "LOOP predecessor: " << *nextLoop;
           outs() << "LOOP: " << *L << "\n";
-          if (areLoopsAdjacent(L, nextLoop, LI))
+          outs() << "\tAnalyzing...\n";
+
+          if (!areLoopsAdjacent(L, nextLoop, LI))
           {
-            outs() << "LOOPS is adjacent\n";
-            if (haveLoopsSameTripCount(L, nextLoop, SE))
-            {
-              outs() << "LOOPS have same trip count\n";
-            }
+            outs() << "\tLOOPS are not adjacent\n";
+            continue;
           }
+          if (!areNormalizedLoop(L, nextLoop))
+          {
+            outs() << "\tLOOPS are not normalized\n";
+            continue;
+          }
+          if (!haveLoopsSameTripCount(L, nextLoop, SE))
+          {
+            outs() << "\tLOOPS have not same trip count\n";
+            continue;
+          }
+          if (!haveControlFlowEquivalent(L, nextLoop, DT))
+          {
+            outs() << "\tLOOPS have not control flow equivalent\n";
+            continue;
+          }
+
+          outs() << "\tLOOPS are fusionable\n";
+
+          loopFusion(L, nextLoop);
         }
         nextLoop = L;
       }
 
-      return Transformed;
+      return true;
     }
   };
 
   char LoopFusion::ID = 0;
   RegisterPass<LoopFusion> X("loop-fusion-pass", "Loop Fusion Pass");
 
+  void loopFusion(Loop *L1, Loop *L2)
+  {
+    switchInductionVariable(L1, L2);
+    modifyCFG(L1, L2);
+  }
+  void switchInductionVariable(Loop *L1, Loop *L2)
+  {
+    PHINode *inductionVariableL1 = L1->getCanonicalInductionVariable();
+    PHINode *inductionVariableL2 = L2->getCanonicalInductionVariable();
+
+    for (BasicBlock *BB : L2->getBlocks())
+    {
+      for (Instruction &I : *BB)
+      {
+        for (Use &U : I.operands())
+        {
+          if (U.get() == inductionVariableL2)
+          {
+            U.set(inductionVariableL1);
+          }
+        }
+      }
+    }
+  }
+  void modifyCFG(Loop *L1, Loop *L2)
+  {
+    // NON FUNZIONA
+    BasicBlock *ExitBlockL1 = L1->getExitBlock();
+    BasicBlock *HeaderL2 = L2->getHeader();
+
+    BranchInst *BranchToHeaderL2 = BranchInst::Create(HeaderL2, ExitBlockL1);
+    ExitBlockL1->getTerminator()->eraseFromParent();
+    ExitBlockL1->getInstList().push_back(BranchToHeaderL2);
+  }
+
+  bool areNormalizedLoop(Loop *L1, Loop *L2)
+  {
+    return L1->isLoopSimplifyForm() && L2->isLoopSimplifyForm();
+  }
   bool areLoopsAdjacent(Loop *L1, Loop *L2, LoopInfo &LI)
   {
     return L1->getExitBlock() == L2->getLoopPreheader();
   }
   bool haveLoopsSameTripCount(Loop *L1, Loop *L2, ScalarEvolution &SE)
   {
+    unsigned int tripCountValueL1 = SE.getSmallConstantTripCount(L1);
+    unsigned int tripCountValueL2 = SE.getSmallConstantTripCount(L2);
+    outs() << "\t\tLoop 1 trip count: " << tripCountValueL1 << "\n";
+    outs() << "\t\tLoop 2 trip count: " << tripCountValueL2 << "\n";
 
-    const SCEV *TripCount1 = SE.getBackedgeTakenCount(L1);
-    const SCEV *TripCount2 = SE.getBackedgeTakenCount(L2);
-
-    outs() << "LOOP1: \n";
-    TripCount1->dump();
-    Optional<uint64_t> ConstantTripCount = SE.getSmallConstantTripCount(L1);
-    if (ConstantTripCount.hasValue())
-    {
-      outs() << "Constant Trip Count: " << ConstantTripCount.getValue() << "\n";
-    }
-    else
-    {
-      outs() << "Trip Count is not a small constant\n";
-    }
-    outs() << "\tTrip count SCEVType: " << TripCount1->getSCEVType() << "\n";
-
-    outs() << "LOOP2: \n";
-    TripCount2->dump();
-    outs() << "\tTrip count SCEVType: " << TripCount2->getSCEVType() << "\n";
-
-    bool SameTripCount = SE.isKnownPredicate(ICmpInst::ICMP_EQ, TripCount1, TripCount2);
-    outs() << "SameTripCount: " << SameTripCount << "\n";
-
-    return SameTripCount;
+    return tripCountValueL1 == tripCountValueL2;
+  }
+  bool haveControlFlowEquivalent(Loop *L1, Loop *L2, DominatorTree &DT)
+  {
+    return DT.dominates(L1->getExitBlock(), L2->getLoopPreheader()) && DT.dominates(L2->getLoopPreheader(), L1->getExitBlock());
   }
 } // namespace

@@ -1,6 +1,7 @@
 # RICREA Loop.ll
-clang-14 -O0 -Xclang -disable-O0-optnone -emit-llvm -c test.cpp -o test/Loop.bc
-llvm-dis test/Loop.bc -o test/Loop.ll
+clang-14 -O0 -Xclang -disable-O0-optnone -emit-llvm -c test.c -o test/Loop.bc
+opt -passes=mem2reg test/Loop.bc -o test/Loop.base.bc
+llvm-dis test/Loop.base.bc -o test/Loop.ll
 
 # OTTIMIZZA Loop.ll
 make
