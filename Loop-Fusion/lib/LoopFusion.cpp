@@ -1,9 +1,11 @@
-
 #include "LoopFusion.h"
 #include "llvm/IR/InstrTypes.h"
 #include <llvm/Analysis/LoopInfo.h>
 #include <llvm/Analysis/ScalarEvolution.h>
 #include <llvm/ADT/SmallSet.h>
+#include <llvm/Transforms/Utils/LoopSimplify.h>
+#include <llvm/Transforms/Scalar/LoopRotation.h>
+
 
 #include <cmath>
 #include <stdint.h>
@@ -56,6 +58,7 @@ bool LoopFusionPass::checkBounds(llvm::Loop *a, llvm::Loop *b, ScalarEvolution &
         return false;
     }
 
+    outs() << sce.getSmallConstantTripCount(a);
     outs() << "boundings found\n";
 
     auto fBounds = foptBounds.value();
@@ -140,6 +143,9 @@ void LoopFusionPass::loopFusion(llvm::Loop *a, llvm::Loop *b, llvm::ScalarEvolut
     auto *header1 = a->getHeader();
     auto *header2 = b->getHeader();
 
+    auto &blocks1 = a->getBlocksVector();
+    auto &blocks2 = a->getBlocksVector();
+
     auto *latch1 = a->getLoopLatch();
     auto *latch2 = b->getLoopLatch();
 
@@ -166,8 +172,13 @@ void LoopFusionPass::loopFusion(llvm::Loop *a, llvm::Loop *b, llvm::ScalarEvolut
     // update edges to header2 to header1
     header2->replaceAllUsesWith(header1);
 
+    auto *successor = header1;
+    while (successor != nullptr && successor->getSingleSuccessor() != latch1) {
+        successor = header1->getSingleSuccessor();
+    } 
+
     // make header2 the successor of header1
-    auto * instr = header1->getTerminator();
+    auto * instr = successor->getTerminator();
     auto *br = dyn_cast<BranchInst>(instr);
     br->setSuccessor(0, header2);
     
@@ -195,40 +206,56 @@ void LoopFusionPass::loopFusion(llvm::Loop *a, llvm::Loop *b, llvm::ScalarEvolut
 llvm::PreservedAnalyses LoopFusionPass::run(llvm::Function &f,
                                             llvm::FunctionAnalysisManager &FM) 
 {
-    auto &loopinfo = FM.getResult<LoopAnalysis>(f); 
-    auto &sce = FM.getResult<ScalarEvolutionAnalysis>(f);
-    auto &dt = FM.getResult<DominatorTreeAnalysis>(f);
-    auto &pdt = FM.getResult<PostDominatorTreeAnalysis>(f);
+    bool changed = true;
+    while (changed) {
+        changed = false;
 
-    auto loops = loopinfo.getLoopsInPreorder();
+        auto simplify = LoopSimplifyPass();
+        FM.invalidate(f, simplify.run(f, FM));
 
-    //outs() << "started\n";
-    for (int i = 0; i < loops.size() - 1; i++) {
-        if (!isLoopAdjacent(loops[i], loops[i + 1]))
-            continue;
-
-        outs() << "loop adjacent ok \n";
-
-        if (!checkBounds(loops[i], loops[i + 1], sce))
-            continue;
-        
-        
-        outs() << "loop bouidings ok \n";
-
-        if (!checkDominance(loops[i], loops[i+1], dt, pdt))
-            continue;
+        //auto rotate = LoopRotatePass();
+        //FM.invalidate(f, rotate.run(f, FM));
 
         
-        outs() << "loop dominance ok \n";
+        auto &loopinfo = FM.getResult<LoopAnalysis>(f); 
+        auto &sce = FM.getResult<ScalarEvolutionAnalysis>(f);
+        auto &dt = FM.getResult<DominatorTreeAnalysis>(f);
+        auto &pdt = FM.getResult<PostDominatorTreeAnalysis>(f);
 
-        //outs() << "loop fusion executings";
+        auto loops = loopinfo.getLoopsInPreorder();
 
-        loopFusion(loops[i], loops[i + 1], sce);
+        for (int i = 0; i < loops.size() - 1; i++) {
+            if (!isLoopAdjacent(loops[i], loops[i + 1]))
+                continue;
 
-        outs() << " dumping function \n\n";
-        f.dump();
-        break;
+            outs() << "loop adjacent ok \n";
+
+            if (!checkBounds(loops[i], loops[i + 1], sce))
+                continue;
+            
+            
+            outs() << "loop bouidings ok \n";
+
+            if (!checkDominance(loops[i], loops[i+1], dt, pdt))
+                continue;
+
+            
+            outs() << "loop dominance ok \n";
+
+            //outs() << "loop fusion executings";
+
+            loopFusion(loops[i], loops[i + 1], sce);
+
+            outs() << " dumping function \n\n";
+
+            FM.invalidate(f, PreservedAnalyses::none());
+            f.dump();
+            changed = true;
+            break;
+        }
     }
+    //outs() << "started\n";
+
 
     return PreservedAnalyses::none();
 }
