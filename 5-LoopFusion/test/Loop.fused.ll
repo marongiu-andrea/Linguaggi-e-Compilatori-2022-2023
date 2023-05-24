@@ -1,4 +1,4 @@
-; ModuleID = 'test/Loop.base.bc'
+; ModuleID = 'test/Loop.fused.bc'
 source_filename = "test.cc"
 target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-pc-linux-gnu"
@@ -11,10 +11,10 @@ target triple = "x86_64-pc-linux-gnu"
 define dso_local void @_Z8populatePiS_S_(i32* noundef %0, i32* noundef %1, i32* noundef %2) #0 {
   br label %4
 
-4:                                                ; preds = %15, %3
-  %.0 = phi i32 [ 0, %3 ], [ %16, %15 ]
+4:                                                ; preds = %27, %3
+  %.0 = phi i32 [ 0, %3 ], [ %28, %27 ]
   %5 = icmp slt i32 %.0, 40000
-  br i1 %5, label %6, label %17
+  br i1 %5, label %6, label %29
 
 6:                                                ; preds = %4
   %7 = sub nsw i32 40000, %.0
@@ -29,37 +29,40 @@ define dso_local void @_Z8populatePiS_S_(i32* noundef %0, i32* noundef %1, i32* 
   br label %15
 
 15:                                               ; preds = %6
-  %16 = add nsw i32 %.0, 1
+  %16 = sext i32 %.0 to i64
+  %17 = getelementptr inbounds i32, i32* %0, i64 %16
+  %18 = load i32, i32* %17, align 4
+  %19 = sub nsw i32 40000, %.0
+  %20 = sub nsw i32 %19, 1
+  %21 = sext i32 %20 to i64
+  %22 = getelementptr inbounds i32, i32* %2, i64 %21
+  %23 = load i32, i32* %22, align 4
+  %24 = add nsw i32 %18, %23
+  %25 = sext i32 %.0 to i64
+  %26 = getelementptr inbounds i32, i32* %1, i64 %25
+  store i32 %24, i32* %26, align 4
+  br label %27
+
+27:                                               ; preds = %15
+  %28 = add nsw i32 %.0, 1
   br label %4, !llvm.loop !6
 
-17:                                               ; preds = %4
-  br label %18
+29:                                               ; preds = %4
+  br label %30
 
-18:                                               ; preds = %32, %17
-  %.1 = phi i32 [ 0, %17 ], [ %33, %32 ]
-  %19 = icmp slt i32 %.1, 40000
-  br i1 %19, label %20, label %34
+30:                                               ; preds = %32, %29
+  %.1 = phi i32 [ 0, %29 ], [ %33, %32 ]
+  %31 = icmp slt i32 %.0, 40000
+  br i1 %31, label %.split, label %34
 
-20:                                               ; preds = %18
-  %21 = sext i32 %.1 to i64
-  %22 = getelementptr inbounds i32, i32* %0, i64 %21
-  %23 = load i32, i32* %22, align 4
-  %24 = sub nsw i32 40000, %.1
-  %25 = sub nsw i32 %24, 1
-  %26 = sext i32 %25 to i64
-  %27 = getelementptr inbounds i32, i32* %2, i64 %26
-  %28 = load i32, i32* %27, align 4
-  %29 = add nsw i32 %23, %28
-  %30 = sext i32 %.1 to i64
-  %31 = getelementptr inbounds i32, i32* %1, i64 %30
-  store i32 %29, i32* %31, align 4
+.split:                                           ; preds = %30
   br label %32
 
-32:                                               ; preds = %20
-  %33 = add nsw i32 %.1, 1
-  br label %18, !llvm.loop !8
+32:                                               ; preds = %.split
+  %33 = add nsw i32 %.0, 1
+  br label %30, !llvm.loop !8
 
-34:                                               ; preds = %18
+34:                                               ; preds = %30
   ret void
 }
 
@@ -72,10 +75,10 @@ define dso_local noundef i32 @main() #1 {
   %5 = alloca %struct.timespec, align 8
   br label %6
 
-6:                                                ; preds = %11, %0
-  %.01 = phi i32 [ 0, %0 ], [ %12, %11 ]
+6:                                                ; preds = %15, %0
+  %.01 = phi i32 [ 0, %0 ], [ %16, %15 ]
   %7 = icmp slt i32 %.01, 40000
-  br i1 %7, label %8, label %13
+  br i1 %7, label %8, label %17
 
 8:                                                ; preds = %6
   %9 = sext i32 %.01 to i64
@@ -84,30 +87,33 @@ define dso_local noundef i32 @main() #1 {
   br label %11
 
 11:                                               ; preds = %8
-  %12 = add nsw i32 %.01, 1
-  br label %6, !llvm.loop !9
-
-13:                                               ; preds = %6
-  %14 = call i32 @clock_gettime(i32 noundef 0, %struct.timespec* noundef %4) #4
+  %12 = getelementptr inbounds [40000 x i32], [40000 x i32]* %1, i64 0, i64 0
+  %13 = getelementptr inbounds [40000 x i32], [40000 x i32]* %2, i64 0, i64 0
+  %14 = getelementptr inbounds [40000 x i32], [40000 x i32]* %3, i64 0, i64 0
+  call void @_Z8populatePiS_S_(i32* noundef %12, i32* noundef %13, i32* noundef %14)
   br label %15
 
-15:                                               ; preds = %21, %13
-  %.0 = phi i32 [ 0, %13 ], [ %22, %21 ]
-  %16 = icmp slt i32 %.0, 40000
-  br i1 %16, label %17, label %23
+15:                                               ; preds = %11
+  %16 = add nsw i32 %.01, 1
+  br label %6, !llvm.loop !9
 
-17:                                               ; preds = %15
-  %18 = getelementptr inbounds [40000 x i32], [40000 x i32]* %1, i64 0, i64 0
-  %19 = getelementptr inbounds [40000 x i32], [40000 x i32]* %2, i64 0, i64 0
-  %20 = getelementptr inbounds [40000 x i32], [40000 x i32]* %3, i64 0, i64 0
-  call void @_Z8populatePiS_S_(i32* noundef %18, i32* noundef %19, i32* noundef %20)
+17:                                               ; preds = %6
+  %18 = call i32 @clock_gettime(i32 noundef 0, %struct.timespec* noundef %4) #4
+  br label %19
+
+19:                                               ; preds = %21, %17
+  %.0 = phi i32 [ 0, %17 ], [ %22, %21 ]
+  %20 = icmp slt i32 %.01, 40000
+  br i1 %20, label %.split, label %23
+
+.split:                                           ; preds = %19
   br label %21
 
-21:                                               ; preds = %17
-  %22 = add nsw i32 %.0, 1
-  br label %15, !llvm.loop !10
+21:                                               ; preds = %.split
+  %22 = add nsw i32 %.01, 1
+  br label %19, !llvm.loop !10
 
-23:                                               ; preds = %15
+23:                                               ; preds = %19
   %24 = call i32 @clock_gettime(i32 noundef 0, %struct.timespec* noundef %5) #4
   %25 = getelementptr inbounds %struct.timespec, %struct.timespec* %5, i32 0, i32 0
   %26 = load i64, i64* %25, align 8
