@@ -52,7 +52,7 @@ static inline unsigned long get_rdtsc_freq(void) {
     return tsc_freq;
 }
 
-#define N 500000
+#define N 10000000
 
 extern void populate(int a[N], int b[N], int c[N], int pippo);
 
@@ -60,9 +60,9 @@ int main()
 {
     long freq = get_rdtsc_freq();
     
-    int a[N];
-    int b[N];
-    int c[N];
+    int* a = (int*)malloc(sizeof(int) * N);
+    int* b = (int*)malloc(sizeof(int) * N);
+    int* c = (int*)malloc(sizeof(int) * N);
     
     long start = __rdtsc();
     populate(a, b, c, 0);
