@@ -1,9 +1,9 @@
 OPTIMIZER := libLoopFusion.so
 OBJs := $(subst .cpp,.o,$(wildcard lib/*.cpp))
 
-LLVM_VERSION ?= 14
+LLVM_VERSION ?= 15
 
-CXXFLAGS := $(shell llvm-config-$(LLVM_VERSION) --cxxflags) -fPIC
+CXXFLAGS := -DLLVMOPT -I/usr/lib/llvm-15/include -std=c++17   -fno-exceptions -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS -fPIC -fPIC
 
 all: $(OPTIMIZER) 
 

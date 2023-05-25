@@ -6,6 +6,7 @@
 #include <llvm/ADT/SmallSet.h>
 #include <llvm/Transforms/Utils/LoopSimplify.h>
 #include <llvm/Transforms/Scalar/LoopRotation.h>
+#include <llvm/ADT/Optional.h>
 
 #include <cmath>
 #include <stdint.h>
@@ -49,7 +50,7 @@ bool LoopFusionPass::isLoopAdjacent(llvm::Loop *a, llvm::Loop *b)
 }
 
 // NOTE(Leo): Le versioni successive a LLVM14 usano std::optional anzichè llvm::Optional
-#ifdef LLVM14
+#ifdef LLVMOPT
 template<typename t>
 bool optionalHasValue(llvm::Optional<t>& optional) { return optional.hasValue(); }
 
