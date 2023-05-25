@@ -1,4 +1,4 @@
-#define N  100
+#define N  1000000000
 
 void populate (int a[N], int b[N], int c[N]){
     int i;

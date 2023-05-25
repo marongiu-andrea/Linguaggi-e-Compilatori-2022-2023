@@ -1,5 +1,5 @@
-; ModuleID = 'Loop.opt.bc'
-source_filename = "Loop.c"
+; ModuleID = 'test/Loop.opt.bc'
+source_filename = "test/Loop.c"
 target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-pc-linux-gnu"
 
@@ -9,7 +9,7 @@ define dso_local void @populate(i32* noundef %0, i32* noundef %1, i32* noundef %
 
 4:                                                ; preds = %13, %3
   %.0 = phi i32 [ 0, %3 ], [ %14, %13 ]
-  %5 = icmp slt i32 %.0, 100
+  %5 = icmp slt i32 %.0, 1000000000
   br i1 %5, label %6, label %15
 
 6:                                                ; preds = %4
@@ -31,7 +31,7 @@ define dso_local void @populate(i32* noundef %0, i32* noundef %1, i32* noundef %
 
 16:                                               ; preds = %28, %15
   %.1 = phi i32 [ 0, %15 ], [ %29, %28 ]
-  %17 = icmp slt i32 %.1, 100
+  %17 = icmp slt i32 %.1, 1000000000
   br i1 %17, label %18, label %30
 
 18:                                               ; preds = %16

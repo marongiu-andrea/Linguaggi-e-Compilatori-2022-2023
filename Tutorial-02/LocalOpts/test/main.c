@@ -1,7 +1,7 @@
 #include "time.h"
 #include "stdio.h"
 
-#define N 100
+#define N 1000000000
 extern void populate(int *, int *, int *);
 
 int main(){
