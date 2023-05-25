@@ -6,6 +6,7 @@
 using namespace llvm;
 
 extern "C" PassPluginLibraryInfo llvmGetPassPluginInfo() {
+  
   return {
       .APIVersion = LLVM_PLUGIN_API_VERSION,
       .PluginName = "LocalOpts",
@@ -23,18 +24,41 @@ extern "C" PassPluginLibraryInfo llvmGetPassPluginInfo() {
 		// LoopPass
 		// RegionPass
 		// BasicBlockPass
+    /*
 		[](StringRef Name, ModulePassManager &MPM,
                    ArrayRef<PassBuilder::PipelineElement>) -> bool {
                   if (Name == "transform") {
                     MPM.addPass(TransformPass());
                     return true;
                   }
-                  // TODO: Implementare gli stub per
-		  // Algebraic Identity
-		  // Strength Reduction
-		  // Multi-instruction Operations
+                  if (Name == "algebraic-identity") {
+                    MPM.addPass(AlgebraicIdentityPass());
+                    return true;
+                  }
+                  if (Name == "multi-instr") {
+                    MPM.addPass(MultiInstrPass());
+                    return true;
+                  }
+                  if (Name == "unione-loop") {
+                    MPM.addPass(UnioneLoopPass());
+                    return true;
+                  }
                   return false;
                 });
-          } // RegisterPassBuilderCallbacks
-  };        // struct PassPluginLibraryInfo
+          } // RegisterPassBuilderCallbacks*/
+    [](StringRef Name, FunctionPassManager &MPM,
+        ArrayRef<PassBuilder::PipelineElement>) -> bool {
+          if (Name == "unione-loop") {
+            MPM.addPass(UnioneLoopPass());
+            return true;
+          }
+          return false;
+        });
+      }
+  
+  
+  
+  
+  };      // struct PassPluginLibraryInfo
+
 }
