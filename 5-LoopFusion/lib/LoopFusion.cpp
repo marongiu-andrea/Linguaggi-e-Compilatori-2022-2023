@@ -18,6 +18,8 @@ namespace
   bool haveLoopsSameTripCount(Loop *L1, Loop *L2, ScalarEvolution &SE);
   bool haveCanonicalInductionVariable(Loop *L1, Loop *L2);
   bool haveControlFlowEquivalent(Loop *L1, Loop *L2, DominatorTree &DT, PostDominatorTree &PDT);
+  void switchInductionVariables(Loop *L1, Loop *L2);
+  SmallVector<BasicBlock *> getBodyBlocks(Loop *L);
   void loopFusion(Loop *L1, Loop *L2, DominatorTree &DT, LoopInfo &LI);
 
   class LoopFusion final : public FunctionPass
@@ -51,7 +53,7 @@ namespace
         {
           outs() << "LOOP predecessor: " << *nextLoop;
           outs() << "LOOP: " << *L << "\n";
-          outs() << "\tAnalyzing...\n";
+          outs() << "\tAnalyzing...\n\n";
 
           if (!areLoopsAdjacent(L, nextLoop, LI))
           {
@@ -79,9 +81,8 @@ namespace
             continue;
           }
 
-          outs() << "\tLOOPS are fusionable\n";
-
           loopFusion(L, nextLoop, DT, LI);
+          outs() << "\tLOOPS fused\n";
         }
         nextLoop = L;
       }
@@ -95,52 +96,24 @@ namespace
 
   void loopFusion(Loop *L1, Loop *L2, DominatorTree &DT, LoopInfo &LI)
   {
+    switchInductionVariables(L1, L2);
 
-    SmallVector<BasicBlock *> blocksToMove;
-    for (auto &bb : L2->getBlocks())
-    {
-      if (bb == L2->getHeader())
-        continue;
+    SmallVector<BasicBlock *> bodyL2 = getBodyBlocks(L2);
 
-      if (bb == L2->getLoopLatch())
-        continue;
+    // printBlocks(bodyL2);
 
-      blocksToMove.push_back(bb);
-    }
+    BasicBlock *lastBasicBlockBodyL1 = getBodyBlocks(L1).back();
 
-    // Replace the induction variable of L2 with the induction variable of L1
-    Value *inductionVariableL1 = &L1->getHeader()->getInstList().front();
-    Instruction *inductionVariableL2 = &L2->getHeader()->getInstList().front();
-    inductionVariableL2->replaceAllUsesWith(inductionVariableL1);
+    Instruction *terminatorBodyL1 = lastBasicBlockBodyL1->getTerminator();
 
-    BasicBlock *L1Body = nullptr;
-    for (auto &bb : L1->getBlocks())
-    {
-      if (bb == L1->getHeader())
-        continue;
-      L1Body = bb;
-      break;
-    }
-
-    Instruction *L1Terminator = nullptr;
-    for (auto &inst : L1Body->getInstList())
-    {
-      if (inst.isTerminator())
-      {
-        L1Terminator = &inst;
-        break;
-      }
-    }
-
-    // TODO: Move the body of L2 next to the body of L1
-
-    for (auto &bb : blocksToMove)
+    // Move the body of L2 next to the body of L1
+    for (auto &bb : bodyL2)
     {
       auto splitEdge = SplitEdge(L2->getHeader(), bb, &DT, &LI);
       bb->replaceAllUsesWith(L2->getLoopLatch());
-      bb->moveAfter(L1Body);
+      bb->moveAfter(lastBasicBlockBodyL1);
 
-      L1Terminator->setOperand(0, bb);
+      terminatorBodyL1->setOperand(0, bb);
 
       for (auto &inst : bb->getInstList())
       {
@@ -151,6 +124,24 @@ namespace
         }
       }
     }
+  }
+  SmallVector<BasicBlock *> getBodyBlocks(Loop *L)
+  {
+    SmallVector<BasicBlock *> bodyBlocks;
+
+    for (auto &bb : L->getBlocks())
+    {
+      if (bb != L->getHeader() && bb != L->getLoopLatch())
+        bodyBlocks.push_back(bb);
+    }
+    return bodyBlocks;
+  }
+  void switchInductionVariables(Loop *L1, Loop *L2)
+  {
+    // Replace the induction variable of L2 with the induction variable of L1
+    Value *inductionVariableL1 = &L1->getHeader()->getInstList().front();
+    Instruction *inductionVariableL2 = &L2->getHeader()->getInstList().front();
+    inductionVariableL2->replaceAllUsesWith(inductionVariableL1);
   }
   bool areNormalizedLoop(Loop *L1, Loop *L2)
   {

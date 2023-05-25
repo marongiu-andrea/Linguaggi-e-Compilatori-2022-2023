@@ -1,9 +1,4 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <ctime>
-
-#define N 40000
-#define BILLION 1000000000L
+#define N 100
 
 void populate(int a[N], int b[N], int c[N])
 {
@@ -11,33 +6,14 @@ void populate(int a[N], int b[N], int c[N])
     for (i = 0; i < N; i++)
     {
         a[i] = 5 * c[N - i - 1];
+        if (a[i] > 10)
+        {
+            b[i] = 5 * c[i];
+        }
     }
 
     for (i = 0; i < N; i++)
     {
         b[i] = a[i] + c[N - i - 1];
     }
-}
-
-int main()
-{
-    int a[N], b[N], c[N];
-
-    for (int i = 0; i < N; i++)
-        c[i] = 1;
-
-    struct timespec start;
-    clock_gettime(CLOCK_REALTIME, &start);
-
-    for (int i = 0; i < N; i++)
-        populate(a, b, c);
-
-    struct timespec end;
-    clock_gettime(CLOCK_REALTIME, &end);
-
-    long double delta = (long double)(end.tv_sec - start.tv_sec) + (long double)(end.tv_nsec - start.tv_nsec) / (long double)(BILLION);
-
-    printf("Time elapsed: %Lf\n\n", delta);
-
-    return 0;
 }
