@@ -1,5 +1,5 @@
-; ModuleID = 'test/Loop.base.bc'
-source_filename = "test.cc"
+; ModuleID = 'test/populate.base.bc'
+source_filename = "srcTest/populate.cc"
 target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-pc-linux-gnu"
 
@@ -9,11 +9,11 @@ define dso_local void @_Z8populatePiS_S_(i32* noundef %0, i32* noundef %1, i32* 
 
 4:                                                ; preds = %27, %3
   %.0 = phi i32 [ 0, %3 ], [ %28, %27 ]
-  %5 = icmp slt i32 %.0, 100
+  %5 = icmp slt i32 %.0, 100000
   br i1 %5, label %6, label %29
 
 6:                                                ; preds = %4
-  %7 = sub nsw i32 100, %.0
+  %7 = sub nsw i32 100000, %.0
   %8 = sub nsw i32 %7, 1
   %9 = sext i32 %8 to i64
   %10 = getelementptr inbounds i32, i32* %2, i64 %9
@@ -50,14 +50,14 @@ define dso_local void @_Z8populatePiS_S_(i32* noundef %0, i32* noundef %1, i32* 
 
 30:                                               ; preds = %44, %29
   %.1 = phi i32 [ 0, %29 ], [ %45, %44 ]
-  %31 = icmp slt i32 %.1, 100
+  %31 = icmp slt i32 %.1, 100000
   br i1 %31, label %32, label %46
 
 32:                                               ; preds = %30
   %33 = sext i32 %.1 to i64
   %34 = getelementptr inbounds i32, i32* %0, i64 %33
   %35 = load i32, i32* %34, align 4
-  %36 = sub nsw i32 100, %.1
+  %36 = sub nsw i32 100000, %.1
   %37 = sub nsw i32 %36, 1
   %38 = sext i32 %37 to i64
   %39 = getelementptr inbounds i32, i32* %2, i64 %38

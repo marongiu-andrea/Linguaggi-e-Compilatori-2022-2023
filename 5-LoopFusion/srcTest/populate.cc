@@ -1,4 +1,4 @@
-#define N 100
+#include "populate.h"
 
 void populate(int a[N], int b[N], int c[N])
 {

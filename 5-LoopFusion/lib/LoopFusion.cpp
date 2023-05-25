@@ -1,12 +1,5 @@
-#include <llvm/Analysis/LoopPass.h>
-#include <llvm/IR/BasicBlock.h>
-#include <llvm/Analysis/ValueTracking.h>
-#include "llvm/IR/Dominators.h"
-#include <llvm/Analysis/PostDominators.h>
-#include <llvm/IR/Function.h>
-#include <llvm/IR/PassManager.h>
-
 #include "llvm/Analysis/ScalarEvolution.h"
+#include <llvm/Analysis/PostDominators.h>
 #include "llvm/Transforms/Utils/BasicBlockUtils.h"
 
 using namespace llvm;
@@ -100,8 +93,6 @@ namespace
 
     SmallVector<BasicBlock *> bodyL2 = getBodyBlocks(L2);
 
-    // printBlocks(bodyL2);
-
     BasicBlock *lastBasicBlockBodyL1 = getBodyBlocks(L1).back();
 
     Instruction *terminatorBodyL1 = lastBasicBlockBodyL1->getTerminator();
@@ -155,8 +146,6 @@ namespace
   {
     unsigned int tripCountValueL1 = SE.getSmallConstantTripCount(L1);
     unsigned int tripCountValueL2 = SE.getSmallConstantTripCount(L2);
-    outs() << "\t\tLoop 1 trip count: " << tripCountValueL1 << "\n";
-    outs() << "\t\tLoop 2 trip count: " << tripCountValueL2 << "\n";
 
     return tripCountValueL1 == tripCountValueL2;
   }

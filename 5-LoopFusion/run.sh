@@ -1,20 +1,26 @@
-# CREA Loop.ll da test.cc
-clang-14 -O0 -Xclang -disable-O0-optnone -emit-llvm -c test.cc -o test/Loop.bc
-opt -passes=mem2reg test/Loop.bc -o test/Loop.base.bc
-llvm-dis test/Loop.base.bc -o test/Loop.ll
+# CREA populate.base.ll da populate.cc
+clang-14 -O0 -Xclang -disable-O0-optnone -emit-llvm -c srcTest/populate.cc -o test/populate.bc
+opt -passes=mem2reg test/populate.bc -o test/populate.base.bc
+llvm-dis test/populate.base.bc -o test/populate.ll
 
-# OTTIMIZZA Loop.ll
+# OTTIMIZZA populate.ll
 make
-# opt -enable-new-pm=0 -load ./libLoopFusion.so -loop-fusion-pass test/Loop.ll -disable-output
-opt -enable-new-pm=0 -load ./libLoopFusion.so -loop-fusion-pass test/Loop.ll -o test/Loop.fused.bc
-llvm-dis test/Loop.fused.bc -o test/Loop.fused.ll
+# opt -enable-new-pm=0 -load ./libLoopFusion.so -loop-fusion-pass test/populate.ll -disable-output
+opt -enable-new-pm=0 -load ./libLoopFusion.so -loop-fusion-pass test/populate.ll -o test/populate.opt.bc
+llvm-dis test/populate.opt.bc -o test/populate.opt.ll
+echo -e
+echo -e
 
 # Genera file eseguibile base
-# clang-14 -c -o test/Loop.base.o test/Loop.base.bc
-# clang-14 -o out/Loop.base.out test/Loop.base.o
-# ./out/Loop.base.out
+clang-14 -c -o srcTest/populate.o test/populate.base.bc
+clang-14 -c -o srcTest/main.o srcTest/main.cc
+clang-14 srcTest/main.o srcTest/populate.o -o test.out -lstdc++ -std=c++11
+./test.out
+echo -e
 
 # Genera file eseguibile ottimizzato
-# clang-14 -c -o test/Loop.fused.o test/Loop.fused.bc
-# clang-14 -o out/Loop.fused.out test/Loop.fused.o
-# ./out/Loop.fused.out
+clang-14 -c -o srcTest/populate.o test/populate.opt.bc
+clang-14 srcTest/main.o srcTest/populate.o -o test.opt.out -lstdc++ -std=c++11
+./test.opt.out ottimizzato
+echo -e
+
