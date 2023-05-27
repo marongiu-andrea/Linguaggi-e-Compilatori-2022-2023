@@ -17,7 +17,7 @@
 
 define dso_local void @foo(i32 noundef %0) {
   %2 = add nsw i32 %0, 0
-  %3 = mul nsw i32 %2, 16
+  %3 = mul nsw i32 %2, 15
   %4 = mul nsw i32 %3, %2
   %5 = sdiv i32 %4, %0
   %6 = sdiv i32 %4, 10
@@ -26,6 +26,9 @@ define dso_local void @foo(i32 noundef %0) {
   %9 = sdiv i32 %7, 54
   %10 = sdiv i32 %6, 1
   %11 = sub nsw i32 %9, 0
+  %12 = sdiv i32 %11, 13 ; righe aggiunte per 3° esercizio
+  %13 = mul nsw i32 13, %12
+  %14 = add nsw i32 %13, 25
   ret void
 }
 

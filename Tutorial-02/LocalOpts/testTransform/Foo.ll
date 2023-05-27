@@ -12,5 +12,5 @@ define dso_local i32 @foo(i32 noundef %0, i32 noundef %1) #0 {
   %5 = shl i32 %0, 1
   %6 = sdiv i32 %5, 4
   %7 = mul nsw i32 %4, %6
-  ret i32 %7
+  ret i32 %7  ; cambiare questo con %4 per provare a cambiare solo 1 reference
 }
