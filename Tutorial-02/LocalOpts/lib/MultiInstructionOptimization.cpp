@@ -143,6 +143,7 @@ void subMultiInstructionOptimization(Instruction &Iter)
         }
     }    
 }
+
 void mulMultiInstructionOptimization(Instruction &Iter)
 {
     outs()<<"----------------------------------------------------------------------------\nHo trovato una Mul:"<<Iter<<"\n";
@@ -216,6 +217,7 @@ void mulMultiInstructionOptimization(Instruction &Iter)
         }
     }    
 }
+
 void sdivMultiInstructionOptimization(Instruction &Iter)
 {
     outs()<<"----------------------------------------------------------------------------\nHo trovato una SDiv:"<<Iter<<"\n";
