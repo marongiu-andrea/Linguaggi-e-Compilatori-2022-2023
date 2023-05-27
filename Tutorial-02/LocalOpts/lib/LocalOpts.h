@@ -16,13 +16,15 @@ class AlgebraicIdentityPass final : public llvm::PassInfoMixin<TransformPass>
 		void addAlgebraicIdentity(llvm::Instruction * Iter);
 		void subAlgebraicIdentity(llvm::Instruction * Iter);
 		void mulAlgebraicIdentity(llvm::Instruction * Iter);
-		void divAlgebraicIdentity(llvm::Instruction * Iter);
+		void sdivAlgebraicIdentity(llvm::Instruction * Iter);
 };
 
 class StrengthReductionPass final : public llvm::PassInfoMixin<TransformPass> 
 {
 	public:
   		llvm::PreservedAnalyses run(llvm::Module &, llvm::ModuleAnalysisManager &);
+		void mulStrengthReduction(llvm::Instruction * Iter);
+		void sdivStrengthReduction(llvm::Instruction * Iter);
 };
 
 class MultiInstructionOptimizationPass final : public llvm::PassInfoMixin<TransformPass> 

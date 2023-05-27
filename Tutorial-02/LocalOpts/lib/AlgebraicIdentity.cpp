@@ -76,7 +76,7 @@ void mulAlgebraicIdentity(Instruction &Iter)
     }
 }
 
-void divAlgebraicIdentity(Instruction &Iter)
+void sdivAlgebraicIdentity(Instruction &Iter)
 {
     outs()<<"----------------------------------------------------------------------------\nHo trovato una SDiv:"<<Iter<<"\n";
     ConstantInt * constant0 = dyn_cast<ConstantInt>(Iter.getOperand(0));
@@ -116,7 +116,7 @@ bool runOnBasicBlockAlgebraicIdentity(BasicBlock &B)
             }
             case Instruction::SDiv: //Se l'operazione è una SDiv
             {
-                divAlgebraicIdentity(Iter);
+                sdivAlgebraicIdentity(Iter);
                 break;
             }   
             default:

@@ -18,9 +18,11 @@ define dso_local void @foo(i32 noundef %0) {
   %15 = sub nsw i32 %12, 0
   %16 = add nsw i32 %15, 1
   %17 = add nsw i32 %14, 5
-  %18 = mul nsw i32 %12, 17
+  %18 = mul nsw i32 15, %12
   %19 = shl i32 %12, 4
-  %20 = add i32 %19, %12
+  %20 = sub i32 %19, %12
   %21 = add nsw i32 %20, 10
+  %22 = add nsw i32 %12, 1
+  %23 = sub nsw i32 %22, 2
   ret void
 }
