@@ -31,5 +31,9 @@ class MultiInstructionOptimizationPass final : public llvm::PassInfoMixin<Transf
 {
 	public:
   		llvm::PreservedAnalyses run(llvm::Module &, llvm::ModuleAnalysisManager &);
+		void addMultiInstructionOptimization(llvm::Instruction * Iter);
+		void subMultiInstructionOptimization(llvm::Instruction * Iter);
+		void mulMultiInstructionOptimization(llvm::Instruction * Iter);
+		void sdivMultiInstructionOptimization(llvm::Instruction * Iter);
 };
 
