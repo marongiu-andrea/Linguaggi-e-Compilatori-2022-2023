@@ -1,7 +1,7 @@
 #include "LICMPass.h"
 #include <llvm/Analysis/ValueTracking.h>
 #include <llvm/IR/Dominators.h>
-#include <vector>
+
 
 using namespace llvm;
 
@@ -24,58 +24,115 @@ RegisterPass<LICMPass> X("loop-invariant-code-motion","Loop Invariant Code Motio
     6.1 Spostare l’istruzione candidata nel preheader
 */
 
-
-bool LICMPass::isIntructionLoopInvariant( Instruction* inst,  Loop* L)
+void LICMPass::getLoopInvariantInstructions()
 {
-  Value* op1 = inst->getOperand(0);
-  Value* op2 = inst->getOperand(1);
-  return isOperandLoopInvariant(op1, L) && isOperandLoopInvariant(op2, L);
+  for(auto& BB : loop->getBlocks())
+  {    
+    for(auto& instr : BB->getInstList())
+    {
+      // cerco le istruzioni del tipo A = B + C
+      if(!instr.isBinaryOp()) continue;
+
+      if(isIntructionLoopInvariant(&instr))
+        markedAsLoopInvariants.insert(&instr);
+    }
+  }
 }
 
-bool LICMPass::isOperandLoopInvariant( Value* op, Loop* L)
+bool LICMPass::isIntructionLoopInvariant(Instruction* inst)
 {
-  // l'operando è una costante?
-  if(isa<ConstantInt>(op))
-    return true;
-
-  // l'operando è definito fuori dal loop?
-  Instruction* instrOP = dyn_cast<Instruction>(op);
-  if(instrOP && !L->contains(instrOP))
-    return true;  
-  
-  // l'operando è stato marcato come loop-invariant?
-  if(markedAsLoopInvariants.find(instrOP) != markedAsLoopInvariants.end())
-    return true;
-
-  return false;
-}
-
-bool LICMPass::isExitBasicBlock(BasicBlock* BB,Loop* L)
-{
-  // è un exit basic block se il suo next è fuori dal loop
-  return !L->contains(BB->getNextNode());
-}
-
-bool LICMPass::dominatesAllExitBlocks(Instruction* instr, DominatorTree* dt)
-{
-  for(auto bb : exitBasicBlocks)
-    if(!dt->dominates(instr, bb))
+  // un'istruzione è loop-invariant se ha tutti gli operandi loop-invariant
+  for(auto& op : inst->operands())
+    if(!isOperandLoopInvariant(op.get()))
       return false;
   
   return true;
 }
 
-bool LICMPass::isDeadOutOfLoop(Instruction* instr, Loop* L)
+bool LICMPass::isOperandLoopInvariant(Value* op)
+{
+  // l'operando è una costante o argomento di una funzione
+  if(isa<Constant>(op) || isa<Argument>(op))
+    return true;
+  
+  // l'operando è una variabile
+  Instruction* definition = dyn_cast<Instruction>(op);
+  if(definition)
+  {
+    // l'operando è una variabile ed è definita solo fuori dal loop?
+    if(!loop->contains(definition))
+      return true;
+    
+    // l'operando è una variabile definita dentro al loop, 
+    // se non è un PHI node ho una unica reaching definition dentro al loop, 
+    // se è già marcato come loop-invariant
+    if(loop->contains(definition) && 
+        !isa<PHINode>(definition) && 
+        markedAsLoopInvariants.count(definition) != 0)
+      return true;
+  }
+
+  return false;
+}
+
+
+void LICMPass::getHoistableInstructions()
+{
+  for(auto inst : markedAsLoopInvariants)
+    if(dominatesAllExitingBlocks(inst) || isDeadOutOfLoop(inst))
+      hoistableInstructions.insert(inst); 
+}
+
+bool LICMPass::dominatesAllExitingBlocks(Instruction* instr)
+{
+  for(auto bb : exitingBasicBlocks)
+    if(!dominatorTree->dominates(instr, bb))
+      return false;
+  
+  return true;
+}
+
+bool LICMPass::isDeadOutOfLoop(Instruction* instr)
 {
   // l'istruzione viene usata solo all'interno del loop
   for(const auto& use : instr->uses())
   {
     Instruction* user = dyn_cast<Instruction>(use.getUser());
-    if(!L->contains(user))
+    if(!loop->contains(user))
       return false;
   }
 
   return true;
+}
+
+
+void LICMPass::moveInstructions()
+{
+  const auto header     = loop->getHeader();
+  const auto preHeader  = loop->getLoopPreheader();
+  const auto terminator = preHeader->getTerminator();
+
+  for(auto inst : hoistableInstructions)
+    inst->moveBefore(terminator);
+}
+
+
+void LICMPass::printLoopInvariantInstructions()
+{
+  auto& os = outs();
+  os << "\n----- Print loop invariant instructions -----\n";
+  for(const auto& inst : markedAsLoopInvariants)
+    os << *inst << "\n";
+  os << "----------------------------------\n";
+}
+
+void LICMPass::printHoistableInstructions()
+{
+    auto& os = outs();
+  os << "\n----- Print loop hoistble instructions -----\n";
+  for(const auto& inst : hoistableInstructions)
+    os << *inst << "\n";
+  os << "----------------------------------\n";
 }
 
 
@@ -93,56 +150,22 @@ bool LICMPass::runOnLoop(Loop* L, LPPassManager& LPM)
 
   if(!L->isLoopSimplifyForm()) return false;
   
-  DominatorTree& dominatorTree = getAnalysis<DominatorTreeWrapperPass>().getDomTree();
+  loop = L;
+  dominatorTree = &getAnalysis<DominatorTreeWrapperPass>().getDomTree();
   
-  os << "------ Iterate over Loop ------\n";
-
-  // cerco tutti gli exit blocks del loop
-  // cerco tutte le instruzioni loop-invariant
-  for(auto BB : L->getBlocks())
-  {
-    bool isExitBlock = isExitBasicBlock(BB, L); 
-    os << *BB << "isExitBasicBlock=" << (isExitBlock == 0 ? "False" : "True") << "\n";
-    if(isExitBlock)
-      exitBasicBlocks.insert(BB);
-    
-    for(auto& instr : BB->getInstList())
-    {
-      // considero solo instruzioni del tipo A = B + C 
-      if(!instr.isBinaryOp()) continue;
-      
-      bool isLoopInvariant = isIntructionLoopInvariant(&instr, L); 
-      os << "<" << instr << ", " << isLoopInvariant << ">\n";
-      
-      if(isLoopInvariant)
-        markedAsLoopInvariants.insert(&instr);
-    }
-    os << "\n\n";
-  }
-
+  // cerco tutti gli exiting blocks del loop
+  loop->getExitingBlocks(exitingBasicBlocks);
+  
+  // cerco tutte le istruzioni loop-invariant
+  getLoopInvariantInstructions();
   // cerco le istruzioni candidate tra quelle marcate loop-invariant
-  for(auto inst : markedAsLoopInvariants)
-  {
-    if(dominatesAllExitBlocks(inst, &dominatorTree) || isDeadOutOfLoop(inst, L))
-      hoistableInstructions.insert(inst);
-  }
+  getHoistableInstructions();
 
+  printLoopInvariantInstructions();
+  printHoistableInstructions();
 
-  os << "\n--------------------\n";
-  os << "Loop invariant instructions:\n";
-  for(const auto inst : markedAsLoopInvariants)
-    os << inst << "\n";
-  os << "\n";
+  // sposto le istruzioni candidate nel preheader
+  moveInstructions();
 
-  os << "Hoistable instructions:\n";
-  for(const auto inst : hoistableInstructions)
-    os << inst << "\n";
-  os << "\n";
-
-  
-
-  return false; 
+  return true; 
 }
-
-
-
