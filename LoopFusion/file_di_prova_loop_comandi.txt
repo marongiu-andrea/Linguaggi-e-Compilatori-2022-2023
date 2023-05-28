@@ -1,0 +1,16 @@
+#!/bin/bash
+clang -O0 -Xclang -disable-O0-optnone -emit-llvm -c Loop.clang
+opt -passes=mem2reg Loop.bc -o Loop.opt.bc
+llvm-dis Loop.opt.bc -o Loop.opt.ll
+# attenzione all'orale chiede i comandi di lllvm
+# per disassaembrare la roba come quello visto
+# sopra
+
+## loop c++ da ottimizzare loopc
+
+int N=100
+void populate (int a[N] , in b[N], in c[N]) {
+  int i;
+  for (i=0; i<N;i++) a[i]=5*c[i];
+  for (i=0; i<N;i++) b[i] = a[i]+c[i];
+}
