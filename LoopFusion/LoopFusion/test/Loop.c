@@ -1,4 +1,4 @@
-#define N 100
+#define N 3
 
 void populate (int a[N], int b[N], int c[N]) {
     int i;
@@ -7,7 +7,7 @@ void populate (int a[N], int b[N], int c[N]) {
         a[i] = 5*c[i];
     }
 
-    for(i=0; i<N; i++) {
+    for(i=N; i<200; i++) {
         b[i] = a[i]+c[i];
     }
 }
