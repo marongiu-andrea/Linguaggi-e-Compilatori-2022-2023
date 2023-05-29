@@ -94,7 +94,7 @@ bool runOnBasicBlockStrength(BasicBlock &B) {
     	}
           if(auto *BO = dyn_cast<BinaryOperator>(&instr)){
             if(BO->getOpcode() == Instruction::SDiv){ //se si tratta di una operazione che posso sostituire con un RSHIFT
-              CI2 = dyn_cast<ConstantInt>(BO->getOperand(1));
+              CI2 = dyn_cast<ConstantInt>(BO->getOperand(1)); //verifico solo il secondo operando perche' e' una divisione
               if(CI2 && isPowerOfTwoStrength(CI2)) {
                 flag=true;
                 instrToRemove=&instr;
@@ -103,7 +103,7 @@ bool runOnBasicBlockStrength(BasicBlock &B) {
                 BO->replaceAllUsesWith(NewInst);
               }
             }
-            else if (BO->getOpcode() == Instruction::Mul) {
+            else if (BO->getOpcode() == Instruction::Mul) { //verifico se ho un prodotto che ha uno degli operandi che e' una potenza di 2
                 int constantIndex=-1;
                 int pos_shift;
                 CI1 = dyn_cast<ConstantInt>(BO->getOperand(0));
@@ -134,21 +134,20 @@ bool runOnBasicBlockStrength(BasicBlock &B) {
                             operandInt=CI1->getValue().getSExtValue();
                         }
                         else {
-                            pos_shift = CI2->getValue().nearestLogBase2();
+                            pos_shift = CI2->getValue().nearestLogBase2(); //trovo la potenza del 2 piu' vicina al valore costante considerato
                             //value = CI2->getValue();
-                            operandInt=CI2->getValue().getSExtValue();
+                            operandInt=CI2->getValue().getSExtValue(); //ottengo il valore della attuale costante espresso in intero CON SEGNO
                         }
                         value=value.shl(pos_shift); //value adesso contiene il valore della potenza di 2 piu' vicina alla costante numerica della moltiplicazione
                         valueInt = value.getSExtValue();
                         //outs() << valueInt << " " << operandInt << "\n";
-                        if ((valueInt-operandInt) == 1) {
+                        if ((valueInt-operandInt) == 1) { 
                             //outs() << "Sono arrivato fino a qui\n";
                             Instruction* NewShift = BinaryOperator::CreateShl(BO->getOperand(1-constantIndex),ConstantInt::get(Type::getInt32Ty(B.getContext()), pos_shift),"",BO);
                             Instruction* NewSub = BinaryOperator::CreateSub(NewShift,BO->getOperand(1-constantIndex),"",BO);
                             BO->replaceAllUsesWith(NewSub);
                             flag=true;
                             instrToRemove=&instr;
-                            //TODO: manca da implementare la logica di generazione dell'istruzione di shift, la logica dell'istruzione di sottrazione e poi bisogna sostituire tutte gli user della moltiplicazione CON L'OPERAZIONE DI SOTTRAZIONE
                         }
                     }
                 }

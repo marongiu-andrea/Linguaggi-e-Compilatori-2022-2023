@@ -18,7 +18,7 @@ bool runOnBasicBlockAlgebraic(BasicBlock &B) {
     for (auto &instr : B) {
 		if(auto *BO = dyn_cast<BinaryOperator>(&instr)){
 			index=-1;
-			if (BO->getOpcode() == Instruction::Mul){
+			if (BO->getOpcode() == Instruction::Mul){ //verifico se l'istruzione e' una mul
 				ConstantInt *CI1 = dyn_cast<ConstantInt>(BO->getOperand(0));
 				ConstantInt *CI2 = dyn_cast<ConstantInt>(BO->getOperand(1));
 				if (CI1 && CI1->getValue().isOne()) {
@@ -29,7 +29,7 @@ bool runOnBasicBlockAlgebraic(BasicBlock &B) {
 				}
 				
 				if (index != -1) {
-					BO->replaceAllUsesWith(BO->getOperand(index));
+					BO->replaceAllUsesWith(BO->getOperand(index)); //sostituisco gli usi della attuale istruzione con quelli dell'operando NON COSTANTE
 				}
 			}
 			
@@ -44,7 +44,7 @@ bool runOnBasicBlockAlgebraic(BasicBlock &B) {
 				}
 				
 				if (index != -1) {
-					BO->replaceAllUsesWith(BO->getOperand(index));
+					BO->replaceAllUsesWith(BO->getOperand(index));//faccio la stessa identica cosa che ho fatto sopra
 				}
 			}
 		}
