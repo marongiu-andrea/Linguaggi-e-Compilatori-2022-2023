@@ -18,7 +18,7 @@ public:
       Function &F = *iter;
       //outs() << F.getName() << "\n" << "Numero di argomenti: " << F.arg_size() << "\n";
       
-      if (F.isVarArg()){
+      if (F.isVarArg()){ //mi consente di verificare se la funzione ha un numero variabile di argomenti
       	outs() << F.getName() << "\n" << "Numero di argomenti: " << F.arg_size() << "+*\n";
       }
       else {
