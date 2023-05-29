@@ -82,7 +82,7 @@ bool runOnBasicBlockMultiple(BasicBlock &B) {
 
 
     
-    //MARK: implementazione punto 3 della consegna
+    //MARK: implementazione punto 3 della consegna nel caso generico, quindi il valore che sommo/sottraggo puo' anche essere diverso da 1
 
 	ConstantInt* CI1;
 	ConstantInt* CI2;
@@ -98,7 +98,7 @@ bool runOnBasicBlockMultiple(BasicBlock &B) {
               CI2 = dyn_cast<ConstantInt>(BO->getOperand(1));
               constantIndexAdd = checkConstantValueMultiple(CI1,CI2); //ottengo l'indice della costante all'interno dell'operazione
               if(constantIndexAdd != -1){
-              	if(constantIndexAdd ==0 ){
+              	if(constantIndexAdd == 0 ){
               		constantAdd = CI1->getValue();
               	}
               	else {
