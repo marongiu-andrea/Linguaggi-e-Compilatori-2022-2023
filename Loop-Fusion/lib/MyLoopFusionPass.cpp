@@ -46,16 +46,50 @@ bool have_negative_distance_dependencies(Loop* a, Loop* b, ScalarEvolution& SE) 
 }
 
 typedef SmallVector<Loop*> CfeSet; 
+BasicBlock* getLoopBodyBlock(Loop* a){
+  BasicBlock* header = a->getHeader();
+  BranchInst* inst = dyn_cast<BranchInst>(header->getTerminator());
+  return inst->getSuccessor(0);
 
-void fuse(Loop* a, Loop* b, Value* iv_a, Value* iv_b) {
+}
+void replaceUses(Loop * a, Loop * b ) {
+    dyn_cast<PHINode>(b->getHeader()->begin())->replaceAllUsesWith(dyn_cast<PHINode>(a->getHeader()->begin()));
+    dyn_cast<PHINode>(b->getHeader()->begin())->eraseFromParent(); 
+  }
+
+void fuse(Loop* a, Loop* b) {
+  BasicBlock* body_a = getLoopBodyBlock(a);
+  BasicBlock* body_b = getLoopBodyBlock(b);
+  BasicBlock* header_a = a->getHeader();
+  BasicBlock* header_B = b->getHeader();
+  BasicBlock* exitingBlock_b = b->getExitingBlock(); 
+  BasicBlock* latch_a = a->getLoopLatch();
+  BranchInst* last_inst;
   outs() << "Fusing ";
   a->getLoopPreheader()->printAsOperand(outs());
   outs() << " with ";
   b->getLoopPreheader()->printAsOperand(outs());
   outs() << "\n";
+  replaceUses(a,b);
+  /*
+    attach the body of loop a with loop b
+  */
+  last_inst = dyn_cast<BranchInst>(body_a->getTerminator());
+  last_inst->setSuccessor(0,body_b);
+  /*
+    attach header of loop a with loop b
+  */
+  last_inst = dyn_cast<BranchInst>(header_a->getTerminator());
+  last_inst->setSuccessor(1,exitingBlock_b);
+  /*
+    attact the body of loop b with loop a to complete fusion
+  */
+  last_inst = dyn_cast<BranchInst>(body_b->getTerminator());
+  last_inst->setSuccessor(0,latch_a);
 
-  iv_b->replaceAllUsesWith(iv_a);
+
 }
+
 
 void runOnCfeLoopPair(Loop* a, Loop* b, ScalarEvolution& SE) {
   if (!are_adjacent(a, b))
@@ -77,10 +111,10 @@ void runOnCfeLoopPair(Loop* a, Loop* b, ScalarEvolution& SE) {
       => iv_a and iv_b have the same range.
   */
 
-  if (have_negative_distance_dependencies(a, b))
+ /* if (have_negative_distance_dependencies(a, b))
     return;
-
-  fuse(a, b, iv_a, iv_b);
+*/
+  fuse(a, b);
 }
 
 void runOnCfeSet(CfeSet& cfe_set, ScalarEvolution& SE) {

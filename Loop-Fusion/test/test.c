@@ -1,9 +1,14 @@
 #include <stdio.h>
 
-void test(int* a, int* b, int* c, int n) {
-    for (int i = 0; i < n; ++i)
-        a[i] = 5 * c[i];
+#define n 100
+void test(int a[n], int b[n], int c[n]) {
+    int i;
 
-    for (int i = 0; i < n; ++i)
-        b[i] = a[i] + c[i];
+    for(i=0; i<n; i++) {
+        a[i] = 5*c[i];
+    }
+
+    for(i=0; i<n; i++) {
+        b[i] = a[i]+c[i];
+    }
 }
