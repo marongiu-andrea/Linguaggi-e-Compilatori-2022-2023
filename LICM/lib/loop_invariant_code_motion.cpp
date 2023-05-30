@@ -5,11 +5,18 @@
 #include <llvm/Analysis/ValueTracking.h>
 #include <llvm/IR/Dominators.h>
 
+#include <unordered_map>
+
 using namespace llvm;
 
 // Deve esserci un "static int count = 0;" all'inizio della funzione
 #define Debug_Print do { outs() << __FUNCTION__ << " " << count << "\n"; ++count; } while(0)
 #define Debug_Print_Message(message) do { outs() << __FUNCTION__ << " " << count << " " << (message) << "\n"; ++count; } while(0)
+
+static const char* functionNameToDebug = "gb_alloc_str";
+
+#define STB_DS_IMPLEMENTATION
+#include "stb_ds.h"
 
 namespace {
     
@@ -24,17 +31,18 @@ namespace {
             AU.addRequired<LoopInfoWrapperPass>();
         }
         
-#if 1
         struct DFSIterator {
             std::set<BasicBlock*> visited;
             std::vector<BasicBlock*> blockStack;
+            Loop* loop = 0;
             
-            DFSIterator(BasicBlock *block) { blockStack.push_back(block); };
+            DFSIterator(Loop* loop) { this->loop = loop; blockStack.push_back(loop->getHeader()); };
             
-            void reset(BasicBlock *block) {
+            void reset(Loop* loop) {
+                this->loop = loop;
                 visited.clear();
                 blockStack.clear();
-                blockStack.push_back(block);
+                blockStack.push_back(loop->getHeader());
             };
             
             BasicBlock *next() {
@@ -46,7 +54,7 @@ namespace {
                 visited.insert(res);
                 
                 for(auto succ : successors(res)) {
-                    if(!visited.count(succ))
+                    if(!visited.count(succ) && loop->contains(succ))
                         blockStack.push_back(succ);
                 }
                 
@@ -54,15 +62,88 @@ namespace {
             };
         };
         
+        bool instrHasSideEffects(Instruction* instr) {
+            if(dyn_cast<ReturnInst>(instr)) return true;
+            if(dyn_cast<BranchInst>(instr)) return true;
+            if(dyn_cast<PHINode>(instr))    return true;
+            if(dyn_cast<CallInst>(instr))   return true;
+            if(dyn_cast<LoadInst>(instr))   return true;
+            if(dyn_cast<StoreInst>(instr))  return true;
+            
+            return false;
+        }
+        
+        struct TableEntry
+        {
+            Instruction* key;
+            char value[0];  // Dimensione nulla
+        };
+        
         // Suppone che i nodi vengano visitati in DFS
-        bool isLoopInvariant(Instruction *instr, Loop *loop) {
+        bool isLoopInvariantHashTable(Instruction *instr, Loop *loop, TableEntry* table) {
+            if(instrHasSideEffects(instr)) return false;
+            
             for(auto it = instr->op_begin(); it != instr->op_end(); ++it) {
                 auto def      = dyn_cast<Instruction>(*it);
                 auto constOp  = dyn_cast<Constant>(*it);
                 auto argument = dyn_cast<Argument>(*it);
                 
-                if(!def && !constOp && !argument)
+                if(!def && !constOp && !argument)   return false;
+                if(def && instrHasSideEffects(def)) return false;
+                
+                // 1. Tutte le definizioni che raggiungono l'istruzione
+                // si trovano fuori dal loop (o sono costanti)
+                // 2. C'è esattamente una reaching definition, e si tratta
+                // di un'istruzione loop-invariant
+                if(!argument && !constOp && loop->contains(def) && hmgeti(table, instr) == -1)
                     return false;
+            }
+            
+            // Aggiungi nodo all'istruzione
+            TableEntry newEntry = { instr };
+            hmputs(table, newEntry);
+            return true;
+        }
+        
+        bool isLoopInvariantRecursive(Value *instr, Loop *loop) {
+            auto def = dyn_cast<Instruction>(instr);
+            auto constOp = dyn_cast<Constant>(instr);
+            auto argument = dyn_cast<Argument>(instr);
+            
+            if(constOp)                         return true;
+            if(def && instrHasSideEffects(def)) return false;
+            if(!def && !constOp && !argument)   return false;
+            
+            bool result = true;
+            if(def) {
+                if(loop->contains(def))
+                    result = false;
+                else for(auto op = def->op_begin(); op != def->op_end() && result; ++op)
+                    result &= isLoopInvariantRecursive((Value*)*op, loop);
+            }
+            
+            return result;
+        }
+        
+        // Suppone che i nodi vengano visitati in DFS
+        bool isLoopInvariant(Instruction *instr, Loop *loop) {
+            if(dyn_cast<ReturnInst>(instr)) return false;
+            if(dyn_cast<BranchInst>(instr)) return false;
+            if(dyn_cast<PHINode>(instr))    return false;
+            if(dyn_cast<CallInst>(instr))   return false;
+            if(dyn_cast<LoadInst>(instr))   return false;
+            if(dyn_cast<StoreInst>(instr))  return false;
+            
+            for(auto it = instr->op_begin(); it != instr->op_end(); ++it) {
+                auto def      = dyn_cast<Instruction>(*it);
+                auto constOp  = dyn_cast<Constant>(*it);
+                auto argument = dyn_cast<Argument>(*it);
+                
+                if(!def && !constOp && !argument) return false;
+                if(dyn_cast<PHINode>(*it))        return false;
+                if(dyn_cast<LoadInst>(*it))       return false;
+                if(dyn_cast<StoreInst>(*it))      return false;
+                if(dyn_cast<CallInst>(*it))       return false;
                 
                 // 1. Tutte le definizioni che raggiungono l'istruzione
                 // si trovano fuori dal loop (o sono costanti)
@@ -92,112 +173,100 @@ namespace {
             return result;
         }
         
-        bool isInstrTypeMovable(Instruction *instr) {
-            if(dyn_cast<ReturnInst>(instr)) return false;
-            if(dyn_cast<BranchInst>(instr)) return false;
-            
-            return true;
-        }
-        
         virtual bool runOnLoop(Loop* l, LPPassManager& lpm) override {
-            static int count = 0;
-            
             if(!l)
                 return false;
             
-            DominatorTree *dt = &getAnalysis<DominatorTreeWrapperPass>().getDomTree();
-            
-            bool modified = false;
-            
-            DFSIterator it(l->getHeader());
-            while(auto block = it.next()) {
-                bool dominatesAllExits = true;
-                
-                SmallVector<BasicBlock*> vec;
-                l->getExitBlocks(vec);
-                for(auto it = vec.begin(); it != vec.end(); ++it) {
-                    BasicBlock *exitBlock = *it;
-                    if(!dt->dominates(&*block, exitBlock))
-                        dominatesAllExits = false;
-                }
-                
-                for(auto instr = block->begin(); instr != block->end(); ++instr) {
-                    if(!isInstrTypeMovable(&*instr)) continue;
-                    
-                    if(isLoopInvariant(&*instr, l) && (dominatesAllExits || isDead(&*instr, l))) {
-                        LLVMContext &ctx = instr->getContext();
-                        MDNode *node = MDNode::get(ctx, MDString::get(ctx, "hoistable"));
-                        instr->setMetadata("HOIST", node);
-                    }
-                    
-                }
-            }
-            
-            it.reset(l->getHeader());
-            while(auto block = it.next()) {
-                Instruction *instr = &block->front();
-                Instruction *next = 0;
-                while(instr) {
-                    next = instr->getNextNode();
-                    
-                    if(instr->hasMetadata("HOIST")) {
-                        assert(l->isLoopSimplifyForm());
-                        
-                        if(l->isLoopSimplifyForm()) {
-                            modified = true;
-                            instr->moveBefore(&l->getLoopPreheader()->back());
-                        }
-                    }
-                    
-                    instr = next;
-                }
-            }
-            
-            return modified;
-        }
-#else
-        virtual bool runOnLoop(Loop *L, LPPassManager &LPM) override {
-            if (!L)
+            // NOTE: Alcuni loop non sono in simplifyform nemmeno dopo il pass -loop-simplify
+            //assert(l->isLoopSimplifyForm());
+            if(!l->isLoopSimplifyForm())
                 return false;
             
             DominatorTree *dt = &getAnalysis<DominatorTreeWrapperPass>().getDomTree();
-            LoopInfo *li = &getAnalysis<LoopInfoWrapperPass>().getLoopInfo();
             
-            outs() << "\nLOOPPASS INIZIATO...\n"; 
+#ifdef HashTableImpl
+            TableEntry* hash = 0;
+#endif
             
-            outs() << "\nLoop normalizzato " << ((L->isLoopSimplifyForm()) ? "true" : "false") << "\n";
+            // Analisi su quali istruzioni possono essere spostate
             
-            if (auto *preheader = L->getLoopPreheader()) {
-                outs() << "\npreheader " << *preheader;
-            }
-            
-            for (auto *block : L->getBlocks()) {
-                for (auto &instr: *block) {
-                    if (instr.getOpcode() == Instruction::Sub) {
-                        outs() << "\ninstruction " << instr;
+#ifndef RecursiveImpl
+            DFSIterator it(l);
+            while(BasicBlock* block = it.next()) {
+#else  // Per l'implementazione ricorsiva non è necessaria una DFS per questa prima fase
+                for(auto it = l->block_begin(); it != l->block_end(); ++it) {
+                    BasicBlock* block = *it;
+#endif
+                    
+                    bool dominatesAllExits = true;
+                    
+                    SmallVector<BasicBlock*> vec;
+                    l->getExitBlocks(vec);
+                    for(auto it = vec.begin(); it != vec.end(); ++it) {
+                        BasicBlock *exitBlock = *it;
+                        if(!dt->dominates(&*block, exitBlock))
+                            dominatesAllExits = false;
+                    }
+                    
+                    int numHoists = 0;
+                    int numInstr = 0;
+                    
+                    for(auto instr = block->begin(); instr != block->end(); ++instr) {
+#if defined HashTableImpl
+                        bool isInv = isLoopInvariantHashTable(&*instr, l, hash);
+#elif defined RecursiveImpl
+                        bool isInv = isLoopInvariantRecursive(&*instr, l);
+#elif defined MetadataImpl
+                        bool isInv = isLoopInvariant(&*instr, l);
+#endif
+                        if(l->getHeader()->getParent()->getName().compare(StringRef(functionNameToDebug)) == 0)
+                            if(isInv)
+                            outs() << "inv: " << *instr << "\n";
                         
-                        outs() << "\n operands: ";
-                        for (auto op = instr.op_begin(); op != instr.op_end(); ++op) {
-                            outs() << "\n ";
-                            if (auto *instr = dyn_cast<Instruction>(*op)) {
-                                outs() << "\n " << *instr;
-                            }
+                        if(isInv && (dominatesAllExits || isDead(&*instr, l))) {
+                            LLVMContext &ctx = instr->getContext();
+                            MDNode *node = MDNode::get(ctx, MDString::get(ctx, "hoistable"));
+                            instr->setMetadata("HOIST", node);
+                            
+                            ++numHoists;
                         }
-                        outs() << "\nbasic block " << *block;
-                        outs() << "\n\n\n";
+                        
+                        ++numInstr;
                     }
                 }
+                
+                // Spostamento delle istruzioni
+                
+                bool modified = false;
+                DFSIterator it2(l);
+                while(BasicBlock* block = it2.next()) {
+                    Instruction* instr = &block->front();
+                    Instruction* next = 0;
+                    while(instr) {
+                        next = instr->getNextNode();
+                        
+                        if(instr->hasMetadata("HOIST")) {
+                            // NOTE: Alcuni loop non sono in simplifyform nemmeno dopo il pass -loop-simplify
+                            //assert(l->isLoopSimplifyForm());
+                            
+                            if(l->isLoopSimplifyForm()) {
+                                modified = true;
+                                instr->moveBefore(&l->getLoopPreheader()->back());
+                            }
+                        }
+                        
+                        instr = next;
+                    }
+                }
+                
+                return modified;
             }
-            
-            outs() << "\n";
-            return false; 
-        }
-#endif
-    };
+        };
+        
+        char LoopInvariantCodeMotion::ID = 0;
+        RegisterPass<LoopInvariantCodeMotion> X("loop-invariant-code-motion",
+                                                "Loop Invariant Code Motion");
+        
+    } // anonymous namespace
     
-    char LoopInvariantCodeMotion::ID = 0;
-    RegisterPass<LoopInvariantCodeMotion> X("loop-invariant-code-motion",
-                                            "Loop Invariant Code Motion");
     
-} // anonymous namespace
-
