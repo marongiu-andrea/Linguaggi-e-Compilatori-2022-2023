@@ -1,9 +1,14 @@
+
 OPTIMIZER := lib_loop_invariant_code_motion.so
 OBJs := $(subst .cpp,.o,$(wildcard lib/*.cpp))
 
 LLVM_VERSION ?= 14
 
-CXXFLAGS := $(shell llvm-config-$(LLVM_VERSION) --cxxflags) -fPIC
+#OPTIONS := -DHashTableImpl
+#OPTIONS := -DRecursiveImpl
+OPTIONS := -DMetadataImpl
+
+CXXFLAGS := $(shell llvm-config-$(LLVM_VERSION) --cxxflags) -fPIC $(OPTIONS) -O2
 
 all: $(OPTIMIZER) 
 
