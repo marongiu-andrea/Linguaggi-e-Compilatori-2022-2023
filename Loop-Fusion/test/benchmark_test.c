@@ -52,22 +52,30 @@ static inline unsigned long get_rdtsc_freq(void) {
     return tsc_freq;
 }
 
-#define N 10000000
+#define N 400000000
 
-extern void populate(int a[N], int b[N], int c[N], int pippo);
+extern void populate(int a[N], int b[N], int c[N], int size, int step);
 
 int main()
 {
     long freq = get_rdtsc_freq();
-    
-    int* a = (int*)malloc(sizeof(int) * N);
-    int* b = (int*)malloc(sizeof(int) * N);
-    int* c = (int*)malloc(sizeof(int) * N);
-    
-    long start = __rdtsc();
-    populate(a, b, c, 0);
-    long end = __rdtsc();
-    
-    double elapsed = (end - start) / (double)freq;
-    printf("%f seconds\n", elapsed);
+
+    for (int i = 64; i < N; i*= 2) {
+        int* a = (int*)malloc(sizeof(int) * i);
+        int* b = (int*)malloc(sizeof(int) * i);
+        int* c = (int*)malloc(sizeof(int) * i);
+
+        for (int j = 1; j < 8200; j++) {
+            long start = __rdtsc();
+            populate(a, b, c, i, j);
+            long end = __rdtsc();
+
+            double elapsed = (end - start) / (double)freq;
+            printf("%d %d %f seconds\n", i, j, elapsed);
+        }
+
+        free(a);
+        free(b);
+        free(c);
+    }
 }
