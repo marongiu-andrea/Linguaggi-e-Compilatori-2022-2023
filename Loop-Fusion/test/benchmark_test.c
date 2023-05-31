@@ -53,29 +53,60 @@ static inline unsigned long get_rdtsc_freq(void) {
 }
 
 #define N 400000000
+#define KB(bytes) 1024ULL*bytes
+#define MB(bytes) 1024ULL*KB(bytes)
+
+#define BufferSize MB(64)
 
 extern void populate(int a[N], int b[N], int c[N], int size, int step);
 
-int main()
+int main(int argCount, char** argValue)
 {
+    if(argCount != 2) {
+        fprintf(stderr, "Incorrect usage");
+    }
+    
     long freq = get_rdtsc_freq();
-
-    for (int i = 64; i < N; i*= 2) {
+    int curSize = 0;
+    char* buffer = (char*)malloc(BufferSize);
+    buffer[0] = '\0';
+    
+    for (int i = 65536; i < N; i*= 2) {
         int* a = (int*)malloc(sizeof(int) * i);
         int* b = (int*)malloc(sizeof(int) * i);
         int* c = (int*)malloc(sizeof(int) * i);
-
-        for (int j = 1; j < 8200; j++) {
-            long start = __rdtsc();
-            populate(a, b, c, i, j);
-            long end = __rdtsc();
-
-            double elapsed = (end - start) / (double)freq;
-            printf("%d %d %f seconds\n", i, j, elapsed);
+        
+        for (int j = 0; j < 8200; j++) {
+            double averageTime = 0;
+            int iterations = 0;
+            
+            for(int k = 0; k < 100; ++k) {
+                long start = __rdtsc();
+                populate(a, b, c, i, j);
+                long end = __rdtsc();
+                
+                double elapsed = (end - start) / (double)freq;
+                
+                ++iterations;
+                averageTime += elapsed;
+            }
+            
+            averageTime /= (double)iterations;
+            
+            if(curSize >= BufferSize) {
+                fprintf(stderr, "Buffer overflow\n");
+                return 1;
+            }
+            
+            curSize += snprintf(buffer+curSize, BufferSize-curSize, "%d %d %f\n", i, j, averageTime);
         }
-
+        
         free(a);
         free(b);
         free(c);
     }
+    
+    FILE* writeTo = fopen(argValue[1], "w");
+    fwrite(buffer, 1, curSize + 1, writeTo);
+    fclose(writeTo);
 }
