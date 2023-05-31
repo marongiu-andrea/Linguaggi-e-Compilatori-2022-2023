@@ -9,6 +9,7 @@
 #include "llvm/Analysis/PostDominators.h"
 #include "llvm/IR/Function.h"
 #include "llvm/IR/InstrTypes.h"
+#include "llvm/IR/Instructions.h"
 #include "llvm/IR/PassManager.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Analysis/LoopInfo.h"
@@ -23,6 +24,41 @@ bool runOnFunction(Function &F) {
   return Transformed;
 }
 
+void unifyLoopsInductionVariables(Loop* current,Loop* next){
+  PHINode* current_iv = current->getCanonicalInductionVariable();
+  PHINode* next_iv = next->getCanonicalInductionVariable();
+  next_iv->replaceAllUsesWith(current_iv);
+  next_iv->eraseFromParent();
+  /*printLoop(*current, outs());
+  outs()<<"\n";
+  printLoop(*next, outs());*/
+}
+
+void mergeLoops(Loop* current, Loop* next){
+  BasicBlock* header_current = current->getHeader();
+  BasicBlock* header_next = next->getHeader();
+
+  BasicBlock* body_current = header_current->getTerminator()->getSuccessor(0);
+  BasicBlock* body_next = header_next->getTerminator()->getSuccessor(0);
+
+  BasicBlock* latch_current = current->getLoopLatch();
+  BasicBlock* latch_next = next->getLoopLatch();
+
+  BasicBlock* exit_next = next->getExitBlock();
+
+  //connessioni
+  body_current->getTerminator()->setSuccessor(0,body_next); //connetto il body di L1 al Body di L2
+  header_current->getTerminator()->setSuccessor(1, exit_next); //connetto l'header di L1 all'exit di L2
+  body_next->getTerminator()->setSuccessor(0, latch_current); //connetto il body di L2 al Latch di L1
+  header_next->getTerminator()->setSuccessor(0, latch_next); //connetto l'header di L2 al latch di L2
+
+  printLoop(*current, outs());
+  outs()<<"\n******************NEXT**********************\n";
+  printLoop(*next, outs());
+
+
+}
+
 PreservedAnalyses TransformPass::run([[maybe_unused]] Function &F,FunctionAnalysisManager &AM) {
   auto &LI = AM.getResult<LoopAnalysis>(F);
   ScalarEvolution &SE = AM.getResult<ScalarEvolutionAnalysis>(F);
@@ -31,10 +67,11 @@ PreservedAnalyses TransformPass::run([[maybe_unused]] Function &F,FunctionAnalys
   int l = 0;
   int BID = 0;
   SmallVector<Loop *, 4> PreOrderLoops = LI.getLoopsInPreorder();
+
   for(int i=0; i<PreOrderLoops.size()-1;i++){
     Loop* current = PreOrderLoops[i];
     Loop* next = PreOrderLoops[i+1];
-
+    
     outs()<<"\n***************PROCESSING LOOP***************";
     BasicBlock *PH = current->getLoopPreheader();
     if(PH) outs()<<" "<<*PH<<"\n";
@@ -54,32 +91,12 @@ PreservedAnalyses TransformPass::run([[maybe_unused]] Function &F,FunctionAnalys
       continue;
     
     outs() <<"control flow eq\n";
+
+    unifyLoopsInductionVariables(current,next);
+    mergeLoops(current, next);
     
   }
-/*
-  bool firstRound = true;
-  BasicBlock *previousExitBlock;
   
-  for(Loop *L : PreOrderLoops){
-    outs()<<"\n***************PROCESSING LOOP***************";
-    BasicBlock *PH = L->getLoopPreheader();
-    if(PH) outs()<<" "<<*PH<<"\n";
-
-    if(!firstRound && L) {
-      if(BasicBlock* head = L->getHeader()){
-        if(head==previousExitBlock){
-          outs()<< "adiacente a "<< head;
-        }
-      }
-    }
-
-    previousExitBlock = L->getExitBlock();
-    if(firstRound) {
-      firstRound = false;
-      continue;
-    }
-    
-  }*/
                                 
   return PreservedAnalyses::none();
   }
