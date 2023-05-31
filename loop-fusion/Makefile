@@ -1,4 +1,4 @@
-OPTIMIZER := LoopFusion.so
+OPTIMIZER := libLocalOpts.so
 OBJs := $(subst .cpp,.o,$(wildcard lib/*.cpp))
 
 LLVM_VERSION ?= 15
@@ -12,4 +12,4 @@ $(OPTIMIZER): $(OBJs)
 
 .PHONY: clean
 clean:
-	$(OPTIMIZER) $(OBJs)
+	$(RM) $(OPTIMIZER) $(OBJs)

@@ -1,6 +1,2 @@
-plugin=./LoopFusion.so
-passes=loop-fusion
-optimizedbc=test/Loop.optimized.bc
-optimizedll=test/Loop.optimized.ll
-opt -load-pass-plugin=$plugin -passes=$passes test/Loop.ll -o $optimizedbc
-llvm-dis $optimizedbc -o $optimizedll
+opt -load-pass-plugin=./libLocalOpts.so -passes=LoopFusion test/Loop.bc -o test/Loop.opt.bc
+llvm-dis test/Loop.opt.bc -o test/Loop.opt.ll
