@@ -7,6 +7,8 @@
 #include <x86intrin.h>
 #include <stdio.h>
 
+// Questo file serve per la misurazione di cache miss, tramite il comando perf ./executable
+
 static inline unsigned long get_rdtsc_freq(void) {
     unsigned long          tsc_freq  = 3000000000;
     bool                   fast_path = false;
@@ -52,67 +54,30 @@ static inline unsigned long get_rdtsc_freq(void) {
     return tsc_freq;
 }
 
-#define N 4000000
-#define KB(bytes) 1024ULL*bytes
-#define MB(bytes) 1024ULL*KB(bytes)
-
-#define BufferSize MB(64)
-
-extern void populate(int a[N], int b[N], int c[N], int size, int step);
+extern void populate(int a[], int b[], int c[], int size, int step);
 
 int main(int argCount, char** argValue)
 {
-    if(argCount != 2) {
-        fprintf(stderr, "Incorrect usage, should be: ./executable filename\n");
+    if(argCount != 3) {
+        fprintf(stderr, "Incorrect usage, should be: ./executable numiterations step\n");
         return 1;
     }
     
     long freq = get_rdtsc_freq();
-    int curSize = 0;
-    char* buffer = (char*)malloc(BufferSize);
-    buffer[0] = '\0';
     
-    for (int i = 32768; i < N; i *= 2) {
-    	int maxStep = 100;
-        int* a = (int*)malloc(sizeof(int) * i * maxStep);
-        int* b = (int*)malloc(sizeof(int) * i * maxStep);
-        int* c = (int*)malloc(sizeof(int) * i * maxStep);
-        
-        printf("%d / %d  \r", i, N);
-        fflush(stdout);
-        
-        for (int j = 1; j < maxStep; j++) {
-            int loopMax = i * j;  // Per avere uno stesso numero di iterazioni indipendentemente dallo step
-            double averageTime = 0;
-            
-            int iterations = 100;
-            for(int k = 0; k < iterations; k++) {
-                long start = __rdtsc();
-                populate(a, b, c, loopMax, j);
-                long end = __rdtsc();
-                
-                double elapsed = (end - start) / (double)freq;
-                averageTime += elapsed;
-            }
-            
-            averageTime /= (double)iterations;
-            
-            if(curSize >= BufferSize) {
-                fprintf(stderr, "\nBuffer overflow\n");
-                return 1;
-            }
-            
-            curSize += snprintf(buffer+curSize, BufferSize-curSize, "%d %d %f\n", i, j, averageTime);
-        }
-        
-        free(a);
-        free(b);
-        free(c);
-    }
- 
-    printf("\n");
+    long long numIter = atoll(argValue[1]);
+    long long step = atoll(argValue[2]);
     
-    FILE* writeTo = fopen(argValue[1], "w");
-    fwrite(buffer, 1, curSize + 1, writeTo);
-    fclose(writeTo);
+    int* a = (int*)malloc(sizeof(int) * numIter * step);
+    int* b = (int*)malloc(sizeof(int) * numIter * step);
+    int* c = (int*)malloc(sizeof(int) * numIter * step);
+
+    long long loopMax = numIter * step;  // Per avere uno stesso numero di iterazioni indipendentemente dallo step
+    double averageTime = 0;
+    
+    int iterations = 1;
+    for(int k = 0; k < iterations; k++)
+	populate(a, b, c, loopMax, step);
+	
+    return 0;
 }
