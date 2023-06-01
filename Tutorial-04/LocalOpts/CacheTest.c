@@ -9,10 +9,10 @@
 extern void populate (int a[], int b[], int c[], int N, int S);
 // N -> # loops, S -> stride
 
-#define OOMS 17
+#define OOMS 7
 #define BASE 2
-#define LOOPS 10000
-#define SIZE 4
+#define LOOPS 100000
+#define SIZE 10000
 
 
 void main() {

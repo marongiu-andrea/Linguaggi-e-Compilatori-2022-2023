@@ -9,7 +9,7 @@ using namespace llvm;
 bool MIOptimizationPass::runOnBasicBlock(BasicBlock &BB) {
   // Itera attraverso le istruzioni del basic block.
   for(auto iter_inst = BB.begin(); iter_inst != BB.end(); ++iter_inst) {
-    Instruction& I = *iter_inst;
+    Instruction I = *iter_inst;
 		std::string opcd1 = I.getOpcodeName();
 
     // Se l'istruzione ha un operatore binario ed è add/sub.

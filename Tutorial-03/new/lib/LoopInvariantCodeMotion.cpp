@@ -80,45 +80,45 @@ public:
   virtual bool runOnLoop(Loop *L, LPPassManager &LPM) override {
     outs() << "\nLOOP-INVARIANT CODE MOTION INIZIATO...\n";
     DominatorTree *DT = &getAnalysis<DominatorTreeWrapperPass>().getDomTree();
-	// Map to store loop-invariant Instructions, to avoid long chains of function calls.
-    std::map <Value*, state> LIMap;
-    // Loop preheader.
-	if(!L->isLoopSimplifyForm()){
-      std::cout << "Loop is not in canonical form!" << std::endl;
-      return false;	  
-	}	
-    BasicBlock* PH = L->getLoopPreheader();
-	
-    // Part 1 - find loop invariant instructions
-    std::cout << "########## Loop-Invariant check debug ##########" << std::endl;
-    for (Loop::block_iterator BI = L->block_begin(); BI != L->block_end(); ++BI) {
-      llvm::BasicBlock *BB = *BI;
-
-      for (auto iter_inst = BB->begin(); iter_inst != BB->end(); ++iter_inst) {
-        Instruction& I = *iter_inst;
-        LIMap[&I] = isLoopInvariant(I, LIMap);
-      }
-    }
-
-    std::cout << "########## Map debug ##########" << std::endl;
-    std::cout << "Map size: " << LIMap.size() << std::endl;
-    for (auto iter_map = LIMap.begin(); iter_map != LIMap.end(); ++iter_map) {
-      outs() << iter_map->first << " " << *iter_map->first << " --> " << iter_map->second << "\n";
-    }
-
-
-    // Part 2 - find code motion candidates.
+    // Map to store loop-invariant Instructions, to avoid long chains of function calls.
+      std::map <Value*, state> LIMap;
+      // Loop preheader.
+    if(!L->isLoopSimplifyForm()){
+        std::cout << "Loop is not in canonical form!" << std::endl;
+        return false;	  
+    }	
+      BasicBlock* PH = L->getLoopPreheader();
     
-    // set of BB's that exit from loop.
-    // std::set<BasicBlock*> ExitBlocks;
-    // Set of code motion candidates.
-    std::set<Value*> CMCandidates;
-    // llvm::SmallSet<Value*> CMCandidates;
+      // Part 1 - find loop invariant instructions
+      std::cout << "########## Loop-Invariant check debug ##########" << std::endl;
+      for (Loop::block_iterator BI = L->block_begin(); BI != L->block_end(); ++BI) {
+        llvm::BasicBlock *BB = *BI;
 
-    std::cout << "Loop exiting blocks:" << std::endl;
-	llvm::SmallVector<llvm::BasicBlock*> ExitingBlocks;
-	L->getExitingBlocks(ExitingBlocks);
-	// for (Loop::block_iterator BI = L->block_begin(); BI != L->block_end(); ++BI) {
+        for (auto iter_inst = BB->begin(); iter_inst != BB->end(); ++iter_inst) {
+          Instruction& I = *iter_inst;
+          LIMap[&I] = isLoopInvariant(I, LIMap);
+        }
+      }
+
+      std::cout << "########## Map debug ##########" << std::endl;
+      std::cout << "Map size: " << LIMap.size() << std::endl;
+      for (auto iter_map = LIMap.begin(); iter_map != LIMap.end(); ++iter_map) {
+        outs() << iter_map->first << " " << *iter_map->first << " --> " << iter_map->second << "\n";
+      }
+
+
+      // Part 2 - find code motion candidates.
+      
+      // set of BB's that exit from loop.
+      // std::set<BasicBlock*> ExitBlocks;
+      // Set of code motion candidates.
+      std::set<Value*> CMCandidates;
+      // llvm::SmallSet<Value*> CMCandidates;
+
+      std::cout << "Loop exiting blocks:" << std::endl;
+    llvm::SmallVector<llvm::BasicBlock*> ExitingBlocks;
+    L->getExitingBlocks(ExitingBlocks);
+    // for (Loop::block_iterator BI = L->block_begin(); BI != L->block_end(); ++BI) {
     //   llvm::BasicBlock *BB = *BI;
 
     //   if (L->isLoopExiting(BB)) {
