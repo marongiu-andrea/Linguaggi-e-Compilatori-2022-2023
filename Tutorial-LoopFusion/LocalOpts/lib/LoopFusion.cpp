@@ -38,13 +38,16 @@ void mergeLoops(Loop* L1, Loop* L2, LoopInfo& LI) {
   PHINode *InductionL1 = L1->getCanonicalInductionVariable();
   PHINode *InductionL2 = L2->getCanonicalInductionVariable();
 
-  for(auto &use : InductionL2->uses()){
-    BasicBlock *parentBlock = dyn_cast<Instruction>(use)->getParent();
-    if(parentBlock != L2->getLoopPreheader() && parentBlock != L2->getLoopLatch()){
-       User *user = use.getUser();
-       user->replaceUsesOfWith(use, InductionL1);
-    }
-  }
+  // for(auto &use : InductionL2->uses()){
+  //    BasicBlock *parentBlock = dyn_cast<Instruction>(use)->getParent();
+  //    if(parentBlock != L2->getLoopPreheader() && parentBlock != L2->getLoopLatch()){
+  //       User *user = use.getUser();
+  //       user->replaceUsesOfWith(use, InductionL1);
+  //    }
+  // }
+
+  InductionL2->replaceAllUsesWith(InductionL1);
+  InductionL2->eraseFromParent();
 
   BasicBlock *L1_Latch = L1->getLoopLatch();
   BasicBlock *L1_Header = L1->getHeader();
@@ -73,39 +76,6 @@ void mergeLoops(Loop* L1, Loop* L2, LoopInfo& LI) {
   L2_BodyEnd->getTerminator()->replaceSuccessorWith(L2_Latch, L1_Latch);
   L2_Header->getTerminator()->setSuccessor(0, L2_Latch);
 
-
-
-/*
-  // Ottenere i blocchi del primo loop
-  SmallVector<BasicBlock*> L1Blocks;
-  for (auto* BB : L1->getBlocks())
-    L1Blocks.push_back(BB);
-
-  // Ottenere i blocchi del secondo loop
-  SmallVector<BasicBlock*> L2Blocks;
-  for (auto* BB : L2->getBlocks())
-    L2Blocks.push_back(BB);
-
-  // Trovare il blocco di terminazione del primo loop
-  BasicBlock* L1ExitBlock = L1->getExitBlock();
-
-  // Trovare il blocco di test del secondo loop
-  BasicBlock* L2HeaderBlock = L2->getHeader();
-
-  // Collegare il blocco di terminazione del primo loop al blocco di test del secondo loop
-  L1ExitBlock->getTerminator()->replaceSuccessorWith(L2HeaderBlock, L1->getExitingBlock());
-
-  //La logica del CFG e' sbagliata: l'header di L1 deve puntare L2_Exit, e l'header di L2 deve puntare al latch di L2
-
-  // Aggiornare il CFG
-  LI.removeBlock(L2HeaderBlock);
-  LI.changeLoopFor(L1ExitBlock, L1);
-  L1->addBasicBlockToLoop(L2HeaderBlock, LI);
-  L1Blocks.insert(L1Blocks.end(), L2Blocks.begin(), L2Blocks.end());
-
-  // Rimuovere il secondo loop dal LoopInfo
-  LI.erase(L2);
-*/
 }
 
 PreservedAnalyses LoopFusionPass::run([[maybe_unused]] Function &F, FunctionAnalysisManager &AM) {
