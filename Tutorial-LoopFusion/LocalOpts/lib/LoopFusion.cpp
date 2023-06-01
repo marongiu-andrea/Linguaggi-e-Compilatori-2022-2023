@@ -41,17 +41,19 @@ void mergeLoops(Loop* L1, Loop* L2, LoopInfo& LI) {
   for(auto &use : InductionL2->uses()){
     BasicBlock *parentBlock = dyn_cast<Instruction>(use)->getParent();
     if(parentBlock != L2->getLoopPreheader() && parentBlock != L2->getLoopLatch()){
-      User *user = use.getUser();
-      user->replaceUsesOfWith(use, InductionL1);
+       User *user = use.getUser();
+       user->replaceUsesOfWith(use, InductionL1);
     }
   }
 
   BasicBlock *L2_Exit = L2->getExitingBlock();
-  BasicBlock *L2_BodyStart = L2->getHeader()->getNextNode();
+  BasicBlock *L2_BodyStart = L2->getHeader()->getTerminator()->getSuccessor(0);
   BasicBlock *L2_Latch = L2->getLoopLatch();
   BasicBlock *L1_Latch = L1->getLoopLatch();
   BasicBlock *L1_Header = L1->getHeader();
   BasicBlock *L2_Header = L2->getHeader();
+
+  //qua si potrebbe usare anche direttamente getsuccessor dell'header per ottenere il body o va bene il for?
 
   BasicBlock *L2_BodyEnd;
   for(auto *BB : L2->getBlocks()){
@@ -59,11 +61,17 @@ void mergeLoops(Loop* L1, Loop* L2, LoopInfo& LI) {
       break;
     L2_BodyEnd = BB;
   }
+  BasicBlock *L1_BodyEnd;
+  for(auto *BB : L1->getBlocks()){
+    if(BB == L1->getLoopLatch())
+      break;
+    L1_BodyEnd = BB;
+  }
 
-  L1_Header->getTerminator()->replaceSuccessorWith(L2->getLoopPreheader(), L2_Exit);
-  L1_Header->getNextNode()->getTerminator()->replaceSuccessorWith(L1_Latch, L2_BodyStart);
+  L1_Header->getTerminator()->setSuccessor(1, L2_Exit);
+  L1_BodyEnd->getTerminator()->replaceSuccessorWith(L2_Latch, L2_BodyStart);
   L2_BodyEnd->getTerminator()->replaceSuccessorWith(L2_Latch, L1_Latch);
-  L2_Header->getTerminator()->replaceSuccessorWith(L2_BodyStart, L2_Latch);
+  L2_Header->getTerminator()->setSuccessor(0, L2_Latch);
 
 
 
