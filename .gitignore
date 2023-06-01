@@ -2,5 +2,6 @@
 *.so
 Tutorial-01/TestPass/ir
 Tutorial-02/LocalOpts/testTransform/*opt.*
-LoopFusion/test/test.ll
+LoopFusion/test/*.ll
+LoopFusion/test/*.svg
 .vscode
