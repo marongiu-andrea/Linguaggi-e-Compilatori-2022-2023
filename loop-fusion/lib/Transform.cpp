@@ -3,7 +3,6 @@
 #include <llvm/IR/Constants.h>
 #include <llvm/Analysis/ScalarEvolution.h>
 #include <llvm/Analysis/LoopAnalysisManager.h>
-#include <map>
 using namespace llvm;
 
 /*
@@ -53,8 +52,10 @@ bool LoopFusionPass::haveNegativeDistanceDependence(Loop*, Loop*)
   return true; 
 }
 
-void LoopFusionPass::mergeLoops(Loop* Li, Loop* Lj)
+void LoopFusionPass::mergeLoops(Loop* Li, Loop* Lj, ScalarEvolution& SE)
 {
+  auto& os = outs();
+
   auto Li_Header = Li->getHeader();
   auto Li_Body   = (dyn_cast<BranchInst>(Li_Header->getTerminator()))->getSuccessor(0);
   auto Li_Latch  = Li->getLoopLatch();
@@ -63,28 +64,44 @@ void LoopFusionPass::mergeLoops(Loop* Li, Loop* Lj)
   auto Lj_Body   = (dyn_cast<BranchInst>(Lj_Header->getTerminator()))->getSuccessor(0);
   auto Lj_Exiting= Lj->getExitingBlock();
 
-  //cambio degli usi della induction variable dei due loop
-  auto inductionVar_i = dyn_cast<PHINode>(Li_Header->begin());
-  auto inductionVar_j = dyn_cast<PHINode>(Lj_Header->begin());
-  inductionVar_j->replaceAllUsesWith(inductionVar_i);
-  inductionVar_j->eraseFromParent();
+  /*
+  1.Modificare gli usi della induction variable nel body di Lj
+    con quelli della induction variable di Li
+  */
+
+  os << "Replacing Lj's induction variable uses with Li's induction variable...\n";
+  auto inductionVar_i = Li->getInductionVariable(SE);
+  auto inductionVar_j = Lj->getInductionVariable(SE);
+  if(inductionVar_i != nullptr)
+    os << "Li_Header=" << *inductionVar_i << "\n";
+  else
+     os << "Li_Header=nullptr\n";
+  
+  //os << "inductionVar_i=" << *inductionVar_i << "\n";
+  //os << "inductionVar_j=" << *inductionVar_j << "\n";
+  
+  //inductionVar_j->replaceAllUsesWith(inductionVar_i);
+  //toErase.insert(inductionVar_j);
+  
+  // inductionVar_j->eraseFromParent();
 
   // collego il body del loop Li al body del loop Lj
-  auto branchInstruction = dyn_cast<BranchInst>(Li_Body->getTerminator());
-  branchInstruction->setSuccessor(0, Lj_Body);
+  // auto branchInstruction = dyn_cast<BranchInst>(Li_Body->getTerminator());
+  // branchInstruction->setSuccessor(0, Lj_Body);
 
   //collego l'header del loop Li all'exiting del loop Lj
-  branchInstruction = dyn_cast<BranchInst>(Li_Header->getTerminator());
-  branchInstruction->setSuccessor(1, Lj_Exiting);
+  // branchInstruction = dyn_cast<BranchInst>(Li_Header->getTerminator());
+  // branchInstruction->setSuccessor(1, Lj_Exiting);
   
   //collego body del loop Lj al latch del loop Li
-  branchInstruction = dyn_cast<BranchInst>(Lj_Body->getTerminator());
-  branchInstruction->setSuccessor(0,Li_Latch);
+  // branchInstruction = dyn_cast<BranchInst>(Lj_Body->getTerminator());
+  // branchInstruction->setSuccessor(0,Li_Latch);
 }
 
 PreservedAnalyses LoopFusionPass::run(Function& F, FunctionAnalysisManager& FAM) 
 {
   auto& os = outs();
+  os << "----- START LOOP FUSION PASS -----\n";
 
   auto& loopInfo      = FAM.getResult<LoopAnalysis>(F);
   auto& dominatorTree = FAM.getResult<DominatorTreeAnalysis>(F);
@@ -102,30 +119,39 @@ PreservedAnalyses LoopFusionPass::run(Function& F, FunctionAnalysisManager& FAM)
 
     if(!Li || !Lj)
       break;
-
+    
     if(!areAdjacent(Li, Lj))
     {
-      os << "I due loop Li e Lj non sono adiacenti!\n";
+      os << "Li, Lj are not adjacent!\n";
       continue;
     }
     if(!sameTripCount(Li, Lj, SE))
     {
-      os << "I due loop Li e Lj non hanno lo stesso Trip count!\n";
+      os << "Li, Lj have different Trip count!\n";
       continue;
     }
     if(!sameGuardBranch(Li, Lj))
     {
-      os << "I due loop Li e Lj non hanno lo stesso Guard Branch!\n";
+      os << "Li, Lj non hanno lo stesso Guard Branch!\n";
       continue;
     }
     if(!controlFlowEquivalence(Li, Lj, dominatorTree, postDT))
     {
-      os << "I due loop Li e Lj non hanno lo stesso control flow!\n";
+      os << "Li, Lj have different control flow!\n";
       continue;
     }
 
-    mergeLoops(Li, Lj);
+    os << "Li, Lj satisfy the conditions! Merge them...\n";
+
+    mergeLoops(Li, Lj, SE);
   }
+
+  // for(auto instr : toErase)
+  //   instr->eraseFromParent();
+
+  os << "----- END LOOP FUSION PASS -----\n";
+
+
 
   return PreservedAnalyses::none();
 }

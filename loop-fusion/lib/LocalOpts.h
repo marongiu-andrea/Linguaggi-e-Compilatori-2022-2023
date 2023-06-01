@@ -2,21 +2,25 @@
 #define LOCALOPTS_H
 
 #include <llvm/IR/PassManager.h>
+#include <llvm/IR/Instructions.h>
 #include <llvm/Analysis/LoopInfo.h>
 #include <llvm/IR/Dominators.h>
 #include <llvm/Analysis/PostDominators.h>
+#include <set>
 
 using namespace llvm;
 
 class LoopFusionPass final : public PassInfoMixin<LoopFusionPass> 
 {
+  std::set<Instruction*> toErase;
+
   bool areAdjacent(Loop*, Loop*);
   bool sameTripCount(Loop*, Loop*, ScalarEvolution&);
   bool sameGuardBranch(Loop*, Loop*);
   bool controlFlowEquivalence(Loop*, Loop*, DominatorTree&, PostDominatorTree&);
   bool haveNegativeDistanceDependence(Loop*, Loop*);
 
-  void mergeLoops(Loop*, Loop*);
+  void mergeLoops(Loop*, Loop*, ScalarEvolution&);
 
   public:
     PreservedAnalyses run(Function&, FunctionAnalysisManager&);
