@@ -10,13 +10,13 @@ with open("cache_exp.txt", "r") as f:
         time.append(float(line.split("\t")[1]))
 
 fig, ax = plt.subplots()
-ax.set_xlabel("stride")
+ax.set_xlabel("stride (log2)")
 ax.set_ylabel("time (seconds)")
 
-plt.plot(stride, time, linewidth=2)
+plt.plot(range(0,7), time, linewidth=2)
 
 # ax.xaxis.set_ticks()
 # ax.xaxis.set_ticklabels()
 
 fig.set_size_inches(10, 6)
-plt.savefig("cache_graph.png", dpi = 200)
+plt.savefig("cache_graph_4096.png", dpi = 200)
