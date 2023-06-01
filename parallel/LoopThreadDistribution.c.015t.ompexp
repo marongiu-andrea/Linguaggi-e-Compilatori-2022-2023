@@ -1,0 +1,175 @@
+
+;; Function task (task, funcdef_no=0, decl_uid=2788, cgraph_uid=1, symbol_order=0)
+
+
+OMP region tree
+
+bb 2: gimple_omp_parallel
+    bb 3: gimple_omp_for
+    bb 7: GIMPLE_OMP_CONTINUE
+    bb 8: GIMPLE_OMP_RETURN
+bb 9: GIMPLE_OMP_RETURN
+
+Added new low gimple function task._omp_fn.0 to callgraph
+Introduced new external node (__builtin_omp_get_num_threads/3).
+Introduced new external node (__builtin_omp_get_thread_num/4).
+
+;; Function task._omp_fn.0 (task._omp_fn.0, funcdef_no=2, decl_uid=2806, cgraph_uid=3, symbol_order=2)
+
+task._omp_fn.0 (struct .omp_data_s.0 & restrict .omp_data_i)
+{
+  int j;
+  int test [value-expr: .omp_data_i->test];
+  int i;
+  int j;
+  int D.2837;
+  int D.2836;
+  int D.2835;
+  int tt.4;
+  int q.3;
+  int D.2832;
+  int D.2831;
+  int N.1;
+  int N;
+  int NITERS;
+
+  <bb 14> :
+
+  <bb 3> :
+  NITERS = .omp_data_i->NITERS;
+  N = .omp_data_i->N;
+  N.1 = N;
+  D.2831 = __builtin_omp_get_num_threads ();
+  D.2832 = __builtin_omp_get_thread_num ();
+  q.3 = N.1 / D.2831;
+  tt.4 = N.1 % D.2831;
+  if (D.2832 < tt.4)
+    goto <bb 12>; [25.00%]
+  else
+    goto <bb 13>; [75.00%]
+
+  <bb 13> :
+  D.2835 = q.3 * D.2832;
+  D.2836 = D.2835 + tt.4;
+  D.2837 = D.2836 + q.3;
+  if (D.2836 >= D.2837)
+    goto <bb 8>; [INV]
+  else
+    goto <bb 11>; [INV]
+
+  <bb 11> :
+  j = D.2836;
+
+  <bb 4> :
+  i = 0;
+
+  <bb 6> :
+  if (i < NITERS)
+    goto <bb 5>; [INV]
+  else
+    goto <bb 7>; [INV]
+
+  <bb 7> :
+  j = j + 1;
+  if (j < D.2837)
+    goto <bb 4>; [INV]
+  else
+    goto <bb 8>; [INV]
+
+  <bb 5> :
+  .omp_data_i->test = 1;
+  i = i + 1;
+  goto <bb 6>; [INV]
+
+  <bb 8> :
+
+  <bb 9> :
+  return;
+
+  <bb 12> :
+  tt.4 = 0;
+  q.3 = q.3 + 1;
+  goto <bb 13>; [100.00%]
+
+}
+
+
+
+;; Function task (task, funcdef_no=0, decl_uid=2788, cgraph_uid=1, symbol_order=0)
+
+Merging blocks 2 and 15
+Merging blocks 2 and 10
+task ()
+{
+  unsigned int numThread.5;
+  int D.2827;
+  int D.2825;
+  int D.2826;
+  int tt.4;
+  int q.3;
+  int D.2822;
+  int D.2821;
+  int j;
+  int i;
+  int N.1;
+  int j;
+  long long int elapsedTime;
+  int test;
+  int NITERS;
+  int N;
+  int numThread;
+  struct timespec stop;
+  struct timespec start;
+  struct .omp_data_s.0 .omp_data_o.2;
+
+  <bb 2> :
+  clock_gettime (1, &start);
+  numThread = 6;
+  N = 1000;
+  NITERS = 1000000;
+  test = 0;
+  .omp_data_o.2.NITERS = NITERS;
+  .omp_data_o.2.N = N;
+  .omp_data_o.2.test = test;
+  numThread.5 = (unsigned int) numThread;
+  __builtin_GOMP_parallel (task._omp_fn.0, &.omp_data_o.2, numThread.5, 0);
+  test = .omp_data_o.2.test;
+  .omp_data_o.2 = {CLOBBER};
+  clock_gettime (1, &stop);
+  _1 = stop.tv_sec;
+  _2 = start.tv_sec;
+  _3 = _1 - _2;
+  _4 = (double) _3;
+  _5 = _4 * 1.0e+9;
+  _6 = stop.tv_nsec;
+  _7 = start.tv_nsec;
+  _8 = _6 - _7;
+  _9 = (double) _8;
+  _10 = _5 + _9;
+  elapsedTime = (long long int) _10;
+  printf ("Tempo: %llu nanosecondi\n", elapsedTime);
+  start = {CLOBBER};
+  stop = {CLOBBER};
+  return;
+
+}
+
+
+
+;; Function main (main, funcdef_no=1, decl_uid=2802, cgraph_uid=2, symbol_order=1)
+
+main ()
+{
+  int D.2843;
+
+  <bb 2> :
+  task ();
+  D.2843 = 0;
+
+  <bb 3> :
+<L0>:
+  return D.2843;
+
+}
+
+
