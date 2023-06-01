@@ -1,4 +1,5 @@
 #include "LocalOpts.h"
+#include <llvm/IR/Instructions.h>
 #include <llvm/IR/InstrTypes.h>
 #include <llvm/IR/Constants.h>
 #include <llvm/Analysis/ScalarEvolution.h>
@@ -69,33 +70,23 @@ void LoopFusionPass::mergeLoops(Loop* Li, Loop* Lj, ScalarEvolution& SE)
     con quelli della induction variable di Li
   */
 
-  os << "Replacing Lj's induction variable uses with Li's induction variable...\n";
-  auto inductionVar_i = Li->getInductionVariable(SE);
-  auto inductionVar_j = Lj->getInductionVariable(SE);
-  if(inductionVar_i != nullptr)
-    os << "Li_Header=" << *inductionVar_i << "\n";
-  else
-     os << "Li_Header=nullptr\n";
-  
-  //os << "inductionVar_i=" << *inductionVar_i << "\n";
-  //os << "inductionVar_j=" << *inductionVar_j << "\n";
-  
-  //inductionVar_j->replaceAllUsesWith(inductionVar_i);
-  //toErase.insert(inductionVar_j);
-  
-  // inductionVar_j->eraseFromParent();
-
-  // collego il body del loop Li al body del loop Lj
-  // auto branchInstruction = dyn_cast<BranchInst>(Li_Body->getTerminator());
-  // branchInstruction->setSuccessor(0, Lj_Body);
+  auto inductionVar_i = dyn_cast<PHINode>(Li_Header->begin()); 
+  auto inductionVar_j = dyn_cast<PHINode>(Lj_Header->begin()); 
+  inductionVar_j->replaceAllUsesWith(inductionVar_i);
+  inductionVar_j->eraseFromParent();
 
   //collego l'header del loop Li all'exiting del loop Lj
-  // branchInstruction = dyn_cast<BranchInst>(Li_Header->getTerminator());
-  // branchInstruction->setSuccessor(1, Lj_Exiting);
+  auto branchInstruction = dyn_cast<BranchInst>(Li_Header->getTerminator());
+  branchInstruction->setSuccessor(1, Lj_Exiting);
+
+  
+  // collego il body del loop Li al body del loop Lj
+  branchInstruction = dyn_cast<BranchInst>(Li_Body->getTerminator());
+  branchInstruction->setSuccessor(0, Lj_Body);
   
   //collego body del loop Lj al latch del loop Li
-  // branchInstruction = dyn_cast<BranchInst>(Lj_Body->getTerminator());
-  // branchInstruction->setSuccessor(0,Li_Latch);
+  branchInstruction = dyn_cast<BranchInst>(Lj_Body->getTerminator());
+  branchInstruction->setSuccessor(0,Li_Latch);
 }
 
 PreservedAnalyses LoopFusionPass::run(Function& F, FunctionAnalysisManager& FAM) 
@@ -146,12 +137,7 @@ PreservedAnalyses LoopFusionPass::run(Function& F, FunctionAnalysisManager& FAM)
     mergeLoops(Li, Lj, SE);
   }
 
-  // for(auto instr : toErase)
-  //   instr->eraseFromParent();
-
   os << "----- END LOOP FUSION PASS -----\n";
-
-
 
   return PreservedAnalyses::none();
 }
