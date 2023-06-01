@@ -1,4 +1,3 @@
-
 LIBDIR = lib
 SRCFILEs := $(wildcard ${LIBDIR}/*.cpp)
 OBJFILEs := $(subst .cpp,.o, ${SRCFILEs})
