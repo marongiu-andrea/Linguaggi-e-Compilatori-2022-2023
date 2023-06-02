@@ -74,61 +74,10 @@ bool LoopFusionPass::checkBounds(llvm::Loop *a, llvm::Loop *b, ScalarEvolution &
         return false;
     }
     
-    outs() << sce.getSmallConstantTripCount(a);
     outs() << "bounds found\n";
     
     auto fBounds = optionalGetValue(foptBounds);
     auto sBounds = optionalGetValue(soptBounds);
-    
-    //fBounds.getInitialIVValue().dump();
-    //fBounds.getFinalIVValue().dump();
-    //fBounds.getStepValue()->dump();
-    //
-    //sBounds.getInitialIVValue().dump();
-    //sBounds.getFinalIVValue().dump();
-    //sBounds.getStepValue()->dump();
-    //
-    //outs() << " count " << sce.getSmallConstantTripCount(a) << "\n";
-    //outs() << " count " << sce.getSmallConstantTripCount(b) << "\n";
-    
-    auto fGuard = a->getLoopGuardBranch();
-    auto sGuard = b->getLoopGuardBranch();
-    
-    if ((!fGuard && sGuard) || (fGuard && !sGuard))
-        return false;
-    
-    if (fGuard && sGuard) {
-        auto cond1 = dyn_cast<llvm::User>(fGuard->getCondition());
-        auto cond2 = dyn_cast<llvm::User>(sGuard->getCondition());
-        
-        if (cond1 != cond2){
-            if (cond1->getType() != cond2->getType())
-                return false;
-            
-            outs() << "branch condition type ok\n"; 
-            if (cond1->getNumUses() != cond2->getNumUses())
-                return false;
-            
-            
-            outs() << "branch uses equals ok\n"; 
-            
-            SmallSet<Value *, 2> values;
-            for (auto &op: cond1->operands())
-                values.insert(op);
-            
-            SmallSet<Value *, 2> values2;
-            for (auto &op: cond2->operands())
-                values2.insert(op);
-            
-            for (auto *v : values)
-                if (!values2.contains(v)) {
-                outs() << "operands does not match \n";
-                return false;
-            }
-            
-            outs() << "same operands for guard\n";
-        } 
-    }
     
     return (&fBounds.getInitialIVValue() == &sBounds.getInitialIVValue() &&
             &fBounds.getFinalIVValue() == &sBounds.getFinalIVValue() &&
