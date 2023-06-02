@@ -13,8 +13,9 @@ inline int64_t GetOppositeOpcode(Instruction* instr)
     auto oppositeInstr = instr->getOpcode();
     switch(instr->getOpcode())
     {
-        case Instruction::Mul:  oppositeInstr = Instruction::SDiv; break;
-        case Instruction::SDiv: oppositeInstr = Instruction::Mul;  break;
+        // NOTE: this optimization can't be applied to integer division (7/2=3,3*2=6)!
+        case Instruction::Mul:  oppositeInstr = -1; break;
+        case Instruction::SDiv: oppositeInstr = -1; break;
         case Instruction::Add:  oppositeInstr = Instruction::Sub;  break;
         case Instruction::Sub:  oppositeInstr = Instruction::Add;  break;
         default: oppositeInstr = -1;
