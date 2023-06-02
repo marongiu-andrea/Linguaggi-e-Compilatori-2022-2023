@@ -16,10 +16,6 @@ void main() {
 
     int a[100], b[100], c[100];
 
-    for (int i = 0; i < 100; i++) {
-        a[i] = 1;
-    }
-
     for (int i = 0; i < M; i++) {
         populate(a, b, c);
     }

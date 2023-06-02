@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <time.h>
+<<<<<<< HEAD
 #include <unistd.h>
 #include <stdlib.h>
 void foo(FILE* fp) {

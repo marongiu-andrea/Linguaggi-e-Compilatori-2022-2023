@@ -916,16 +916,6 @@ INPUT ../LocalOpts/graph_log.png
 INPUT ../LocalOpts/graph_log.png
 INPUT ../LocalOpts/graph_log.png
 INPUT ../LocalOpts/graph_log.png
-INPUT ../LocalOpts/cache_graph.png
-INPUT ../LocalOpts/cache_graph.png
-INPUT ../LocalOpts/cache_graph.png
-INPUT ../LocalOpts/cache_graph.png
-INPUT ../LocalOpts/cache_graph.png
-INPUT ../LocalOpts/cache_tab.png
-INPUT ../LocalOpts/cache_tab.png
-INPUT ../LocalOpts/cache_tab.png
-INPUT ../LocalOpts/cache_tab.png
-INPUT ../LocalOpts/cache_tab.png
 INPUT loopfusion.aux
 INPUT ./loopfusion.out
 INPUT ./loopfusion.out

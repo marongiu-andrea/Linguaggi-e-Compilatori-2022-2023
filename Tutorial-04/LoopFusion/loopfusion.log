@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.22 (TeX Live 2021) (preloaded format=pdflatex 2022.9.27)  22 MAY 2023 18:53
+This is pdfTeX, Version 3.141592653-2.6-1.40.22 (TeX Live 2021) (preloaded format=pdflatex 2022.9.27)  2 JUN 2023 09:32
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -698,7 +698,7 @@ Overfull \hbox (2.16704pt too wide) in paragraph at lines 160--160
  []
 
 [3]
-<./bfore.png, id=71, 1621.05624pt x 1480.53125pt>
+<./bfore.png, id=66, 1621.05624pt x 1480.53125pt>
 File: ./bfore.png Graphic file (type png)
 <use ./bfore.png>
 Package pdftex.def Info: ./bfore.png  used on input line 171.
@@ -708,7 +708,7 @@ Overfull \hbox (12.57521pt too wide) in paragraph at lines 171--172
  [][] 
  []
 
-<./after.png, id=73, 1159.33125pt x 874.26625pt>
+<./after.png, id=68, 1159.33125pt x 874.26625pt>
 File: ./after.png Graphic file (type png)
 <use ./after.png>
 Package pdftex.def Info: ./after.png  used on input line 177.
@@ -727,7 +727,7 @@ Underfull \hbox (badness 10000) in paragraph at lines 195--197
 
  []
 
-<../LocalOpts/graph_1-10.png, id=86, 722.7pt x 433.62pt>
+<../LocalOpts/graph_1-10.png, id=81, 722.7pt x 433.62pt>
 File: ../LocalOpts/graph_1-10.png Graphic file (type png)
 <use ../LocalOpts/graph_1-10.png>
 Package pdftex.def Info: ../LocalOpts/graph_1-10.png  used on input line 200.
@@ -737,7 +737,7 @@ Overfull \hbox (26.5756pt too wide) in paragraph at lines 200--201
  [][] 
  []
 
-<../LocalOpts/graph_1-5.png, id=87, 722.7pt x 433.62pt>
+<../LocalOpts/graph_1-5.png, id=82, 722.7pt x 433.62pt>
 File: ../LocalOpts/graph_1-5.png Graphic file (type png)
 <use ../LocalOpts/graph_1-5.png>
 Package pdftex.def Info: ../LocalOpts/graph_1-5.png  used on input line 208.
@@ -747,7 +747,7 @@ Overfull \hbox (26.5756pt too wide) in paragraph at lines 208--209
  [][] 
  []
 
-<../LocalOpts/graph_1-3.png, id=88, 722.7pt x 433.62pt>
+<../LocalOpts/graph_1-3.png, id=83, 722.7pt x 433.62pt>
 File: ../LocalOpts/graph_1-3.png Graphic file (type png)
 <use ../LocalOpts/graph_1-3.png>
 Package pdftex.def Info: ../LocalOpts/graph_1-3.png  used on input line 216.
@@ -758,7 +758,7 @@ Overfull \hbox (26.5756pt too wide) in paragraph at lines 216--217
  []
 
 [6 <../LocalOpts/graph_1-10.png> <../LocalOpts/graph_1-5.png>]
-<../LocalOpts/graph_log.png, id=101, 722.7pt x 433.62pt>
+<../LocalOpts/graph_log.png, id=96, 722.7pt x 433.62pt>
 File: ../LocalOpts/graph_log.png Graphic file (type png)
 <use ../LocalOpts/graph_log.png>
 Package pdftex.def Info: ../LocalOpts/graph_log.png  used on input line 224.
@@ -768,38 +768,23 @@ Overfull \hbox (26.5756pt too wide) in paragraph at lines 224--225
  [][] 
  []
 
-<../LocalOpts/cache_graph.png, id=102, 722.7pt x 433.62pt>
-File: ../LocalOpts/cache_graph.png Graphic file (type png)
-<use ../LocalOpts/cache_graph.png>
-Package pdftex.def Info: ../LocalOpts/cache_graph.png  used on input line 236.
-(pdftex.def)             Requested size: 292.31555pt x 175.39017pt.
-
-Overfull \hbox (26.5756pt too wide) in paragraph at lines 236--237
- [][] 
- []
-
-<../LocalOpts/cache_tab.png, id=103, 370.38374pt x 240.9pt>
-File: ../LocalOpts/cache_tab.png Graphic file (type png)
-<use ../LocalOpts/cache_tab.png>
-Package pdftex.def Info: ../LocalOpts/cache_tab.png  used on input line 244.
-(pdftex.def)             Requested size: 265.73994pt x 172.84134pt.
-[7 <../LocalOpts/graph_1-3.png> <../LocalOpts/graph_log.png> <../LocalOpts/cache_graph.png>] [8 <../LocalOpts/cache_tab.png (PNG copy)>] (./loopfusion.aux)
+[7 <../LocalOpts/graph_1-3.png> <../LocalOpts/graph_log.png>] (./loopfusion.aux)
 Package rerunfilecheck Info: File `loopfusion.out' has not changed.
-(rerunfilecheck)             Checksum: 1BF9C78C06C872285E84759AC7680427;1448.
+(rerunfilecheck)             Checksum: 1C5F95B79B23978A5C31F02888BDB919;1116.
  ) 
 Here is how much of TeX's memory you used:
- 17536 strings out of 480806
- 281455 string characters out of 5905151
+ 17501 strings out of 480806
+ 280811 string characters out of 5905151
  627847 words of memory out of 6000000
- 34509 multiletter control sequences out of 15000+600000
- 466600 words of font info for 120 fonts, out of 8000000 for 9000
+ 34496 multiletter control sequences out of 15000+600000
+ 465889 words of font info for 112 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
- 69i,8n,79p,737b,553s stack positions out of 5000i,500n,10000p,200000b,80000s
+ 69i,8n,79p,601b,553s stack positions out of 5000i,500n,10000p,200000b,80000s
 {/usr/share/texlive/texmf-dist/fonts/enc/dvips/lm/lm-rm.enc}{/usr/share/texlive/texmf-dist/fonts/enc/dvips/lm/lm-mathsy.enc}{/usr/share/texlive/texmf-dist/fonts/enc/dvips/lm/lm-ts1.enc}{/usr/share/texlive/texmf-dist/fonts/enc/dvips/lm/lm-ec.enc}{/usr/share/texlive/texmf-dist/fonts/enc/dvips/lm/lm-mathit.enc}</usr/share/texlive/texmf-dist/fonts/type1/public/lm/lmbx10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/lm/lmbx12.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/lm/lmmi10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/lm/lmmi8.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/lm/lmr10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/lm/lmr12.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/lm/lmr17.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/lm/lmr6.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/lm/lmr8.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/lm/lmr9.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/lm/lmri10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/lm/lmsy10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/lm/lmtt9.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.pfb>
-Output written on loopfusion.pdf (8 pages, 859704 bytes).
+Output written on loopfusion.pdf (7 pages, 773540 bytes).
 PDF statistics:
- 183 PDF objects out of 1000 (max. 8388607)
- 142 compressed objects within 2 object streams
- 26 named destinations out of 1000 (max. 500000)
- 37481 words of extra memory for PDF output out of 42996 (max. 10000000)
+ 168 PDF objects out of 1000 (max. 8388607)
+ 131 compressed objects within 2 object streams
+ 22 named destinations out of 1000 (max. 500000)
+ 37463 words of extra memory for PDF output out of 42996 (max. 10000000)
 
