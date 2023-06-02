@@ -1,10 +1,11 @@
+#define N 100
 
-void populate (int a[], int b[], int c[], int N, int S) {
+void populate (int a[N], int b[N], int c[N]) {
     int i;
 
-    for (i=0; i<N; i+=S)
+    for (i=0; i<N; i++)
         a[i] = 5*c[i];
     
-    for (i=0; i<N; i+=S)
+    for (i=0; i<N; i++)
         b[i] = a[i]+c[i];
 }

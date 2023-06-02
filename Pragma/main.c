@@ -2,22 +2,18 @@
 #include <time.h>
 
 void main() {
-    int N = 10;
+    int N = 1;
     int M = 12;
-    int NITERS = 50;
-    int a = 0;
+    int NITERS = 10;
 
     clock_t start = clock();
 
-    #pragma omp for schedule(dynamic, N)
-    {
+    #pragma omp parallel for schedule(dynamic, N) num_threads(4)
 
-        for (int i = 0; i < M; ++i) {
-            for (int j = 0; j < NITERS; ++j) {
-                ++a;
-            }
+    for (int i = 0; i < M; ++i) {
+        for (int j = 0; j < NITERS; ++j) {
+            printf("%d\n", j);
         }
-
     }
 
     clock_t stop = clock();

@@ -227,26 +227,6 @@ doppio incremento della \emph{induction variable}.
 
   Dopo un iniziale assestamento, ed al crescere di \textit{i}, il rapporto tra le prestazioni con e senza loop fusion si conserva circa stabile (esecuzione $\sim 5-7$ volte più rapida con loop fusion).
 
-  \subsection{Determinazione empirica della dimensione delle cache}
-  Seguendo la proposta del docente, ci siamo proposti di stimare in modo empirico la dimensione della cache del calcolatore su cui abbiamo eseguito l'esperienza (CPU Ryzen 5 2500U).\\
-  Sostanzialmente, ci siamo serviti di un profiler analogo al precedente, linkandolo con la versione ottimizzata di \textit{Loop.c}. La funzione \textit{populate} è stata richiamata dal profiler, eseguendo $10^4$ volte ad ogni misura del tempo, per uno stride \textit{s} crescente ($s = 2^i, i \in [0, 16], i \in \mathbb{N}$). La dimensione degli array di partenza è stata impostata come $size \, = \, base\_size \, * \, stride$, così da avere un numero di accessi uguale, ed un tempo di esecuzione simile al netto delle cache miss, per ogni valore di $s$.
-
-  \begin{figure}[H]
-    \centering
-    \includegraphics[width = 1.1 \linewidth]{../LocalOpts/cache_graph.png}
-    \caption{Cache test - stride vs execution time}
-  \end{figure}
-
-  Lo "scalino" presente in corrispondenza di $s = 1024$ sembrerebbe indicare che di lì in poi si abbiano sole cache miss, dunque la dimensione della singola linea di cache sarebbe 4kb. Ciò non di meno, l'incremento di execution time in $s = 4, 8, \cdots, 64$ sembra decisamente irrilevante per quello che ci si aspetterebbe dalle cache penalties, come si può vedere nel seguente tabulato.
-
-  \begin{figure}[H]
-    \centering
-    \includegraphics[width = 1 \linewidth]{../LocalOpts/cache_tab.png}
-    \caption{Cache test - tabulato dati raccolti}
-  \end{figure}
-
-  Non si esclude che vengano svolte ulteriori ottimizzazioni per sulle cache, delle quali siamo completamente all'oscuro.
-
 \end{multicols}
 
 \end{document}
