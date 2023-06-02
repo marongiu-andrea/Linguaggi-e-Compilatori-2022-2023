@@ -1,25 +1,32 @@
 #include <stdio.h>
 #include <time.h>
-
-void main() {
-    int N = 1;
-    int M = 12;
-    int NITERS = 10;
-
-    clock_t start = clock();
-
+<<<<<<< HEAD
+#include <unistd.h>
+#include <stdlib.h>
+void foo(FILE* fp) {
+    int N = 5; // chunk size
+    int M = 500; // static number of iterations
+	struct timespec start, finish;
+	clock_gettime(CLOCK_REALTIME, &start);    
     #pragma omp parallel for schedule(dynamic, N) num_threads(4)
-
-    for (int i = 0; i < M; ++i) {
-        for (int j = 0; j < NITERS; ++j) {
-            printf("%d\n", j);
-        }
-    }
-
-    clock_t stop = clock();
-
-    double time = (stop - start) / (double) CLOCKS_PER_SEC;
-    printf("Exec time: %f \n", time);
-
+	/* #pragma omp parallel for schedule(static) */
+	for (int i = 0; i < M; ++i) {
+	  /* printf("performing iteration: %d\n", i); */
+	  int randomnumber = (rand() % 6) + 1;
+	  usleep(randomnumber * 100);
+	}
+	clock_gettime(CLOCK_REALTIME, &finish);
+	double elapsed_time = ((double) (finish.tv_nsec - start.tv_nsec))/((double) 1000000);
+	/* double elapsed_time = ((double) (finish.tv_nsec - start.tv_nsec));     */
+	fprintf(fp, "%f\n",elapsed_time);
+    printf("Exec time: %f \n", elapsed_time);
     return;
+}
+int main(){
+  int num_ex = 10;
+  FILE *fp = fopen("for_output_2.txt", "w");
+  for(int i = 0; i < num_ex; i++){
+	foo(fp);
+  }
+  return 0;
 }
