@@ -15,17 +15,22 @@ void task()
 
     int result[N_ITERS];
 
-    // N nello statico = lo uso per dimensionarlo come una riga di cache per evitare di fare delle miss 
-    // N nel dynamic = ogni volta che assegno del lavoro a un thread gli dò N chunk
+    // static: Iterations of a loop are divided into chunks of size ceiling(number_of_iterations/number_of_threads). Each thread is assigned a separate chunk.
+    // static,n: Iterations of a loop are divided into chunks of size n. Each chunk is assigned to a thread in round-robin fashion.
+    // dynamic: Iterations of a loop are divided into chunks of size ceiling(number_of_iterations/number_of_threads).
+    // dynamic,n: As above, except chunks are set to size n.
+
+    // N: dimensione dei chunk
+
 	#pragma omp parallel num_threads(numThread)
-    #pragma omp for schedule(static) 
-        for (int j = 0; j < N; j++)
+    #pragma omp for schedule(dynamic, N) 
+    for (int j = 0; j < N; j++)
+    {
+        for (int i = 0; i < N_ITERS; i++) 
         {
-            for (int i = 0; i < N_ITERS; i++) 
-            {
-                result[i] = j;
-            }
+            result[i] = j;
         }
+    }
 
     clock_gettime(CLOCK_MONOTONIC, &stop);
 
