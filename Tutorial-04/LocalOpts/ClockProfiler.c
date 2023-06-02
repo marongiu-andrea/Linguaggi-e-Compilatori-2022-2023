@@ -22,10 +22,6 @@ void main() {
 
     int a[N], b[N], c[N];
 
-    for (int i = 0; i < N; ++i) {
-        a[i] = 1;
-    }
-
     for (int i = 0; i < OOMS; ++i) {
         int num_cycles = pow(BASE, i);
 
