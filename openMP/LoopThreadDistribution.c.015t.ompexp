@@ -21,17 +21,16 @@ task._omp_fn.0 (struct .omp_data_s.3 & restrict .omp_data_i)
 {
   int j;
   int result[0:D.2823] [value-expr: *result.1];
-  _Bool D.2860;
+  _Bool D.2858;
   int i;
-  int D.2858;
+  int D.2856;
   long int .iend0.9;
   int j;
   long int .istart0.8;
-  _Bool D.2854;
+  _Bool D.2852;
   long int .iend0.7;
   long int .istart0.6;
-  long int D.2851;
-  long int D.2850;
+  long int D.2849;
   int N.4;
   int N;
   int N_ITERS;
@@ -44,10 +43,9 @@ task._omp_fn.0 (struct .omp_data_s.3 & restrict .omp_data_i)
   N_ITERS = .omp_data_i->N_ITERS;
   N = .omp_data_i->N;
   N.4 = N;
-  D.2850 = (long int) N;
-  D.2851 = (long int) N.4;
-  D.2854 = __builtin_GOMP_loop_nonmonotonic_dynamic_start (0, D.2851, 1, D.2850, &.istart0.6, &.iend0.7);
-  if (D.2854 != 0)
+  D.2849 = (long int) N.4;
+  D.2852 = __builtin_GOMP_loop_nonmonotonic_dynamic_start (0, D.2849, 1, 1000, &.istart0.6, &.iend0.7);
+  if (D.2852 != 0)
     goto <bb 11>; [INV]
   else
     goto <bb 8>; [INV]
@@ -56,7 +54,7 @@ task._omp_fn.0 (struct .omp_data_s.3 & restrict .omp_data_i)
   .istart0.8 = .istart0.6;
   j = (int) .istart0.8;
   .iend0.9 = .iend0.7;
-  D.2858 = (int) .iend0.9;
+  D.2856 = (int) .iend0.9;
 
   <bb 4> :
   i = 0;
@@ -69,14 +67,14 @@ task._omp_fn.0 (struct .omp_data_s.3 & restrict .omp_data_i)
 
   <bb 7> :
   j = j + 1;
-  if (j < D.2858)
+  if (j < D.2856)
     goto <bb 4>; [87.50%]
   else
     goto <bb 12>; [12.50%]
 
   <bb 12> :
-  D.2860 = __builtin_GOMP_loop_nonmonotonic_dynamic_next (&.istart0.6, &.iend0.7);
-  if (D.2860 != 0)
+  D.2858 = __builtin_GOMP_loop_nonmonotonic_dynamic_next (&.istart0.6, &.iend0.7);
+  if (D.2858 != 0)
     goto <bb 11>; [INV]
   else
     goto <bb 8>; [INV]
@@ -103,13 +101,12 @@ Merging blocks 2 and 10
 task ()
 {
   unsigned int numThread.10;
-  _Bool D.2845;
+  _Bool D.2844;
   long int .iend0.9;
-  int D.2844;
+  int D.2843;
   long int .istart0.8;
   long int D.2839;
-  long int D.2840;
-  _Bool D.2841;
+  _Bool D.2840;
   long int .iend0.7;
   long int .istart0.6;
   int j;
@@ -140,8 +137,8 @@ task ()
   saved_stack.2 = __builtin_stack_save ();
   clock_gettime (1, &start);
   numThread = 8;
-  N = 1;
-  N_ITERS = 1000000;
+  N = 1000000;
+  N_ITERS = 1000;
   N_ITERS.0 = N_ITERS;
   _1 = (long int) N_ITERS.0;
   _2 = _1 + -1;
@@ -189,15 +186,15 @@ task ()
 
 main ()
 {
-  int D.2864;
+  int D.2862;
 
   <bb 2> :
   task ();
-  D.2864 = 0;
+  D.2862 = 0;
 
   <bb 3> :
 <L0>:
-  return D.2864;
+  return D.2862;
 
 }
 
