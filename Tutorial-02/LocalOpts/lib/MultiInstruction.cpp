@@ -38,6 +38,16 @@ inline bool IsCommutative(Instruction* instr)
     return false;
 }
 
+inline bool CompareValues(Value* value1, Value* value2) {
+    if(value1 == value2) return true;  // Same register
+    
+    auto value1Int = dyn_cast<ConstantInt>(value1);
+    auto value2Int = dyn_cast<ConstantInt>(value2);
+    if(value1Int && value2Int)
+        return value1Int->getSExtValue() == value2Int->getSExtValue();
+    return false;
+}
+
 // NOTE: works with non-constant operands (b = a+c, d = b-a => d=c)
 static bool runOnInstruction(Instruction *instr) {
     // Only for debugging purposes
@@ -72,9 +82,9 @@ static bool runOnInstruction(Instruction *instr) {
         bool isCommutative = IsCommutative(defInstr);
         Value* swapWith = 0;
         // Compare first operand only if the instruction is commutative
-        if(isCommutative && otherOperand == defInstrOp1)
+        if(isCommutative && CompareValues(otherOperand, defInstrOp1))
             swapWith = defInstrOp2;
-        else if(otherOperand == defInstrOp2)
+        else if(CompareValues(otherOperand, defInstrOp2))
             swapWith = defInstrOp1;
         
         if(swapWith) {
