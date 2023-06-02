@@ -13,8 +13,9 @@ inline int64_t GetOppositeOpcode(Instruction* instr)
     auto oppositeInstr = instr->getOpcode();
     switch(instr->getOpcode())
     {
-        case Instruction::Mul:  oppositeInstr = Instruction::SDiv; break;
-        case Instruction::SDiv: oppositeInstr = Instruction::Mul;  break;
+        // NOTE: this optimization can't be applied to integer division (7/2=3,3*2=6)!
+        case Instruction::Mul:  oppositeInstr = -1; break;
+        case Instruction::SDiv: oppositeInstr = -1; break;
         case Instruction::Add:  oppositeInstr = Instruction::Sub;  break;
         case Instruction::Sub:  oppositeInstr = Instruction::Add;  break;
         default: oppositeInstr = -1;
@@ -35,6 +36,16 @@ inline bool IsCommutative(Instruction* instr)
     }
     
     assert(false && "Unreachable code");
+    return false;
+}
+
+inline bool CompareValues(Value* value1, Value* value2) {
+    if(value1 == value2) return true;  // Same register
+    
+    auto value1Int = dyn_cast<ConstantInt>(value1);
+    auto value2Int = dyn_cast<ConstantInt>(value2);
+    if(value1Int && value2Int)
+        return value1Int->getSExtValue() == value2Int->getSExtValue();
     return false;
 }
 
@@ -72,9 +83,9 @@ static bool runOnInstruction(Instruction *instr) {
         bool isCommutative = IsCommutative(defInstr);
         Value* swapWith = 0;
         // Compare first operand only if the instruction is commutative
-        if(isCommutative && otherOperand == defInstrOp1)
+        if(isCommutative && CompareValues(otherOperand, defInstrOp1))
             swapWith = defInstrOp2;
-        else if(otherOperand == defInstrOp2)
+        else if(CompareValues(otherOperand, defInstrOp2))
             swapWith = defInstrOp1;
         
         if(swapWith) {
