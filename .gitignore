@@ -6,4 +6,5 @@ LoopFusion/test/*.ll
 LoopFusion/cfg/
 LoopFusion/bin
 LoopFusion/obj
+LoopFusion/stat
 .vscode

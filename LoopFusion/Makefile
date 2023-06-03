@@ -5,6 +5,7 @@ CFG_DIR := cfg
 LIB_DIR := lib
 OBJ_DIR := obj
 TEST_DIR := test
+STAT_DIR := stat
 
 TESTFILE_SRC := $(TEST_DIR)/test.c
 TESTFILE_LL := $(TESTFILE_SRC:%.c=%.ll)
@@ -18,22 +19,26 @@ POPULATE_OPT_CFG := $(POPULATE_CFG:%.svg=%.opt.svg)
 MAIN_SRC := $(TEST_DIR)/main.c
 MAIN_OBJ := $(MAIN_SRC:$(TEST_DIR)/%.c=$(OBJ_DIR)/%.o)
 
-BIN := $(BIN_DIR)/main
-BIN_OPT := $(BIN)-opt
-
 LIB_SRC := $(LIB_DIR)/LoopFusion.cpp
 LIB_INCLUDE := $(LIB_SRC:%.cpp=%.hpp)
 LIB_OBJ := $(LIB_SRC:$(LIB_DIR)/%.cpp=$(OBJ_DIR)/%.o)
+
+BIN := $(BIN_DIR)/main
+BIN_OPT := $(BIN)-opt
+
+STAT := $(STAT_DIR)/stat.json
+STAT_OPT := $(STAT:%.json=%.opt.json)
 
 CC = /usr/bin/clang
 CXX = /usr/bin/clang++
 OPT = /usr/bin/opt
 DOT = /usr/bin/dot
 LLC = /usr/bin/llc
+PERF = /usr/bin/perf
 CCFLAGS = -Wall -Werror -pedantic-errors
 CXXFLAGS = $(shell llvm-config --cxxflags) $(CCFLAGS) -fPIC -std=c++20
 
-all: $(TESTFILE_OPT_LL) $(POPULATE_CFG) $(POPULATE_OPT_CFG) $(BIN) $(BIN_OPT)
+all: $(TESTFILE_OPT_LL) $(POPULATE_CFG) $(POPULATE_OPT_CFG) $(BIN) $(BIN_OPT) $(STAT) $(STAT_OPT)
 
 $(TESTFILE_OPT_LL): $(TESTFILE_LL) $(OPTIMIZER)
 	$(OPT) -load-pass-plugin=./$(OPTIMIZER) -passes=custom-loopfusion -S $< -o $@
@@ -73,6 +78,12 @@ $(BIN): $(MAIN_OBJ) $(TESTFILE_OBJ) | $(BIN_DIR)
 $(BIN_OPT): $(MAIN_OBJ) $(TESTFILE_OPT_OBJ) | $(BIN_DIR)
 	$(CC) -o $@ $^
 
+$(STAT): $(BIN) | $(STAT_DIR)
+	$(PERF) stat -B -e cache-misses -j $< 2> $@
+
+$(STAT_OPT): $(BIN_OPT) | $(STAT_DIR)
+	$(PERF) stat -B -e cache-misses -j $< 2> $@
+
 $(BIN_DIR):
 	mkdir -p $@
 
@@ -82,6 +93,9 @@ $(OBJ_DIR):
 $(CFG_DIR):
 	mkdir -p $@
 
+$(STAT_DIR):
+	mkdir -p $@
+
 .PHONY: clean
 clean:
-	$(RM) $(BIN_DIR)/* $(CFG_DIR)/* $(OBJ_DIR)/* $(OPTIMIZER) $(TEST_DIR)/*.ll
+	$(RM) $(BIN_DIR)/* $(CFG_DIR)/* $(OBJ_DIR)/* $(OPTIMIZER) $(TEST_DIR)/*.ll $(STAT_DIR)/*
