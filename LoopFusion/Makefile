@@ -1,4 +1,5 @@
 OPTIMIZER := libLoopFusion.so
+ARRAY_SIZE := 1000
 
 BIN_DIR := bin
 CFG_DIR := cfg
@@ -40,11 +41,13 @@ CXXFLAGS = $(shell llvm-config --cxxflags) $(CCFLAGS) -fPIC -std=c++20
 
 all: $(TESTFILE_OPT_LL) $(POPULATE_CFG) $(POPULATE_OPT_CFG) $(BIN) $(BIN_OPT) $(STAT) $(STAT_OPT)
 
+all-test: $(TESTFILE_OPT_LL) $(BIN) $(BIN_OPT) $(STAT) $(STAT_OPT)
+
 $(TESTFILE_OPT_LL): $(TESTFILE_LL) $(OPTIMIZER)
 	$(OPT) -load-pass-plugin=./$(OPTIMIZER) -passes=custom-loopfusion -S $< -o $@
 
 $(TESTFILE_LL): $(TESTFILE_SRC)
-	$(CC) -O0 -Xclang -disable-O0-optnone -emit-llvm -S -c $< -o $@
+	$(CC) -O0 -Xclang -disable-O0-optnone -emit-llvm -S $< -o $@ -DARRAY_SIZE=$(ARRAY_SIZE)
 	$(OPT) -passes=mem2reg -S $@ -o $@
 
 $(TESTFILE_OBJ): $(TESTFILE_LL)
@@ -70,7 +73,7 @@ $(POPULATE_OPT_CFG): $(TESTFILE_OPT_LL) | $(CFG_DIR)
 	$(RM) .populate.dot
 
 $(MAIN_OBJ): $(MAIN_SRC)
-	$(CC) $(CCFLAGS) -c $< -o $@
+	$(CC) $(CCFLAGS) -c $< -o $@ -DARRAY_SIZE=$(ARRAY_SIZE)
 
 $(BIN): $(MAIN_OBJ) $(TESTFILE_OBJ) | $(BIN_DIR)
 	$(CC) -o $@ $^
@@ -96,6 +99,9 @@ $(CFG_DIR):
 $(STAT_DIR):
 	mkdir -p $@
 
-.PHONY: clean
+.PHONY: clean clean-test
 clean:
 	$(RM) $(BIN_DIR)/* $(CFG_DIR)/* $(OBJ_DIR)/* $(OPTIMIZER) $(TEST_DIR)/*.ll $(STAT_DIR)/*
+
+clean-test:
+	$(RM) $(MAIN_OBJ) $(TESTFILE_OBJ) $(TESTFILE_OPT_OBJ) $(STAT_DIR)/* $(TESTFILE_LL) $(TESTFILE_OPT_LL)
