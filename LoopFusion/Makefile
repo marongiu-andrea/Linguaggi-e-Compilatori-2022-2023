@@ -59,7 +59,7 @@ $(TESTFILE_OPT_OBJ): $(TESTFILE_OPT_LL)
 $(OPTIMIZER): $(LIB_OBJ)
 	$(CXX) -dylib -shared $^ -o $@
 
-$(LIB_OBJ): $(LIB_SRC) $(LIB_INCLUDE) | $(LIB_DIR)
+$(LIB_OBJ): $(LIB_SRC) $(LIB_INCLUDE) | $(LIB_DIR) $(OBJ_DIR)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 $(POPULATE_CFG): $(TESTFILE_LL) | $(CFG_DIR)
