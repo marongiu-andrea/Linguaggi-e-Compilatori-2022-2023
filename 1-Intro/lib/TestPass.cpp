@@ -19,17 +19,21 @@ namespace
 
       for (auto iter = M.begin(); iter != M.end(); ++iter)
       {
+        //get the current function
         Function &F = *iter;
         auto nBasicBlocks = 0;
         std::string variable_arg = "";
 
         outs() << "Nome funzione: " << F.getName() << "\n";
 
+        //check if the function accepts a variable  number of arguments
         if (F.isVarArg())
         {
           variable_arg = "+*";
         }
+        //get the function's number of passed arguments
         outs() << "Numero parametri: " << F.arg_size() << variable_arg << "\n";
+        //count all the basic blocks of the function
         for (auto &basic_block : F)
         {
           nBasicBlocks++;
@@ -41,7 +45,7 @@ namespace
         outs() << "--------------------"
                << "\n";
       }
-
+  
       return PreservedAnalyses::all();
     }
   };

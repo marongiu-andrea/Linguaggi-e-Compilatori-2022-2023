@@ -10,6 +10,7 @@ using namespace llvm;
 
 bool runOnBasicBlockAlgebric(BasicBlock &B)
 {
+    //per ogni basic block otteniamo la funzione padre e il relativo contesto
     Function *F = B.getParent();
     LLVMContext &context = F->getContext();
 
@@ -29,11 +30,13 @@ bool runOnBasicBlockAlgebric(BasicBlock &B)
             outs() << "\t" << *operand_1 << "\n\t" << *operand_2 << "\n";
 
             ConstantInt *C2 = dyn_cast<ConstantInt>(operand_2);
+            //controlliamo se il secondo operando dell'istruzione è una costante intera
             if (C2 && C2->getValue().isZero())
             {
+                //se è una costante intera e il vlaore è 0
                 outs() << "\tIstruzione rimpiazzata con " << *operand_1 << "\n";
+                //rimpiazzamo tutti gli usi con solo l'operando 1
                 Inst.replaceAllUsesWith(operand_1);
-                // Inst.eraseFromParent();
             }
         }
         else if (!strcmp(Inst.getOpcodeName(), "mul"))
@@ -51,14 +54,14 @@ bool runOnBasicBlockAlgebric(BasicBlock &B)
             if (C2 && C2->getValue().getLimitedValue() == 1)
             {
                 outs() << "\tIstruzione rimpiazzata con " << *operand_1 << "\n";
+                //rimpiazzamo tutti gli usi con solo l'operando 1
                 Inst.replaceAllUsesWith(operand_1);
-                // Inst.eraseFromParent();
             }
             else if (C1 && C1->getValue().getLimitedValue() == 1)
             {
                 outs() << "\tIstruzione rimpiazzata con " << *operand_2 << "\n";
+                //rimpiazzamo tutti gli usi con solo l'operando 1
                 Inst.replaceAllUsesWith(operand_2);
-                // Inst.eraseFromParent();
             }
         }
         outs() << "\n";
@@ -73,12 +76,13 @@ bool runOnFunctionAlgebric(Function &F)
 
     for (auto Iter = F.begin(); Iter != F.end(); ++Iter)
     {
+        //per ogni basic block applichiamo l'ottimizzazione 
         if (runOnBasicBlockAlgebric(*Iter))
         {
             Transformed = true;
         }
     }
-
+    // se non c'è stato neanche un miglioramento la variabile Transoformed sarà false
     return Transformed;
 }
 
@@ -89,6 +93,7 @@ PreservedAnalyses AlgebraicIdentityPass::run([[maybe_unused]] Module &M,
     // Un semplice passo di esempio di manipolazione della IR
     for (auto Iter = M.begin(); Iter != M.end(); ++Iter)
     {
+        //per ogni funzione applichiamo l'ottimizzazione 
         if (runOnFunctionAlgebric(*Iter))
         {
             return PreservedAnalyses::none();

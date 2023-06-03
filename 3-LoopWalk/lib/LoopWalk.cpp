@@ -40,6 +40,7 @@ namespace
 
         for (auto Iter = B->begin(); Iter != B->end(); ++Iter)
         {
+          //cerchiamo una istruzione di sottrazione
           if (Iter->getOpcode() == Instruction::Sub)
           {
             outs() << *Iter << " ###QUESTA E UNA SUB###\n";
@@ -47,6 +48,7 @@ namespace
             PHINode *binOpLeft = dyn_cast<PHINode>(Iter->getOperand(0));
             PHINode *binOpRight = dyn_cast<PHINode>(Iter->getOperand(1));
 
+            //controlliamo se uno dei due operandi punta ad una phiNode, in modo da stampare il basic block dove si trova
             if (binOpLeft)
             {
               printBasicBlock(Iter->getOperand(0));

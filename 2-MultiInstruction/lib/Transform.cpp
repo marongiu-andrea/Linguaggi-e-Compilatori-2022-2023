@@ -64,8 +64,6 @@ bool runOnBasicBlock(BasicBlock &B)
             outs() << "\tNuova istruzione" << *NewInst << "\n";
             NewInst->insertAfter(&Inst);
 
-            // Si possono aggiornare le singole references separatamente?
-            // Controlla la documentazione e prova a rispondere.
             Inst.replaceAllUsesWith(NewInst);
           }
         }
@@ -95,8 +93,6 @@ bool runOnFunction(Function &F)
 PreservedAnalyses TransformPass::run([[maybe_unused]] Module &M,
                                      ModuleAnalysisManager &)
 {
-  // FunctionAnalysisManager &AM
-  // auto &LI = AM.getResult<LoopAnalysis>(F)
 
   // Un semplice passo di esempio di manipolazione della IR
   for (auto Iter = M.begin(); Iter != M.end(); ++Iter)
@@ -110,110 +106,3 @@ PreservedAnalyses TransformPass::run([[maybe_unused]] Module &M,
   return PreservedAnalyses::none();
 }
 
-/*
-  CODICE VECCHIO
-
-bool runOnBasicBlock(BasicBlock &B)
-{
-  Function *F = B.getParent();
-  LLVMContext &context = F->getContext();
-
-  // Preleviamo le prime due istruzioni del BB
-  Instruction &Inst1st = *B.begin(), &Inst2nd = *(++B.begin());
-
-  // L'indirizzo della prima istruzione deve essere uguale a quello del
-  // primo operando della seconda istruzione (per costruzione dell'esempio)
-  assert(&Inst1st == Inst2nd.getOperand(0));
-
-  // Stampa la prima istruzione
-  outs() << "PRIMA ISTRUZIONE: " << Inst1st << "\n";
-  outs() << "SECONDA ISTRUZIONE: " << Inst2nd << "\n";
-  // Stampa la prima istruzione come operando
-  outs() << "COME OPERANDO: ";
-  Inst1st.printAsOperand(outs(), false);
-  outs() << "\n";
-
-  // User-->Use-->Value
-  outs() << "I MIEI OPERANDI SONO:\n";
-  for (auto *Iter = Inst1st.op_begin(); Iter != Inst1st.op_end(); ++Iter)
-  {
-    Value *Operand = *Iter;
-
-    if (Argument *Arg = dyn_cast<Argument>(Operand))
-    {
-      outs() << "\t" << *Arg << ": SONO L'ARGOMENTO N. " << Arg->getArgNo()
-             << " DELLA FUNZIONE" << Arg->getParent()->getName()
-             << "\n";
-    }
-    if (ConstantInt *C = dyn_cast<ConstantInt>(Operand))
-    {
-      outs() << "\t" << *C << ": SONO UNA COSTANTE INTERA DI VALORE " << C->getValue()
-             << "\n";
-    }
-  }
-
-  outs() << "LA LISTA DEI MIEI USERS:\n";
-  for (auto Iter = Inst1st.user_begin(); Iter != Inst1st.user_end(); ++Iter)
-  {
-    outs() << "\t" << *(dyn_cast<Instruction>(*Iter)) << "\n";
-  }
-
-  outs() << "E DEI MIEI USI (CHE E' LA STESSA):\n";
-  for (auto Iter = Inst1st.use_begin(); Iter != Inst1st.use_end(); ++Iter)
-  {
-    outs() << "\t" << *(dyn_cast<Instruction>(Iter->getUser())) << "\n";
-  }
-
-  // Manipolazione delle istruzioni
-  Instruction *NewInst = BinaryOperator::Create(
-      Instruction::Add, Inst1st.getOperand(0), Inst1st.getOperand(0));
-
-  NewInst->insertAfter(&Inst1st);
-  // Si possono aggiornare le singole references separatamente?
-  // Controlla la documentazione e prova a rispondere.
-  Inst1st.replaceAllUsesWith(NewInst);
-
-  for (auto *Iter_op = Inst.op_begin(); Iter_op != Inst.op_end(); ++Iter_op)
-  {
-    Value *Operand = *Iter_op;
-
-    if (ConstantInt *C = dyn_cast<ConstantInt>(Operand))
-    {
-      outs() << "\t" << *C << ": SONO UNA COSTANTE INTERA DI VALORE " << C->getValue() << "\n";
-
-      /*
-      Questo serve perchè LLVM restituisce un intero forzato quando si usa getValue()
-      per aggirare la cosa si usa una libreria che estrae l'intero e poi fa il cast a float
-      questo serve perchè la funzione log2 prende un float come parametro.
-
-      uint64_t value = C->getValue().getZExtValue();  // extract the integer value from the APInt object
-      float value_in_float = static_cast<float>(value);
-      float log_value = log2(value_in_float);
-      //se il log_value è pari alla sua floor vuol dire che value_In_float è effettivamente una potenza di 2
-      //se non lo fosse  log_value sarebbe un valore con la virgola e quindi non valido
-      if(log_value == floor(log_value)){
-        outs() << "\tPossiamo fare un miglioramento " << "\n";
-        //outs() << "\t Primo operando: " << Inst.getOperand(0) << "\n";
-        //int value_of_log_in_int = APInt IntValue(32, log_value);
-        /*
-        LLVMContext context;
-        Value *log_value_in_constant_int = ConstantInt::get(Type::getInt32Ty(context),log_value);
-        Instruction *NewInst = BinaryOperator::CreateShl(
-        Inst.getOperand(0), log_value_in_constant_int);
-
-        NewInst->insertAfter(old_instr);
-        // Si possono aggiornare le singole references separatamente?
-        // Controlla la documentazione e prova a rispondere.
-        Inst.replaceAllUsesWith(NewInst);
-
-}
-
-for (auto *Iter = Inst1st.op_begin(); Iter != Inst1st.op_end(); ++Iter)
-{
-  Value *Operand = *Iter;
-}
-old_instr = &(*Iter);
-}
-return true;
-}
-*/
