@@ -78,7 +78,7 @@ public:
 
     //scorro il loop per spostare le istruzioni taggate come movable
 
-    Instruction *last_preheader = preheader->getTerminator();
+    Instruction *last_preheader = preheader->getTerminator(); //mi posiziono alla fine del preheader per procedere ad inserire le istruzioni movable
     Instruction *instr;
     for(auto iter = Movablevector.begin(); iter != Movablevector.end(); ++iter){
         instr = *iter;
@@ -132,7 +132,7 @@ public:
           flag=false; //se e' un BinaryOperato che non ha soddisfatto nessuna delle due condizioni precedenti, allora e' di sicuro NON LOOP-INVARIANT
         }
         else {
-          arg = dyn_cast<Argument>(instr->getOperand(i));
+          arg = dyn_cast<Argument>(instr->getOperand(i)); //provo a castare a function parameter
           if(arg){
             continue; //se non e' ne' una costante ne' un BinaryOperator, allora e' un function parameter, che quindi e' LOOP-INVARIANT
           }
