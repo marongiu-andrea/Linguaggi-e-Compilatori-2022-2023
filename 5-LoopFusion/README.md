@@ -1,19 +1,19 @@
 # Comandi
 
-
-
+## Generiamo il file
 ## Primo comando
-    clang-14 -O0 -Xclang -disable-O0-optnone -emit-llvm -c test.cpp -o test/test.bc
+
+    clang-14 -O0 -Xclang -disable-O0-optnone -emit-llvm -c test.cpp -o test/Loop.bc
 
 
 ## Ottimiziamo il programma
 
-    opt -passes=mem2reg test/test.bc -o test/test.base.bc
+    opt -passes=mem2reg test/loop.bc -o test/test.base.bc
 
 
 ## Generiamo il file .ll per leggere il programma creato (Foo)
 
-    llvm-dis test/test.base.bc -o test/test.ll
+    llvm-dis test/Loop.bc -o test/Loop.ll
 
 ## Compiliamo l'eseguibile
 
@@ -21,8 +21,13 @@
 
 ## Ottimiziamo il programma
 
-    opt -load-pass-plugin=./libLocalOpts.so -passes=transform test/test.ll -o test/Test.optimized.bc
+    opt -enable-new-pm=0 -load ./libLoopFusion.so -loop-fusion-pass test/Loop.ll -disable-output
 
-## Generiamo il file .ll per leggere il programma creato (Foo)
+## Ottimizza il progrmma con output
 
-    llvm-dis test/Test.optimized.bc -o test/Test.optimized.ll
+    opt -enable-new-pm=0 -load ./libLoopFusion.so -loop-fusion-pass test/Loop.ll -o test/Loop.fused.bc
+
+   
+## Generiamo il file .ll per leggere il programma creato
+    
+    llvm-dis test/Loop.fused.bc -o test/Loop.fused.ll
