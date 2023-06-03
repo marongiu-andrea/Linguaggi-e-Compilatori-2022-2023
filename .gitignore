@@ -3,5 +3,7 @@
 Tutorial-01/TestPass/ir
 Tutorial-02/LocalOpts/testTransform/*opt.*
 LoopFusion/test/*.ll
-LoopFusion/test/*.svg
+LoopFusion/cfg/
+LoopFusion/bin
+LoopFusion/obj
 .vscode
