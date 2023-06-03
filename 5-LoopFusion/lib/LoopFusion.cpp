@@ -100,16 +100,21 @@ namespace
     // Move the body of L2 next to the body of L1
     for (auto &bb : bodyL2)
     {
+      //for each block we unlink it from the ehader of the loop that contains it
       auto splitEdge = SplitEdge(L2->getHeader(), bb, &DT, &LI);
+      //we then replace all the uses of the block with the latch block of the loop
       bb->replaceAllUsesWith(L2->getLoopLatch());
+      //we then move the block to the position after the last body block of loop 1
       bb->moveAfter(lastBasicBlockBodyL1);
-
+      //we also set the terminator of the body of loop 1 to the block
       terminatorBodyL1->setOperand(0, bb);
 
       for (auto &inst : bb->getInstList())
       {
         if (inst.isTerminator())
         {
+        //if the instruction is the terminator of the block, we set it's first operand in the last instruction 
+        //as a branch to the loop 1 latch
           inst.setOperand(0, L1->getLoopLatch());
           return;
         }
