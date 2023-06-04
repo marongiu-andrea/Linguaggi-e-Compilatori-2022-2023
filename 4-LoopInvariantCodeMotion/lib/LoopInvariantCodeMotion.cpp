@@ -26,7 +26,6 @@ namespace
     virtual void getAnalysisUsage(AnalysisUsage &AU) const override
     {
       AU.addRequired<DominatorTreeWrapperPass>();
-      AU.setPreservesAll();
     }
 
     virtual bool runOnLoop(Loop *L, LPPassManager &LPM) override
