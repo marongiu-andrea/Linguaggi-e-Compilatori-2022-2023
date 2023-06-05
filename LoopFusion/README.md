@@ -84,7 +84,7 @@ Oltre ad essere più complesso, gestire i loop con più di un'uscita sarebbe sta
 
 Il numero di iterazioni di un loop (**trip count**) si ottiene tramite la **scalar evolution analysis**. Si tratta di un'analisi che cerca di capire l'evoluzione dei valori scalari (tra cui ad esempio la loop induction variable) durante il flusso d'esecuzione del programma.
 
-Il metodo [`llvm::ScalarEvolution::getSmallConstantTripCount(llvm::Loop*)](https://llvm.org/doxygen/classllvm_1_1ScalarEvolution.html#abec0c616087c002528fcf80c6583eadd) permette di ottenere il trip count di un loop. Se questo non è calcolabile a compile time, viene restituito `0`.
+Il metodo [`llvm::ScalarEvolution::getSmallConstantTripCount(llvm::Loop*)`](https://llvm.org/doxygen/classllvm_1_1ScalarEvolution.html#abec0c616087c002528fcf80c6583eadd) permette di ottenere il trip count di un loop. Se questo non è calcolabile a compile time, viene restituito `0`.
 
 Due loop iterano lo stesso numero di volte se:
 - il trip count di entrambi è calcolabile (i.e. è `!= 0`);
