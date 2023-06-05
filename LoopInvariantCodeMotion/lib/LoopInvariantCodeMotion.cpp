@@ -243,6 +243,9 @@ class LoopInvariantCodeMotionPass final : public LoopPass
 						dominatesAllUses = false;
 					}
 				}
+			
+				if (deadAfterExit)
+					outs()<<*(iter->first)<<" è DEAD all'uscita del loop\n";
 
 				/*
 				Un'istruzione candidata movable è:
@@ -253,10 +256,6 @@ class LoopInvariantCodeMotionPass final : public LoopPass
 				- Si trovano in blocchi che dominano tutti i blocchi nel loop che usano la variabile
 					a cui si sta assegnando un valore
 				*/
-			
-				if (deadAfterExit)
-					outs()<<*(iter->first)<<" è DEAD all'uscita del loop\n";
-
 				if ((dominatesAllExits || deadAfterExit) && dominatesAllUses)
 					candidateMovableInstructions.push_back(iter->first);
 			}
