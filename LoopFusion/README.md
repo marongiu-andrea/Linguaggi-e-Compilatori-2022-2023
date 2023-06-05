@@ -148,7 +148,19 @@ Poiché il controllo sulle dipendenze è molto complesso, nella nostra implement
 bool LoopFusion::checkNegativeDistanceDeps(Loop* loopi, Loop* loopj) const { return true; }
 ```
 
-# Confronto tra versione ottimizzata e non ottimizzata 
+# Confronto tra versione ottimizzata e non ottimizzata
+
+## Confronto sui CFG
+
+![CFG versione ottimizzata](cfg/populate.svg)
+
+![CFG versione ottimizzata](cfg/populate.opt.svg)
+
+Nel CFG ottimizzato si può notare che in realtà rimane qualche rimasuglio (preheader, header e latch) del 2° loop.
+
+Questo non è un problema, perché le successive ottimizzazioni fatte da LLVM andranno a fare pulizia.
+
+## Grafici su cache miss e tempo d'esecuzione
 
 ![grafico cache misses](diagrams/diagram_cache.svg)
 
