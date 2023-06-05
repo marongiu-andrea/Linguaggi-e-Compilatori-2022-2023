@@ -150,7 +150,7 @@ bool LoopFusion::checkNegativeDistanceDeps(Loop* loopi, Loop* loopj) const { ret
 
 # Confronto tra versione ottimizzata e non ottimizzata 
 
-![grafico cache misses](diagrams/diagram_cache)
+![grafico cache misses](diagrams/diagram_cache.svg)
 
-![grafico tempo d'esecuzione](diagrams/diagram_exec)
+![grafico tempo d'esecuzione](diagrams/diagram_exec.svg)
 
