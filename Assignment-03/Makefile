@@ -13,3 +13,7 @@ $(OPTIMIZER): $(OBJs)
 .PHONY: clean
 clean:
 	$(RM) $(OPTIMIZER) $(OBJs)
+
+ottimizzazione:
+	opt -enable-new-pm=0 -load ./libLoopWalk.so -loop-walk test/Loop.ll -o lib/result.bc
+	llvm-dis test/result.bc -o test/result-optimized.ll
