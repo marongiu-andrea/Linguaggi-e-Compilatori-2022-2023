@@ -4,16 +4,14 @@
 #include <stdlib.h>
 void foo(FILE* fp) {
     int N = 4; // chunk size
-    int M = 100; 
-
-	
+    int M = 100; 	
 	struct timespec start, finish;
 	clock_gettime(CLOCK_REALTIME, &start);
     #pragma omp parallel for schedule(dynamic, N) num_threads(4)
-	/* #pragma omp parallel for schedule(static) */
+    /* #pragma omp parallel for schedule(static) num_threads(4) */
 	for (int i = 0; i < M; ++i) {	  
-	  int randomnumber = (rand() % 6) + 1;
-	  usleep(randomnumber * 100);
+	  int randomnumber = (rand() % 10) + 1;
+	  usleep(randomnumber * 10);
 	}
 	clock_gettime(CLOCK_REALTIME, &finish);
 	double elapsed_time = ((double) (finish.tv_nsec - start.tv_nsec))/((double) 1000000);
