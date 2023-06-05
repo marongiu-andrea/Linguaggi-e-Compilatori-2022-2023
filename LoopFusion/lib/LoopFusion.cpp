@@ -96,7 +96,7 @@ void LoopFusion::findAdjacentLoops(const std::vector<Loop*>& loops, std::vector<
             outs() << "\n - ";
             loopj->print(outs(), false, false);
             outs() << "\n";
-            adjLoopPairs.push_back(std::pair(loopi, loopj));
+            adjLoopPairs.emplace_back(loopi, loopj);
         }
     }
 }
@@ -118,7 +118,6 @@ bool LoopFusion::checkNegativeDistanceDeps(Loop* loopi, Loop* loopj) const { ret
 
 bool LoopFusion::mergeLoops(Loop* loopFused, Loop* loopToFuse, ScalarEvolution& SE, LoopInfo& LI) const
 {
-    // prendere terminator primo loop e farlo puntare all'exit del secondo
     PHINode* loopToFuseIndV = getInductionVariable(loopToFuse, SE);
     PHINode* loopFusedIndV = getInductionVariable(loopFused, SE);
 
@@ -168,15 +167,13 @@ bool LoopFusion::mergeLoops(Loop* loopFused, Loop* loopToFuse, ScalarEvolution& 
     // considero solo lo spostamento dei blocchi da un loop all'altro e la cancellazione del secondo loop
     // bisognerebbe considerare anche i loop innestati: rimuoverli dal secondo e aggiungerli al primo
     // effettuando una copia dei blocchi del loop posso iterare e modificare il loop stesso
-    SmallVector<BasicBlock*, 4> secondaryBlocks(loopToFuse->blocks());
-
-    for (auto& secondaryBlock : secondaryBlocks)
+    for (auto& bb : loopToFuse->blocks())
     {
         // header e latch rimarranno soli, non devono essere spostati!
-        if (secondaryBlock != secondaryHeader && secondaryBlock != secondaryLatch)
+        if (bb != secondaryHeader && bb != secondaryLatch)
         {
-            loopFused->addBasicBlockToLoop(secondaryBlock, LI);
-            loopToFuse->removeBlockFromLoop(secondaryBlock);
+            loopFused->addBasicBlockToLoop(bb, LI);
+            loopToFuse->removeBlockFromLoop(bb);
         }
     }
 
@@ -207,7 +204,6 @@ PreservedAnalyses LoopFusion::run(Function& function, FunctionAnalysisManager& f
 
     findAdjacentLoops(topLevelLoopsInPreorder, adjacentLoops);
 
-    // filtro il vettore di loop controllando le condizioni
     const auto& loopsToMerge = make_filter_range(adjacentLoops, [this, &PT, &DT, &SE](std::pair<Loop*, Loop*> pair) {
         return haveSameTripCount(SE, pair.first, pair.second) &&
                areControlFlowEquivalent(DT, PT, pair.first, pair.second) &&
@@ -215,7 +211,7 @@ PreservedAnalyses LoopFusion::run(Function& function, FunctionAnalysisManager& f
     });
 
     std::vector<std::pair<Loop*, Loop*>> loopsToMergeVector(loopsToMerge.begin(), loopsToMerge.end());
-    // effettuo fusione e guardo se devo cambiare dei pair successivi
+
     for (Loop* l : topLevelLoops)
         outs() << *l << '\n';
 
@@ -228,7 +224,7 @@ PreservedAnalyses LoopFusion::run(Function& function, FunctionAnalysisManager& f
          * per come è stato esplorato l'albero dei loop, avrò le seguenti coppie: (A, B), (B, C)
          * se B viene fuso in A, allora mi basta sostituire nella seconda coppia il loop B con il loop (modificato) A.
          */
-        if (merged && i != loopsToMergeVector.size() && loopsToMergeVector[i].second == loopsToMergeVector[i + 1].first)
+        if (merged && i != loopsToMergeVector.size() - 1 && loopsToMergeVector[i].second == loopsToMergeVector[i + 1].first)
         {
             loopsToMergeVector[i + 1].first = loopsToMergeVector[i].first;
         }
