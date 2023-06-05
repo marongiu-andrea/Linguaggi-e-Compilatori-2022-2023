@@ -36,3 +36,10 @@ E poi confrontarlo con il file sopra che usa la loopfusion.
 Notare la riduzione del tempo dovuto al lavoro della cache.
 
 L'obbiettivo dell'esercitazione è vedere che c'è un improvement significativo.
+
+
+-clang -O0
+-opt mem2reg
+-llvm-dis
+-opt loopfusion
+-clang
