@@ -23,14 +23,14 @@ PreservedAnalyses LoopFusionPass::run([[maybe_unused]] /*Module*/ Function &F,
 
   // Un semplice passo di esempio di manipolazione della IR
   auto &LI = AM.getResult<LoopAnalysis>(F);
-  ScalarEvolution &SE = AM.getResult<ScalarEvolutionAnalysis>(F);
+  ScalarEvolution &SE = AM.getResult<ScalarEvolutionAnalysis>(F); //necessaria per la verifica dei bounds e del numero delle iterazioni dei due loop
   DominatorTree &DT = AM.getResult<DominatorTreeAnalysis>(F);
   PostDominatorTree &PDT = AM.getResult<PostDominatorTreeAnalysis>(F);
   std::map<Loop*,BasicBlock*> preheaders;
   llvm::Loop* l_prev = nullptr; //puntatore al loop precedente
   Instruction* inst;
 
-  auto loops = LI.getLoopsInPreorder();
+  auto loops = LI.getLoopsInPreorder(); //ottengo i loop sui quali devo verificare le varie condizioni
   for (llvm::Loop * l_actual : loops) {
     if(l_prev) {
       if(checkAdiacenza(l_actual, l_prev) && checkBranch(l_actual) && checkLoopTripCount(l_actual,l_prev,SE) && checkCFEquivalent(l_actual, l_prev,DT,PDT)){ //verifico le varie condizioni
@@ -73,11 +73,11 @@ void fondiLoop(Loop* attuale, Loop* prev, ScalarEvolution &SE) {
   body_actual_bi->setSuccessor(0,latch_prev);
 }
 
-bool checkAdiacenza(Loop* l_actual, Loop* l_prev) {
+bool checkAdiacenza(Loop* l_actual, Loop* l_prev) { //verifico l'adiacenza a livello di basic block; per la verifica che non ci siano altre istruzioni trad i due loop uso la funzione checkBranch()
   return l_prev->getExitBlock() == l_actual->getLoopPreheader();
 }
 
-bool checkBranch(Loop* l_actual) {
+bool checkBranch(Loop* l_actual) { //necessaria per verificare che non ci siano altre istruzioni nel preheader del loop innestato (in generale che non ci siano altre istruzioni tra i due loop)
   BasicBlock* preheader = l_actual->getLoopPreheader();
   Instruction *inst = dyn_cast<Instruction>(preheader->begin());
   if (llvm::BranchInst* branchInst = dyn_cast<BranchInst>(inst))
