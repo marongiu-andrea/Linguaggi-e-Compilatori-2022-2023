@@ -3,6 +3,10 @@
 
 using namespace llvm;
 
+// Strength Reduction:
+//  15 × 𝑥 = 𝑥 × 15 ⇒ (𝑥 ≪ 4) – 𝑥
+//  y = x / 8 ⇒ y = x >> 3
+
 // opt -load-pass-plugin=./libLocalOpts.so -passes=strengthreduction test/test.ll -o test/test.strengthreduction.optimized.bc
 // llvm-dis test/test.strengthreduction.optimized.bc -o test/test.strengthreduction.optimized.ll
 

@@ -3,6 +3,10 @@
 
 using namespace llvm;
 
+// Algebraic Identity:
+//  𝑥 + 0 = 0 + 𝑥 ⇒ 𝑥
+//  𝑥 × 1 = 1 × 𝑥 ⇒ 𝑥
+
 //opt -load-pass-plugin=./libLocalOpts.so -passes=algebraicidentity test/test.ll -o test/test.algebraicidentity.optimized.bc
 //llvm-dis test/test.algebraicidentity.optimized.bc -o test/test.algebraicidentity.optimized.ll
 

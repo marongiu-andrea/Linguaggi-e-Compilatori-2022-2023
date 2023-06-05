@@ -3,6 +3,11 @@
 
 using namespace llvm;
 
+// Multi-Instruction Optimization
+//  𝑎 = 𝑏 + 1,     ⇒    𝑎 = 𝑏 + 1
+//  𝑐 = 𝑎 − 1      ⇒    𝑐 = 𝑏
+
+
 // opt -load-pass-plugin=./libLocalOpts.so -passes=multiinstructionoptimization test/testMultiInstruction.ll -o test/test.multiinstructionoptimization.optimized.bc
 // llvm-dis test/test.multiinstructionoptimization.optimized.bc -o test/test.multiinstructionoptimization.optimized.ll
 
