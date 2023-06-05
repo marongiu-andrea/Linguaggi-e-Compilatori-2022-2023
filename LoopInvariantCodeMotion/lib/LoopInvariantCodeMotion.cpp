@@ -235,7 +235,7 @@ class LoopInvariantCodeMotionPass final : public LoopPass
 						outs()<<*(iter->first)<<" NON è dead all'uscita del loop\n";
 						deadAfterExit = false;
 					}
-
+					
 					// Se il blocco dove viene definita un'istruzione loop-invariant non domina un suo uso
 					if (!(*DT).dominates((*DT).getNode(iter->first->getParent()), (*DT).getNode(inst->getParent())))
 					{
@@ -253,6 +253,10 @@ class LoopInvariantCodeMotionPass final : public LoopPass
 				- Si trovano in blocchi che dominano tutti i blocchi nel loop che usano la variabile
 					a cui si sta assegnando un valore
 				*/
+			
+				if (deadAfterExit)
+					outs()<<*(iter->first)<<" è DEAD all'uscita del loop\n";
+
 				if ((dominatesAllExits || deadAfterExit) && dominatesAllUses)
 					candidateMovableInstructions.push_back(iter->first);
 			}
