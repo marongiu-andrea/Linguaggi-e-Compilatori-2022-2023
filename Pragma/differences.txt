@@ -1,0 +1,83 @@
+4d3
+< Introduced new external node (foo._omp_fn.0/8).
+17,18c16,25
+<         .omp_data_o.2.M = M;
+<         #pragma omp parallel firstprivate(M) [child fn: foo._omp_fn.0 (.omp_data_o.2)]
+---
+>         int i;
+> 
+>         {
+>           int M.0;
+>           int randomnumber;
+>           int i;
+> 
+>           M.0 = M;
+>           #pragma omp for schedule(static) private(i)
+>           for (i = 0; i < M.0; i = i + 1)
+20,44c27,32
+<             .omp_data_i = (struct .omp_data_s.0 & restrict) &.omp_data_o.2;
+<             M = .omp_data_i->M;
+<             {
+<               int i;
+< 
+<               {
+<                 int M.1;
+<                 int randomnumber;
+< 
+<                 M.1 = M;
+<                 #pragma omp for schedule(static) nowait
+<                 for (i = 0; i < M.1; i = i + 1)
+<                 {
+<                   D.3739 = rand ();
+<                   D.3740 = D.3739 % 6;
+<                   randomnumber = D.3740 + 1;
+<                   D.3741 = randomnumber * 100;
+<                   D.3742 = (unsigned int) D.3741;
+<                   usleep (D.3742);
+<                 }
+<                 #pragma omp continue (i, i)
+<                 #pragma omp return(nowait)
+<               }
+<             }
+<             #pragma omp return
+---
+>             _1 = rand ();
+>             _2 = _1 % 6;
+>             randomnumber = _2 + 1;
+>             _3 = randomnumber * 100;
+>             _4 = (unsigned int) _3;
+>             usleep (_4);
+46c34,36
+<         .omp_data_o.2 = {CLOBBER};
+---
+>           #pragma omp continue (i, i)
+>           #pragma omp return
+>         }
+49,53c39,43
+<       _1 = finish.tv_nsec;
+<       _2 = start.tv_nsec;
+<       _3 = _1 - _2;
+<       _4 = (double) _3;
+<       elapsed_time = _4 / 1.0e+6;
+---
+>       _5 = finish.tv_nsec;
+>       _6 = start.tv_nsec;
+>       _7 = _5 - _6;
+>       _8 = (double) _7;
+>       elapsed_time = _8 / 1.0e+6;
+71c61
+<   int D.3775;
+---
+>   int D.3750;
+91,92c81,82
+<     D.3775 = 0;
+<     return D.3775;
+---
+>     D.3750 = 0;
+>     return D.3750;
+94,95c84,85
+<   D.3775 = 0;
+<   return D.3775;
+---
+>   D.3750 = 0;
+>   return D.3750;
