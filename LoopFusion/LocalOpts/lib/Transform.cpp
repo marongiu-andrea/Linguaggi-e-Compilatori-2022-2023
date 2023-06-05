@@ -25,6 +25,7 @@ bool runOnFunction(Function &F) {
 }
 
 void unifyLoopsInductionVariables(Loop* current,Loop* next){
+  outs()<<"Unifying loops induction variables...\n";
   PHINode* current_iv = current->getCanonicalInductionVariable();
   PHINode* next_iv = next->getCanonicalInductionVariable();
   next_iv->replaceAllUsesWith(current_iv);
@@ -35,6 +36,7 @@ void unifyLoopsInductionVariables(Loop* current,Loop* next){
 }
 
 void mergeLoops(Loop* current, Loop* next){
+  outs()<<"Merging loops...\n";
   BasicBlock* header_current = current->getHeader();
   BasicBlock* header_next = next->getHeader();
 
@@ -78,22 +80,24 @@ PreservedAnalyses TransformPass::run([[maybe_unused]] Function &F,FunctionAnalys
     if(current->getExitBlock() != next->getLoopPreheader())
       continue;
 
-    outs() << "Adiacenti\n";
+    outs() << "Adjecency Cecked\n";
     
     //trip count
     if (SE.getSmallConstantTripCount(current) != SE.getSmallConstantTripCount(next))
       continue;
     
-    outs() << "same trip\n";
+    outs() << "Trip Count Cecked\n";
 
     //control flow equivalence
     if (!(DT.dominates(current->getHeader(),next->getHeader()) && PDT.dominates(next->getHeader(),current->getHeader())))
       continue;
     
-    outs() <<"control flow eq\n";
+    outs() << "Control Flow Equivalence Checked\n";
 
     unifyLoopsInductionVariables(current,next);
+    outs() << "Loops Induction Variables Unified\n";
     mergeLoops(current, next);
+    outs() << "Loops Merged\n";
     
   }
   
