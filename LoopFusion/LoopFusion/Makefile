@@ -15,6 +15,7 @@ clean:
 	$(RM) $(OPTIMIZER) $(OBJs)
 
 #comando di compilazione per fare in modo di convertire le operazioni che lavorano sulla memoria con operazioni che lavorano sui registri (per questioni di semplicita')
+#Viene utilizzato il passo di ottimizzazione mem2reg per abilitare la modalita' di lavoro specificata sopra
 setup:
 	clang -O0 -Xclang -disable-O0-optnone -emit-llvm -c test/Loop.c -o test/Loop.bc
 	opt -passes=mem2reg test/Loop.bc -o test/Loop.opt.bc
