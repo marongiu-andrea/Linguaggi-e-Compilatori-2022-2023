@@ -45,7 +45,7 @@ bool LoopFusionPass::controlFlowEquivalence(Loop* Li, Loop* Lj, DominatorTree& d
 // TODO
 bool LoopFusionPass::haveNegativeDistanceDependence(Loop*, Loop*)
 {
-  return true; 
+  return false; 
 }
 
 void LoopFusionPass::mergeLoops(Loop* Li, Loop* Lj, ScalarEvolution& SE)
@@ -64,7 +64,6 @@ void LoopFusionPass::mergeLoops(Loop* Li, Loop* Lj, ScalarEvolution& SE)
   1.Modificare gli usi della induction variable nel body di Lj
     con quelli della induction variable di Li
   */
-
   auto inductionVar_i = dyn_cast<PHINode>(Li_Header->begin()); 
   auto inductionVar_j = dyn_cast<PHINode>(Lj_Header->begin()); 
   inductionVar_j->replaceAllUsesWith(inductionVar_i);
@@ -81,7 +80,7 @@ void LoopFusionPass::mergeLoops(Loop* Li, Loop* Lj, ScalarEvolution& SE)
   
   //collego body del loop Lj al latch del loop Li
   branchInstruction = dyn_cast<BranchInst>(Lj_Body->getTerminator());
-  branchInstruction->setSuccessor(0,Li_Latch);
+  branchInstruction->setSuccessor(0, Li_Latch);
 }
 
 PreservedAnalyses LoopFusionPass::run(Function& F, FunctionAnalysisManager& FAM) 
@@ -119,6 +118,11 @@ PreservedAnalyses LoopFusionPass::run(Function& F, FunctionAnalysisManager& FAM)
     if(!controlFlowEquivalence(Li, Lj, dominatorTree, postDT))
     {
       os << "Li, Lj have different control flow!\n";
+      continue;
+    }
+    if(!haveNegativeDistanceDependence(Li, Lj))
+    {
+      os << "Li, Lj have negative distance dependece!\n";
       continue;
     }
 
