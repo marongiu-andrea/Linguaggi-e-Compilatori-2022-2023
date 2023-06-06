@@ -45,7 +45,7 @@ bool LoopFusionPass::controlFlowEquivalence(Loop* Li, Loop* Lj, DominatorTree& d
 // TODO
 bool LoopFusionPass::haveNegativeDistanceDependence(Loop*, Loop*)
 {
-  return false; 
+  return true; 
 }
 
 void LoopFusionPass::mergeLoops(Loop* Li, Loop* Lj, ScalarEvolution& SE)

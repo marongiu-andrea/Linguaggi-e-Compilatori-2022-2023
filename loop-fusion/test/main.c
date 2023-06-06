@@ -1,7 +1,7 @@
 #include <time.h>
 #include <stdio.h>
 
-#define M 100000000
+#define M 20000000
 
 extern void populate(int*, int*, int*, int);
 

@@ -12,11 +12,11 @@ $(OPTIMIZER): $(OBJs)
 
 setup:	
 	clang -O0 -Xclang -disable-O0-optnone -emit-llvm -c test/Loop.c -o test/Loop.bc
-	opt -passes=mem2reg test/Loop.bc -o test/Loop.bc
-	llvm-dis test/Loop.bc -o test/Loop.ll
+	opt -passes=mem2reg test/Loop.bc -o test/Loop.m2r.bc
+	llvm-dis test/Loop.m2r.bc -o test/Loop.m2r.ll
 
 pass:
-	opt -load-pass-plugin=./${OPTIMIZER} -passes=LocalOpts test/Loop.bc -o test/Loop.opt.bc
+	opt -load-pass-plugin=./libLocalOpts.so -passes=LocalOpts test/Loop.m2r.bc -o test/Loop.opt.bc
 	llvm-dis test/Loop.opt.bc -o test/Loop.opt.ll
 
 compile:
@@ -24,6 +24,7 @@ compile:
 	llc test/Loop.bc -filetype=obj -o test/Loop.o
 	gcc test/Loop.o test/main.c -o mainNoOpt
 	gcc test/Loop.opt.o test/main.c -o mainOpt
+
 
 .PHONY: clean
 clean:
