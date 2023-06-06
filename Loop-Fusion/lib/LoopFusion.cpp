@@ -36,7 +36,7 @@ bool LoopFusionPass::isLoopAdjacent(llvm::Loop *a, llvm::Loop *b)
     }
     
     if (!contains)
-        false;
+        return false;
     
     if (preheader->size() > 1)
         return false;
@@ -96,8 +96,8 @@ bool LoopFusionPass::checkDominance(llvm::Loop *a, llvm::Loop *b, llvm::Dominato
     auto *preheader = b->getLoopPreheader();
     preheader->dump();
     for (auto exit: exits) {
-        dominates |= dt.dominates(exit, preheader);
-        dominates |= pdt.dominates(preheader, exit);
+        dominates &= dt.dominates(exit, preheader);
+        dominates &= pdt.dominates(preheader, exit);
     }
     
     return dominates;
@@ -190,22 +190,26 @@ llvm::PreservedAnalyses LoopFusionPass::run(llvm::Function &f,
         auto loops = loopinfo.getLoopsInPreorder();
         
         for (int i = 0; i < loops.size() - 1; i++) {
-            if (!isLoopAdjacent(loops[i], loops[i + 1]))
+            if (loops[i]->isGuarded() != loops[i+1]->isGuarded())
                 continue;
+
+            if (!loops[i]->isGuarded()) {
+                if (!isLoopAdjacent(loops[i], loops[i + 1]))
+                    continue;
             
-            outs() << "loop adjacent ok \n";
+                outs() << "loop adjacent ok \n";
             
+                if (!checkDominance(loops[i], loops[i+1], dt, pdt))
+                    continue;
+
+                    
+                outs() << "loop dominance ok \n";
+            }
+
             if (!checkBounds(loops[i], loops[i + 1], sce))
                 continue;
             
-            
             outs() << "loop bounds ok \n";
-            
-            if (!checkDominance(loops[i], loops[i+1], dt, pdt))
-                continue;
-            
-            
-            outs() << "loop dominance ok \n";
             
             //outs() << "loop fusion executings";
             
