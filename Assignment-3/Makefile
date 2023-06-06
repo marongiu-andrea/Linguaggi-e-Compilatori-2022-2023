@@ -6,8 +6,8 @@ LLVM_VERSION ?= 15
 CXXFLAGS := $(shell llvm-config-$(LLVM_VERSION) --cxxflags) -fPIC
 
 pass=loop-invariant-code-motion
-optimizedbc=Loop.optimized.bc
-optimizedll=Loop.optimized.ll
+optimizedbc=test/Loop.optimized.bc
+optimizedll=test/Loop.optimized.ll
 
 all: $(OPTIMIZER) 
 
