@@ -175,13 +175,6 @@ llvm::PreservedAnalyses LoopFusionPass::run(llvm::Function &f,
     while (changed) {
         changed = false;
         
-        auto simplify = LoopSimplifyPass();
-        FM.invalidate(f, simplify.run(f, FM));
-        
-        //auto rotate = LoopRotatePass();
-        //FM.invalidate(f, rotate.run(f, FM));
-        
-        
         auto &loopinfo = FM.getResult<LoopAnalysis>(f); 
         auto &sce = FM.getResult<ScalarEvolutionAnalysis>(f);
         auto &dt = FM.getResult<DominatorTreeAnalysis>(f);
