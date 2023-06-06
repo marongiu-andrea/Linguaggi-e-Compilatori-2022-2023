@@ -36,11 +36,6 @@ bool LoopFusionPass::sameTripCount(Loop* Li, Loop* Lj, ScalarEvolution& SE)
     SE.getSmallConstantMaxTripCount(Li) == SE.getSmallConstantMaxTripCount(Lj);
 }
 
-bool LoopFusionPass::sameGuardBranch(Loop* Li, Loop* Lj)
-{
-  return Li->getLoopGuardBranch() == Lj->getLoopGuardBranch();
-}
-
 bool LoopFusionPass::controlFlowEquivalence(Loop* Li, Loop* Lj, DominatorTree& dt, PostDominatorTree& pdt)
 {
   return dt.dominates(Li->getHeader(), Lj->getHeader()) && 
@@ -119,11 +114,6 @@ PreservedAnalyses LoopFusionPass::run(Function& F, FunctionAnalysisManager& FAM)
     if(!sameTripCount(Li, Lj, SE))
     {
       os << "Li, Lj have different Trip count!\n";
-      continue;
-    }
-    if(!sameGuardBranch(Li, Lj))
-    {
-      os << "Li, Lj non hanno lo stesso Guard Branch!\n";
       continue;
     }
     if(!controlFlowEquivalence(Li, Lj, dominatorTree, postDT))
