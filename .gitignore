@@ -3,4 +3,8 @@
 Tutorial-01/TestPass/ir
 Tutorial-02/LocalOpts/testTransform/*opt.*
 LICM/test/*.opt.*
+LoopFusion/test/*.ll
+LoopFusion/bin
+LoopFusion/obj
+LoopFusion/stat
 .vscode
