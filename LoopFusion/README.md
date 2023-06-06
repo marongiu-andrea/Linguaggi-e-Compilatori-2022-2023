@@ -148,9 +148,115 @@ Poiché il controllo sulle dipendenze è molto complesso, nella nostra implement
 bool LoopFusion::checkNegativeDistanceDeps(Loop* loopi, Loop* loopj) const { return true; }
 ```
 
-# Confronto tra versione ottimizzata e non ottimizzata
+## Esecuzione della loop fusion
 
-## Confronto sui CFG
+Il metodo `LoopFusion::mergeLoop` è il metodo che esegue la fusione.
+
+Per prima cosa, il metodo recupera le induction variable dei due loop:
+
+``` c++
+PHINode* loopToFuseIndV = getInductionVariable(loopToFuse, SE);
+PHINode* loopFusedIndV = getInductionVariable(loopFused, SE);
+```
+
+questo ci servirà perché dovremo rimpiazzare gli usi dell'induction variable del 2° loop con l'induction variable del 1° loop:
+
+``` c++
+// sostituisco usi della variabile induttiva nel secondo loop
+loopToFuseIndV->replaceAllUsesWith(loopFusedIndV);
+```
+
+Arrivati a questo punto abbiamo già passato le condizioni per poter effettuare la loop fusion, quindi questa sostituzione è safe (non altera la semantica del programma).
+
+Il successore del loop fuso dovrà essere il successore del 2° loop. Facciamo quindi puntare l'header del 1° loop al blocco d'uscita del 2° loop:
+
+``` c++
+loopFused->getHeader()->getTerminator()->replaceSuccessorWith(loopFused->getExitBlock(), loopToFuse->getExitBlock());
+```
+
+Poi eseguiamo una ricerca per individuare il blocco d'entrata nel body del 2° loop:
+
+``` c++
+BasicBlock* entryToSecondaryBody = nullptr;
+BasicBlock* secondaryHeader = loopToFuse->getHeader();
+
+for (BasicBlock* succ : successors(secondaryHeader))
+{
+    if (loopToFuse->contains(succ))
+    {
+        entryToSecondaryBody = succ;
+        break;
+    }
+}
+```
+
+Questo ci servirà per agganciare l'ultimo blocco del body del 1° loop al 1° blocco del body del 2° loop:
+
+``` c++
+BasicBlock* primaryLatch = loopFused->getLoopLatch();
+
+for (BasicBlock* pred : predecessors(primaryLatch))
+{
+    pred->getTerminator()->replaceSuccessorWith(primaryLatch, entryToSecondaryBody);
+}
+```
+
+Poi facciamo puntare i predecessori del latch del 2° loop al latch del 1° loop:
+
+``` c++
+BasicBlock* secondaryLatch = loopToFuse->getLoopLatch();
+
+for (BasicBlock* pred : predecessors(secondaryLatch))
+{
+    pred->getTerminator()->replaceSuccessorWith(secondaryLatch, primaryLatch);
+}
+```
+
+Arrivati a questo punto chiudiamo il 2° loop facendo puntare il suo header al suo latch:
+
+``` c++
+loopToFuse->getHeader()->getTerminator()->replaceSuccessorWith(entryToSecondaryBody, secondaryLatch);
+```
+
+In questo modo il 2° loop diventa un loop vuoto che verrà rimosso dai successivi passi di ottimizzazione fatti da LLVM.
+
+Poi spostiamo tutti i basic block del 2° loop nel 1° loop:
+
+``` c++
+for (auto& bb : loopToFuse->blocks())
+{
+    // header e latch rimarranno soli, non devono essere spostati!
+    if (bb != secondaryHeader && bb != secondaryLatch)
+    {
+        loopFused->addBasicBlockToLoop(bb, LI);
+        loopToFuse->removeBlockFromLoop(bb);
+    }
+}
+```
+
+e spostiamo nel 1° loop anche tutti gli eventuali loop innestati presenti nel 2° loop:
+
+``` c++
+while (!loopToFuse->isInnermost())
+{
+    // prendo solo il primo figlio e continuo fin quando non ho finito
+    Loop* child = *(loopToFuse->begin());
+    loopToFuse->removeChildLoop(child);
+    loopFused->addChildLoop(child);
+}
+```
+
+Infine aggiorniamo l'analisi di LLVM:
+
+``` c++
+LI.erase(loopToFuse);
+```
+
+Rimuoviamo tutte le informazioni su `loopToFuse` dall'analisi di LLVM, perché di fatto questo loop non esisterà più, in quanto è stato unito con il 1° loop.
+
+## Confronto tra versione ottimizzata e non ottimizzata
+
+### Confronto sui CFG
 
 ![CFG versione ottimizzata](cfg/populate.svg)
 
@@ -160,7 +266,7 @@ Nel CFG ottimizzato si può notare che in realtà rimane qualche rimasuglio (pre
 
 Questo non è un problema, perché le successive ottimizzazioni fatte da LLVM andranno a fare pulizia.
 
-## Grafici su cache miss e tempo d'esecuzione
+### Grafici su cache miss e tempo d'esecuzione
 
 ![grafico cache misses](diagrams/diagram_cache.svg)
 
