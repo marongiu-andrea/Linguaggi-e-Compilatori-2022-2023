@@ -116,8 +116,8 @@ namespace {
             
             bool result = true;
             if(def) {
-                if(loop->contains(def))
-                    result = false;
+                if(!loop->contains(def))
+                    result = true;
                 else for(auto op = def->op_begin(); op != def->op_end() && result; ++op)
                     result &= isLoopInvariantRecursive((Value*)*op, loop);
             }
