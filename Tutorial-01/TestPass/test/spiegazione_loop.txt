@@ -1,0 +1,18 @@
+Ciò che accade nel basic block etichettato con label 6 è, a quanto ci pare, un'ottimizzazione che permette il calcolo
+del risultato che il for darebbe in output però seza effettuare un effettivo ciclo.
+ESEMPIO:
+    Con dati a=2 b=5 c=1
+    il ciclo for imposterebbe la variabile g(Globale) a 3 dopo 3 iterazioni,
+    Al contrario con l'ottimizzazione effettuata sul codice vengono applicate solo 3 operazioni sequenziali:
+        %7 = b - a
+        %8 = %7 * c
+        %9 = g + %8
+-----------------------------------------------------------------------------------------------------------------------
+
+Se generiamo il codice IR con opzione -O0 non vengono effettuate ottimizzazioni (come per esempio quella del for)
+La differenza sostanziale tra i due codici IR è che quello con opzione -O0 è nettamente più lungo visivamente parlando, inoltre molto probabilnente più pesante
+computazionalmente parlando.
+
+-----------------------------------------------------------------------------------------------------------------------
+
+Aggiungendo il tag -Rpass=.* otteniamo a terminale una breve spiegazione delle ottimizzazioni effettuate.

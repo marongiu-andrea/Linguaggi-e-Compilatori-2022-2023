@@ -51,18 +51,14 @@ public:
               if (!c1) {
                 Value *opVal = inst.getOperand(0);
                 Instruction *def = dyn_cast<Instruction>(opVal);
-                BasicBlock* bb = def->getParent();
-                bb->printAsOperand(outs(),false);
-                /*outs() << "BasicBlock della definizione dell' istruzione sub:\n"
-                       << *B;*/
+                outs() << "BasicBlock della definizione dell' istruzione sub:\n"
+                       << *B;
               }
               if (!c2) {
                 Value *opVal = inst.getOperand(1);
                 Instruction *def = dyn_cast<Instruction>(opVal);
-                /*outs() << "BasicBlock della definizione dell' istruzione sub:\n"
-                       << *B;*/
-                BasicBlock* bb = def->getParent();
-                bb->printAsOperand(outs(),false);
+                outs() << "BasicBlock della definizione dell' istruzione sub:\n"
+                       << *B;
               }
             }
           }
