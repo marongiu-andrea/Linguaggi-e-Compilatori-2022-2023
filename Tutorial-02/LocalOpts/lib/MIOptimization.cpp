@@ -32,7 +32,7 @@ bool MIOptimizationPass::runOnBasicBlock(BasicBlock &BB) {
               // Se il secondo operando è uguale in entrambe le istruzioni e
               // le due istruzioni sono diverse (una ad ed una sub).
               if (C1 == C2 && opcd1 != opcd2) {
-                U->replaceAllUsesWith(U->getOperand(0));
+                U->replaceAllUsesWith(I->getOperand(0));
               }
             }
           }
