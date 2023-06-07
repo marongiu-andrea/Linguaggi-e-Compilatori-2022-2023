@@ -5,6 +5,7 @@
 
 using namespace llvm;
 
+
 extern "C" PassPluginLibraryInfo llvmGetPassPluginInfo() {
   return {
       .APIVersion = LLVM_PLUGIN_API_VERSION,
@@ -14,7 +15,7 @@ extern "C" PassPluginLibraryInfo llvmGetPassPluginInfo() {
           [](PassBuilder &PB) {
             PB.registerPipelineParsingCallback(
 		// CREO LO STUB per il mio TestPass
-		// 
+		//
 		// RICORDA: Posso usare (coi relativi Pass Managers)
 		// -------------------------------------------------
 		// ModulePass
@@ -29,10 +30,25 @@ extern "C" PassPluginLibraryInfo llvmGetPassPluginInfo() {
                     MPM.addPass(TransformPass());
                     return true;
                   }
+
+                  if (Name == "algebraic-id") {
+                    MPM.addPass(AlgebraicIdentityPass());
+                    return true;
+                  }
+                  if (Name == "strength-red") {
+                    MPM.addPass(StrengthReductionPass());
+                    return true;
+                  }
+                  if (Name == "multi-inst") {
+                    MPM.addPass(MultiInstructionPass());
+                    return true;
+                  }
                   // TODO: Implementare gli stub per
 		  // Algebraic Identity
 		  // Strength Reduction
 		  // Multi-instruction Operations
+
+
                   return false;
                 });
           } // RegisterPassBuilderCallbacks

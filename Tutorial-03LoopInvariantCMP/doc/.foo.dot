@@ -1,0 +1,17 @@
+digraph "CFG for 'foo' function" {
+	label="CFG for 'foo' function";
+
+	Node0x6e7de0 [shape=record,color="#3d50c3ff", style=filled, fillcolor="#abc8fd70",label="{%2:\l  br label %3\l}"];
+	Node0x6e7de0 -> Node0x6e8450;
+	Node0x6e8450 [shape=record,color="#b70d28ff", style=filled, fillcolor="#b70d2870",label="{%3:\l3:                                                \l  %.05 = phi i32 [ 0, %2 ], [ %19, %15 ]\l  %.04 = phi i32 [ 0, %2 ], [ %17, %15 ]\l  %.03 = phi i32 [ 0, %2 ], [ %16, %15 ]\l  %.01 = phi i32 [ 9, %2 ], [ %.1, %15 ]\l  %.0 = phi i32 [ %1, %2 ], [ %4, %15 ]\l  %4 = add nsw i32 %.0, 1\l  %5 = add nsw i32 %0, 3\l  %6 = add nsw i32 %0, 7\l  %7 = icmp slt i32 %4, 5\l  br i1 %7, label %8, label %11\l|{<s0>T|<s1>F}}"];
+	Node0x6e8450:s0 -> Node0x6e84a0;
+	Node0x6e8450:s1 -> Node0x6e84f0;
+	Node0x6e84a0 [shape=record,color="#3d50c3ff", style=filled, fillcolor="#dc5d4a70",label="{%8:\l8:                                                \l  %9 = add nsw i32 %.01, 2\l  %10 = add nsw i32 %0, 3\l  br label %15\l}"];
+	Node0x6e84a0 -> Node0x6e8540;
+	Node0x6e84f0 [shape=record,color="#3d50c3ff", style=filled, fillcolor="#dc5d4a70",label="{%11:\l11:                                               \l  %12 = sub nsw i32 %.01, 1\l  %13 = add nsw i32 %0, 4\l  %14 = icmp sge i32 %4, 10\l  br i1 %14, label %20, label %15\l|{<s0>T|<s1>F}}"];
+	Node0x6e84f0:s0 -> Node0x6e8590;
+	Node0x6e84f0:s1 -> Node0x6e8540;
+	Node0x6e8540 [shape=record,color="#b70d28ff", style=filled, fillcolor="#b70d2870",label="{%15:\l15:                                               \l  %.02 = phi i32 [ %10, %8 ], [ %13, %11 ]\l  %.1 = phi i32 [ %9, %8 ], [ %12, %11 ]\l  %16 = add nsw i32 %5, 7\l  %17 = add nsw i32 %.02, 2\l  %18 = add nsw i32 %0, 7\l  %19 = add nsw i32 %6, 5\l  br label %3\l}"];
+	Node0x6e8540 -> Node0x6e8450;
+	Node0x6e8590 [shape=record,color="#3d50c3ff", style=filled, fillcolor="#abc8fd70",label="{%20:\l20:                                               \l  %21 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([25 x i8], [25\l... x i8]* @.str, i64 0, i64 0), i32 %12, i32 %13, i32 %.03, i32 %.04, i32 %6,\l... i32 %.05, i32 %5, i32 %4)\l  ret void\l}"];
+}

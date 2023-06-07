@@ -1,0 +1,45 @@
+clang -O0 -Xclang -disable-O0-optnone -emit-llvm -c Loop.c 
+-> genera Loop.bc
+
+opt -passes=mem2reg Loop.bc -o Loop.opt.bc
+-> genera Loop.opt.bc
+
+llvm-dis Loop.opt.bc -o loop.opt.ll
+-> genera loop.opt.ll
+
+opt -load-pass-plugin=./libLocalOpts.so -passes=loopFusion test/loop.opt.ll -disable-output
+
+Usare scalar evolution
+ScalarEvolution &SE = AM.getResult<ScalarEvolutionAnalysis>(F);
+Su esso posso chiamare i metodi offerti.
+
+Control flow equivalent
+DominatorTree &DT
+PostDominatorTree &PDT
+
+clang -> loop.ll -> loopfuse -> loop.fused.bc -> llc -> loop.fused.offerti
+void populate(int A[])
+              int B[]
+              int C[]
+
+#include time.h
+#define N
+extern void populate(int *, int *, int *)
+start=clock_gettime();
+for(...N...)
+    populate();
+stop=clock_gettime();
+
+clang -> loop.ll -> loop.fused.bc -> llc -> loop.fused.offerti
+E poi confrontarlo con il file sopra che usa la loopfusion.
+
+Notare la riduzione del tempo dovuto al lavoro della cache.
+
+L'obbiettivo dell'esercitazione è vedere che c'è un improvement significativo.
+
+
+-clang -O0
+-opt mem2reg
+-llvm-dis
+-opt loopfusion
+-clang
