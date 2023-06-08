@@ -8,8 +8,11 @@ using namespace llvm;
 namespace {
 
 class LoopWalkPass final : public LoopPass {
+private:
+  std::list<Instruction*> loopInvariantInsts;
 public:
   static char ID;
+  
 
   LoopWalkPass() : LoopPass(ID) {}
 
@@ -150,8 +153,7 @@ public:
     return false;
   }
 
-private:
-  std::list<Instruction*> loopInvariantInsts;
+
 
   bool _isLoopInvariant(Loop* L, Value* V) {
     if(dyn_cast<Constant>(V) != nullptr)
