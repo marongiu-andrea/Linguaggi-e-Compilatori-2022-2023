@@ -124,7 +124,6 @@ bool runOnBasicBlockStrength(BasicBlock &B) {
                         int operandInt;
                         if (constantIndex == 0) {
                             pos_shift = CI1->getValue().nearestLogBase2();
-                           ();
                             operandInt=CI1->getValue().getSExtValue();
                         }
                         else {

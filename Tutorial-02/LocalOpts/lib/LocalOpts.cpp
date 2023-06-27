@@ -1,5 +1,4 @@
 #include "LocalOpts.h"
-
 #include <llvm/Passes/PassBuilder.h>
 #include <llvm/Passes/PassPlugin.h>
 
