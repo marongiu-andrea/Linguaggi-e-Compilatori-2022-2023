@@ -1,12 +1,10 @@
-#include "Loop.cpp"
-
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 
 #define ITERATIONS_COUNT 1000
-#define ARRAY_SIZE 100
+#define ARRAY_SIZE 5000000
 
 extern void populate(int* a, int* b, int* c);
 

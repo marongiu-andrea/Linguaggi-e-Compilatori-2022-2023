@@ -1,6 +1,6 @@
 /*
 COMANDI PER CREARE IL .ll
-clang -O0 -Xclang -disable-O0-optnone -emit-llvm -c Loop.cpp
+clang -O0 -Xclang -disable-O0-optnone -emit-llvm -c Loop.c
 opt -passes=mem2reg Loop.bc -o Loop.opt.bc
 llvm-dis Loop.opt.bc -o Loop.opt.ll
 
@@ -12,7 +12,7 @@ questo è quello più importante quindi applico solo questo
 PER PROVARE IL PASSO
 opt -load-pass-plugin=./libLocalOpts.so -passes=transform test/Loop.opt.ll -o test/test.optimized.ll
 */
-#define N 100
+#define N 5000000
 
 void populate (int a[N], int b[N], int c[N])
 {

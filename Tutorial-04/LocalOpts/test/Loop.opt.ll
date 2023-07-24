@@ -1,15 +1,15 @@
 ; ModuleID = 'Loop.opt.bc'
-source_filename = "Loop.cpp"
+source_filename = "Loop.c"
 target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-pc-linux-gnu"
 
-; Function Attrs: mustprogress noinline nounwind uwtable
-define dso_local void @_Z8populatePiS_S_(i32* noundef %0, i32* noundef %1, i32* noundef %2) #0 {
+; Function Attrs: noinline nounwind uwtable
+define dso_local void @populate(i32* noundef %0, i32* noundef %1, i32* noundef %2) #0 {
   br label %4
 
 4:                                                ; preds = %13, %3
   %.0 = phi i32 [ 0, %3 ], [ %14, %13 ]
-  %5 = icmp slt i32 %.0, 100
+  %5 = icmp slt i32 %.0, 5000000
   br i1 %5, label %6, label %15
 
 6:                                                ; preds = %4
@@ -31,7 +31,7 @@ define dso_local void @_Z8populatePiS_S_(i32* noundef %0, i32* noundef %1, i32* 
 
 16:                                               ; preds = %28, %15
   %.1 = phi i32 [ 0, %15 ], [ %29, %28 ]
-  %17 = icmp slt i32 %.1, 100
+  %17 = icmp slt i32 %.1, 5000000
   br i1 %17, label %18, label %30
 
 18:                                               ; preds = %16
@@ -55,7 +55,7 @@ define dso_local void @_Z8populatePiS_S_(i32* noundef %0, i32* noundef %1, i32* 
   ret void
 }
 
-attributes #0 = { mustprogress noinline nounwind uwtable "frame-pointer"="all" "min-legal-vector-width"="0" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="x86-64" "target-features"="+cx8,+fxsr,+mmx,+sse,+sse2,+x87" "tune-cpu"="generic" }
+attributes #0 = { noinline nounwind uwtable "frame-pointer"="all" "min-legal-vector-width"="0" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="x86-64" "target-features"="+cx8,+fxsr,+mmx,+sse,+sse2,+x87" "tune-cpu"="generic" }
 
 !llvm.module.flags = !{!0, !1, !2, !3, !4}
 !llvm.ident = !{!5}

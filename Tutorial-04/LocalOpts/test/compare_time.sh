@@ -1,7 +1,7 @@
 #!/bin/bash
 
-#clang main.c Loop.opt.ll -o notOptTime.out
-#clang main.c test.optimized.ll -o OptTime.out
+clang -O0 main.c Loop.opt.ll -o notOptTime.out
+clang -O0 main.c test.optimized.ll -o OptTime.out
 
 # Esegue il primo programma e memorizza il tempo di esecuzione
 output1=$(./notOptTime.out)
