@@ -22,34 +22,46 @@ public:
     DominatorTree *DT = &getAnalysis<DominatorTreeWrapperPass>().getDomTree(); // ottengo il DominatorTree
     LoopInfo *LI = &getAnalysis<LoopInfoWrapperPass>().getLoopInfo();
 
+    //controllo che il loop sia in forma semplificata
     if((*L).isLoopSimplifyForm())
     {
+      //ottengo il preheader se esiste
       if(BasicBlock *preheader = (*L).getLoopPreheader())
       {
+        //stampo il preheader
         outs()<<"PreHeader: "<<*preheader;
         for (Loop::block_iterator BI = L->block_begin(); BI != L->block_end(); ++BI)
         {
           BasicBlock *B = *BI;
-          //outs()<<*B<<"\n";
+          //outs()<<*B<<"\n"; //stampa di tutti i basic block commentata per non intasare l'output
           for(auto Iter = (*B).begin(); Iter != (*B).end(); ++Iter )
           {
-            if( (*Iter).getOpcode() == Instruction::Sub ) // controllo se l'operazione che viene effettuata è una MUL
+            if( (*Iter).getOpcode() == Instruction::Sub ) // controllo se l'operazione che viene effettuata è una SUB
             {
+              //otteniamo gli operandi e controlliamo se sono delle costanti
               Value *Operand1 = (*Iter).getOperand(0);
               Value *Operand2 = (*Iter).getOperand(1);
               ConstantInt *C = dyn_cast<ConstantInt>(Operand1);
               ConstantInt *D = dyn_cast<ConstantInt>(Operand2);
 
+              //se il primo operando non è costante
               if(C == nullptr)
               {
+                //ottengo l'istruzione di definizione dell'operando
                 Instruction *reference = dyn_cast<Instruction>(Operand1);
+                outs()<<"\nIstruzione della definizione dell'operando nella sub: \n";
                 outs()<<*reference<<"\n";
+                outs()<<"\nBlocco in cui sta la definizione: ";
                 outs()<<*(*reference).getParent()<<"\n";
               }
+              //se il secondo operando non è costante
               if(D == nullptr)
               {
+                //ottengo l'istruzione di definizione dell'operando
                 Instruction *reference = dyn_cast<Instruction>(Operand2);
+                outs()<<"Istruzione della definizione dell'operando nella sub: \n";
                 outs()<<*reference<<"\n";
+                outs()<<"\nBlocco in cui sta la definizione: ";
                 outs()<<*(*reference).getParent()<<"\n";
               }
             }

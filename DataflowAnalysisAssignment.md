@@ -59,7 +59,7 @@ OUT[b] = Fb( IN[b] )
 IN[b] = ^OUT[ PRED[b] ]  |
 | Transfer Function | Fb(X)= HIMb U X |
 | Meet Operation (^) | ∩ |
-| Boundary Condition | OUT[ entry ] = ø |
+| Boundary Condition | OUT[ entry ] = {entry} |
 | Initial interior points | OUT[b] = U |
 
 | /////////// | START | ITER | 1 | ITER | 2 |
@@ -85,7 +85,7 @@ Riguardo alla transfer function è stata utilizzata la notazione **HIMb**, ovver
 
 ---
 
-# 3) Dominator Analysis
+# 3) Costant propagation
 
 ![Untitled](DataflowAnalysisAssignmentIMG/Untitled%202.png)
 
