@@ -45,13 +45,13 @@ bool runOnMulti(BasicBlock &B)
           if( (Y == nullptr) && ( (Z != nullptr) && (*Z).getSExtValue() == (*C).getSExtValue() ) )
           {
             myInstructions.push_back(&*Iter); //pusho l'istruzione da cancellare nella lista
-            (*Iter).replaceAllUsesWith((*prevInst).getOperand(0));
+            (*Iter).replaceAllUsesWith((&*prevInst));
           }
           else if( ( (Y != nullptr) && (*Y).getSExtValue() == (*C).getSExtValue() ) && (Z == nullptr) ) // guardo quali dei 2 op è uguale e mi assicuro che l'altra sia una var
           {
             //metto l'istruzione da cancellare nella lista e poi ricreo l'istruzione in modo corretto facendo replaceAllUsesWith
             myInstructions.push_back(&*Iter);
-            (*Iter).replaceAllUsesWith((*prevInst).getOperand(1)); 
+            (*Iter).replaceAllUsesWith((&*prevInst)); 
           }
         }
       }
@@ -86,7 +86,7 @@ bool runOnMulti(BasicBlock &B)
           {
             //mi salvo l'istruzione da cancellare e faccio una raplace
             myInstructions.push_back(&*Iter);
-            (*Iter).replaceAllUsesWith((*prevInst).getOperand(0));
+            (*Iter).replaceAllUsesWith((&*prevInst));
           }
         }
       } //controllo l'altra casistica (secondo operando costante e il primo no)
@@ -109,7 +109,7 @@ bool runOnMulti(BasicBlock &B)
           if( (Y == nullptr) && ( (Z != nullptr) && (*Z).getSExtValue() == (*D).getSExtValue() ) )
           {
             myInstructions.push_back(&*Iter);
-            (*Iter).replaceAllUsesWith((*prevInst).getOperand(0));
+            (*Iter).replaceAllUsesWith((&*prevInst));
           }
         }
       }
