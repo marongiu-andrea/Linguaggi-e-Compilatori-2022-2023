@@ -234,3 +234,7 @@ Il programma CON ottimizzazione ha impiegato  0.000598  secondi
 
 Differenza di tempo di esecuzione tra i due programmi: .000123 secondi
 ```
+il comando per eseguire generare il codice ottimizzato partendo dalla cartella ```LocalOpts``` è il seguente: 
+```bash
+opt -load-pass-plugin=./libLocalOpts.so -passes=transform test/Loop.opt.ll -S -o test/test.optimized.ll
+```
