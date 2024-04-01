@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "exception": "cpp",
+        "type_traits": "cpp"
+    },
+    "C_Cpp.errorSquiggles": "disabled"
+}
