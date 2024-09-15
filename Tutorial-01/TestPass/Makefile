@@ -13,3 +13,5 @@ $(OPTIMIZER): $(OBJs)
 .PHONY: clean
 clean:
 	$(RM) $(OPTIMIZER) $(OBJs)
+load:
+	opt -load-pass-plugin=./libTestPass.so -passes=test-pass $(file) -disable-output

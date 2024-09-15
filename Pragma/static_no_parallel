@@ -1,0 +1,88 @@
+;; static no parallel
+;; Function foo (foo, funcdef_no=6, decl_uid=3720, cgraph_uid=7, symbol_order=6)
+
+void foo (struct FILE * fp)
+{
+  int M;
+  struct timespec start;
+  struct timespec finish;
+  double elapsed_time;
+
+  try
+    {
+      M = 100;
+      clock_gettime (0, &start);
+      {
+        int i;
+
+        {
+          int M.0;
+          int randomnumber;
+          int i;
+
+          M.0 = M;
+          #pragma omp for schedule(static) private(i)
+          for (i = 0; i < M.0; i = i + 1)
+          {
+            _1 = rand ();
+            _2 = _1 % 6;
+            randomnumber = _2 + 1;
+            _3 = randomnumber * 100;
+            _4 = (unsigned int) _3;
+            usleep (_4);
+          }
+          #pragma omp continue (i, i)
+          #pragma omp return
+        }
+      }
+      clock_gettime (0, &finish);
+      _5 = finish.tv_nsec;
+      _6 = start.tv_nsec;
+      _7 = _5 - _6;
+      _8 = (double) _7;
+      elapsed_time = _8 / 1.0e+6;
+      fprintf (fp, "%f\n", elapsed_time);
+      printf ("Exec time: %f \n", elapsed_time);
+      return;
+    }
+  finally
+    {
+      start = {CLOBBER};
+      finish = {CLOBBER};
+    }
+}
+
+
+
+;; Function main (main, funcdef_no=7, decl_uid=3729, cgraph_uid=8, symbol_order=7)
+
+int main ()
+{
+  int D.3750;
+
+  {
+    int num_ex;
+    struct FILE * fp;
+
+    num_ex = 15;
+    fp = fopen ("for_output_3.txt", "w");
+    {
+      int i;
+
+      i = 0;
+      goto <D.3737>;
+      <D.3736>:
+      foo (fp);
+      i = i + 1;
+      <D.3737>:
+      if (i < num_ex) goto <D.3736>; else goto <D.3734>;
+      <D.3734>:
+    }
+    D.3750 = 0;
+    return D.3750;
+  }
+  D.3750 = 0;
+  return D.3750;
+}
+
+
