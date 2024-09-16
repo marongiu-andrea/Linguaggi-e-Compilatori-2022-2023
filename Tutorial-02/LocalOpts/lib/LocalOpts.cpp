@@ -24,17 +24,32 @@ extern "C" PassPluginLibraryInfo llvmGetPassPluginInfo() {
 		// RegionPass
 		// BasicBlockPass
 		[](StringRef Name, ModulePassManager &MPM,
-                   ArrayRef<PassBuilder::PipelineElement>) -> bool {
-                  if (Name == "transform") {
+            ArrayRef<PassBuilder::PipelineElement>) -> bool {
+                if (Name == "transform") {
                     MPM.addPass(TransformPass());
                     return true;
-                  }
-                  // TODO: Implementare gli stub per
-		  // Algebraic Identity
-		  // Strength Reduction
-		  // Multi-instruction Operations
-                  return false;
-                });
-          } // RegisterPassBuilderCallbacks
+                }
+                // TODO: Implementare gli stub per
+		        // Algebraic Identity
+		        // Strength Reduction
+
+                if (Name == "algebraic-identity") {
+                    MPM.addPass(AlgebraicIdentityPass());
+                    return true;
+                }
+
+                if (Name == "strength-reduction") {
+                    MPM.addPass(StrengthReductionPass());
+                    return true;
+                }
+
+                if (Name == "multi-instruction") {
+                    MPM.addPass(MultiInstructionPass());
+                    return true;
+                }
+		        // Multi-instruction Operations
+                return false;
+            });
+        }   // RegisterPassBuilderCallbacks
   };        // struct PassPluginLibraryInfo
 }

@@ -1,0 +1,6 @@
+Esercizio 1
+
+Si possono aggiornare le singole references separatamente?
+Controlla la documentazione e prova a rispondere.
+
+Si, in particolare è possibile iterare sugli uses() di un determinato oggetto llvm:Value e per ciascuno si può chiamare la procedura set() per cambiarne il value.
