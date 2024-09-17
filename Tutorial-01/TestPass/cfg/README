@@ -1,0 +1,7 @@
+Generazione SVG da script d2 per schemi CFG
+
+Generazione file .svg (da directory "cfg"):
+	d2 src/filename.d2 svg/outputname.svg
+
+Si può compilare il file e attivare la compilazione interattiva: viene aperto il browser per visualizzare il file SVG; salvando il file viene rilanciata la compilazione e il risultato visualizzato nella pagina aperta
+	d2 -w src/filename.s2 svg/outputname.svg
