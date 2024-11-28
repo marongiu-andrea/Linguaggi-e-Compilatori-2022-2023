@@ -1,0 +1,201 @@
+
+;; Function task (task, funcdef_no=0, decl_uid=2788, cgraph_uid=1, symbol_order=0)
+
+
+OMP region tree
+
+bb 2: gimple_omp_parallel
+    bb 3: gimple_omp_for
+    bb 7: GIMPLE_OMP_CONTINUE
+    bb 8: GIMPLE_OMP_RETURN
+bb 9: GIMPLE_OMP_RETURN
+
+Added new low gimple function task._omp_fn.0 to callgraph
+Introduced new external node (__builtin_GOMP_loop_nonmonotonic_dynamic_start/3).
+Introduced new external node (__builtin_GOMP_loop_nonmonotonic_dynamic_next/4).
+Introduced new external node (__builtin_GOMP_loop_end/5).
+
+;; Function task._omp_fn.0 (task._omp_fn.0, funcdef_no=2, decl_uid=2814, cgraph_uid=3, symbol_order=2)
+
+task._omp_fn.0 (struct .omp_data_s.3 & restrict .omp_data_i)
+{
+  int j;
+  int result[0:D.2823] [value-expr: *result.1];
+  _Bool D.2858;
+  int i;
+  int D.2856;
+  long int .iend0.9;
+  int j;
+  long int .istart0.8;
+  _Bool D.2852;
+  long int .iend0.7;
+  long int .istart0.6;
+  long int D.2849;
+  int N.4;
+  int N;
+  int N_ITERS;
+  int[0:D.2829] * result.1;
+
+  <bb 13> :
+
+  <bb 3> :
+  result.1 = .omp_data_i->result.1;
+  N_ITERS = .omp_data_i->N_ITERS;
+  N = .omp_data_i->N;
+  N.4 = N;
+  D.2849 = (long int) N.4;
+  D.2852 = __builtin_GOMP_loop_nonmonotonic_dynamic_start (0, D.2849, 1, 1000, &.istart0.6, &.iend0.7);
+  if (D.2852 != 0)
+    goto <bb 11>; [INV]
+  else
+    goto <bb 8>; [INV]
+
+  <bb 11> :
+  .istart0.8 = .istart0.6;
+  j = (int) .istart0.8;
+  .iend0.9 = .iend0.7;
+  D.2856 = (int) .iend0.9;
+
+  <bb 4> :
+  i = 0;
+
+  <bb 6> :
+  if (i < N_ITERS)
+    goto <bb 5>; [INV]
+  else
+    goto <bb 7>; [INV]
+
+  <bb 7> :
+  j = j + 1;
+  if (j < D.2856)
+    goto <bb 4>; [87.50%]
+  else
+    goto <bb 12>; [12.50%]
+
+  <bb 12> :
+  D.2858 = __builtin_GOMP_loop_nonmonotonic_dynamic_next (&.istart0.6, &.iend0.7);
+  if (D.2858 != 0)
+    goto <bb 11>; [INV]
+  else
+    goto <bb 8>; [INV]
+
+  <bb 5> :
+  MEM <int[0:D.2828]> [(int[0:D.2828] *)result.1][i] = j;
+  i = i + 1;
+  goto <bb 6>; [INV]
+
+  <bb 8> :
+  __builtin_GOMP_loop_end ();
+
+  <bb 9> :
+  return;
+
+}
+
+
+
+;; Function task (task, funcdef_no=0, decl_uid=2788, cgraph_uid=1, symbol_order=0)
+
+Merging blocks 2 and 14
+Merging blocks 2 and 10
+task ()
+{
+  unsigned int numThread.10;
+  _Bool D.2844;
+  long int .iend0.9;
+  int D.2843;
+  long int .istart0.8;
+  long int D.2839;
+  _Bool D.2840;
+  long int .iend0.7;
+  long int .istart0.6;
+  int j;
+  int i;
+  int N.4;
+  int j;
+  long long int elapsedTime;
+  int result[0:D.2806] [value-expr: *result.1];
+  int N_ITERS;
+  int N;
+  int numThread;
+  struct timespec stop;
+  struct timespec start;
+  void * saved_stack.2;
+  int[0:D.2806] * result.1;
+  sizetype D.2810;
+  bitsizetype D.2809;
+  sizetype D.2808;
+  bitsizetype D.2807;
+  sizetype D.2806;
+  int N_ITERS.0;
+  struct .omp_data_s.3 .omp_data_o.5;
+  sizetype D.2829;
+  sizetype D.2828;
+  sizetype D.2823;
+
+  <bb 2> :
+  saved_stack.2 = __builtin_stack_save ();
+  clock_gettime (1, &start);
+  numThread = 8;
+  N = 1000000;
+  N_ITERS = 1000;
+  N_ITERS.0 = N_ITERS;
+  _1 = (long int) N_ITERS.0;
+  _2 = _1 + -1;
+  D.2806 = (sizetype) _2;
+  _4 = (sizetype) N_ITERS.0;
+  _5 = (bitsizetype) _4;
+  D.2807 = _5 * 32;
+  _7 = (sizetype) N_ITERS.0;
+  D.2808 = _7 * 4;
+  _9 = (sizetype) N_ITERS.0;
+  _10 = (bitsizetype) _9;
+  D.2809 = _10 * 32;
+  _12 = (sizetype) N_ITERS.0;
+  D.2810 = _12 * 4;
+  result.1 = __builtin_alloca_with_align (D.2810, 32);
+  .omp_data_o.5.result.1 = result.1;
+  .omp_data_o.5.N_ITERS = N_ITERS;
+  .omp_data_o.5.N = N;
+  numThread.10 = (unsigned int) numThread;
+  __builtin_GOMP_parallel (task._omp_fn.0, &.omp_data_o.5, numThread.10, 0);
+  .omp_data_o.5 = {CLOBBER};
+  clock_gettime (1, &stop);
+  _14 = stop.tv_sec;
+  _15 = start.tv_sec;
+  _16 = _14 - _15;
+  _17 = (double) _16;
+  _18 = _17 * 1.0e+9;
+  _19 = stop.tv_nsec;
+  _20 = start.tv_nsec;
+  _21 = _19 - _20;
+  _22 = (double) _21;
+  _23 = _18 + _22;
+  elapsedTime = (long long int) _23;
+  printf ("Tempo: %llu nanosecondi\n", elapsedTime);
+  __builtin_stack_restore (saved_stack.2);
+  start = {CLOBBER};
+  stop = {CLOBBER};
+  return;
+
+}
+
+
+
+;; Function main (main, funcdef_no=1, decl_uid=2802, cgraph_uid=2, symbol_order=1)
+
+main ()
+{
+  int D.2862;
+
+  <bb 2> :
+  task ();
+  D.2862 = 0;
+
+  <bb 3> :
+<L0>:
+  return D.2862;
+
+}
+
+
